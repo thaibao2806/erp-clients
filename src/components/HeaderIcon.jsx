@@ -17,11 +17,17 @@ const notifications = [
   {
     id: 1,
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
-    title: 'WELCOME TO 1BOSS',
+    title: 'Cập nhật hệ thống',
     time: '13/06/2022 04:42',
   },
   {
     id: 2,
+    image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
+    title: 'Cập nhật hệ thống',
+    time: '14/06/2022 09:30',
+  },
+  {
+    id: 3,
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
     title: 'Cập nhật hệ thống',
     time: '14/06/2022 09:30',

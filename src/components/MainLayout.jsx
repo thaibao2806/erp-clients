@@ -256,23 +256,24 @@ const MainLayout = () => {
         {/* ========== CONTENT ========== */}
         <Content
           style={{
-            margin: '24px 16px 0px 16px', // Khoảng cách trên dưới và trái phải
-            overflow: 'initial', // Cho phép nội dung tràn nếu cần
+            margin: '24px 16px 0px 16px',
+            paddingRight: 16, // thêm chút padding phải cho đẹp
+            height: 'calc(100vh - 64px - 48px - 10px)', // 64px là Header, 48px là Footer
+            overflowY: 'auto', // Cho phép scroll dọc
           }}
         >
           <div
             style={{
-              padding: 24,
+              padding:20,
               background: '#fff',
-              minHeight: 'calc(100vh - 64px - 48px - 10px)', // Cao 100vh trừ Header, margin Content, Footer
-              borderRadius:"10px"
-
-              // minHeight: 360, // Hoặc đặt một chiều cao tối thiểu cố định
+              borderRadius: "10px",
+              minHeight: '100%', // đảm bảo full chiều cao trong Content
             }}
           >
-            <Outlet /> {/* Nơi render nội dung các trang */}
+            <Outlet />
           </div>
         </Content>
+
 
         {/* ========== FOOTER ========== */}
         <Footer style={{ textAlign: 'center', padding: '10px 0' }}>

@@ -5,10 +5,11 @@ import NotFoundPage from '../modules/Common/Notfound'
 import Review from '../modules/Common/Review'
 import Calendar from '../modules/Common/Calendar'
 import DashboardProductionControll from '../modules/ProductionControl/Dashboard'
-import WareHousePC from '../modules/ProductionControl/WareHousePC'
-import Projects from '../modules/ProductionControl/Projects'
-import ProgressProject from '../modules/ProductionControl/ProgressProject'
-import Timekeeping from '../modules/ProductionControl/Timekeeping'
+import WareHousePC from '../modules/ProductionControl/WareHousePC/WareHousePC'
+import Projects from '../modules/ProductionControl/Project/Projects'
+import ProgressProject from '../modules/ProductionControl/ProgressProject/ProgressProject'
+import Timekeeping from '../modules/ProductionControl/TimeKeeping/Timekeeping'
+import Delivery from '../modules/ProductionControl/Delivery/Delivery'
 
 function AppRoute() {
   return (
@@ -21,6 +22,7 @@ function AppRoute() {
             <Route path="/pm/du-an" element={<Projects />} />
             <Route path="/pm/tien-do" element={<ProgressProject />} />
             <Route path="/pm/cham-cong" element={<Timekeeping />} />
+            <Route path="/pm/so-giao-nhan" element={<Delivery />} />
             <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
