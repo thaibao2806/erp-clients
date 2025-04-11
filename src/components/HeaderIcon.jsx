@@ -128,9 +128,9 @@ const HeaderIcons = () => {
       </Dropdown>
 
       {/* Cài đặt */}
-      <Tooltip >
+      {/* <Tooltip >
         <SettingOutlined style={{ fontSize: '20px', cursor: 'pointer' }} />
-      </Tooltip>
+      </Tooltip> */}
 
       {/* Tài khoản (Dropdown) */}
       <Dropdown overlay={accountMenu} trigger={['click']} placement="bottomRight">

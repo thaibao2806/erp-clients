@@ -10,10 +10,19 @@ import Projects from '../modules/ProductionControl/Project/Projects'
 import ProgressProject from '../modules/ProductionControl/ProgressProject/ProgressProject'
 import Timekeeping from '../modules/ProductionControl/TimeKeeping/Timekeeping'
 import Delivery from '../modules/ProductionControl/Delivery/Delivery'
+import Login from '../modules/Auth/Login/Login';
+import ForgotPassword from '../modules/Auth/ForgotPassword/ForgotPassword';
+import CheckOTP from '../modules/Auth/ForgotPassword/CheckOTP';
+import ChangePassword from '../modules/Auth/ChangePassword/ChangePassword'
+import TimekeepingDetail from '../modules/ProductionControl/TimeKeeping/TimekeepingDetail'
 
 function AppRoute() {
   return (
     <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/check-otp" element={<CheckOTP />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/" element={<MainLayout />}>
             <Route path="/review" element={<Review />} />
             <Route path="/calendar" element={<Calendar />} />
@@ -22,6 +31,7 @@ function AppRoute() {
             <Route path="/pm/du-an" element={<Projects />} />
             <Route path="/pm/tien-do" element={<ProgressProject />} />
             <Route path="/pm/cham-cong" element={<Timekeeping />} />
+            <Route path="/pm/cham-cong-chi-tiet/:id" element={<TimekeepingDetail />} />
             <Route path="/pm/so-giao-nhan" element={<Delivery />} />
             <Route path="*" element={<NotFoundPage />} />
       </Route>

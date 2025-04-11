@@ -1,38 +1,55 @@
-// src/config/navigation.js
+import PTIcon from '../assets/images/modules/ct_hc.png';
+import FNIcon from '../assets/images/modules/tc.png';
+import PMIcon from '../assets/images/modules/dd_sx.png';
+import PLIcon from '../assets/images/modules/kh_kd.png';
+import KTIcon from '../assets/images/modules/kt_vt.png';
 
-// Định nghĩa cấu trúc dữ liệu cho modules và pages
 export const moduleData = {
     TM: { // Sales Order
-      name: 'Ban KT-VT-CN',
+      lable: 'KT-VT-CN',
+      name: 'Ban Kỹ thuật - Vật tư - Công nghệ',
+      icon: KTIcon,
       pages: [
         { key: 'so-orders', label: 'Đơn hàng bán', path: '/so/orders' },
         { key: 'so-delivery', label: 'Tình trạng giao hàng', path: '/so/delivery-status' },
         { key: 'so-pricelist', label: 'Bảng giá', path: '/so/price-list' },
+        { key: 'tm-task', label: 'Công việc', path: '/tm/task' },
       ],
     },
     PL: { // Purchase Order
-      name: 'Ban KH-UD',
+      lable: 'KH-KD',
+      name: 'Ban Kế hoạch - Kinh doanh',
+      icon: PLIcon,
       pages: [
         { key: 'po-orders', label: 'Đơn hàng mua', path: '/po/orders' },
         { key: 'po-receipts', label: 'Nhập kho', path: '/po/receipts' },
+        { key: 'pl-task', label: 'Công việc', path: '/pl/task' },
       ],
     },
     FN: { // Warehouse Management
+      lable:'TC',
       name: 'Ban Tài Chính',
+      icon: FNIcon,
       pages: [
         { key: 'wm-inventory', label: 'Tồn kho', path: '/wm/inventory' },
         { key: 'wm-transfer', label: 'Chuyển kho', path: '/wm/transfer' },
+        { key: 'fn-task', label: 'Công việc', path: '/fn/task' },
       ],
     },
     PT: { // Customer Relationship Management
-      name: 'Ban hành chính - chính trị',
+      lable:'CT-HC',
+      name: 'Ban chính trị - hành chính',
+      icon: PTIcon,
       pages: [
         { key: 'crm-customers', label: 'Danh sách khách hàng', path: '/crm/customers' },
         { key: 'crm-opportunities', label: 'Cơ hội bán hàng', path: '/crm/opportunities' },
+        { key: 'pt-task', label: 'Công việc', path: '/pt/task' },
       ],
     },
     PM: { // Customer Relationship Management
+        lable: 'DDSX',
         name: 'Điều độ sản xuất',
+        icon: PMIcon,
         pages: [
           { key: 'pm-dashboard', label: 'A. Dashboard', path: '/pm/dashboard' },
           { key: 'pm-chamcong', label: 'B. Chấm công', path: '/pm/cham-cong' },
@@ -59,6 +76,7 @@ export const moduleData = {
           { key: 'pm-du-an', label: 'G. Dự án', path: '/pm/du-an' },
           { key: 'pm-tien-do', label: 'H. Tiến độ công việc', path: '/pm/tien-do' },
           { key: 'pm-so-giao-nhan', label: 'I. Sổ giao nhận', path: '/pm/so-giao-nhan' },
+          { key: 'pm-task', label: 'K. Công việc', path: '/pm/task' },
         ],
       },
     // Thêm các module khác nếu cần
@@ -84,7 +102,7 @@ export const moduleData = {
   // Tạo danh sách modules cho Select component
   export const modules = moduleKeys.map(key => ({
     value: key,
-    label: moduleData[key].name,
+    label: moduleData[key].label,
   }));
   
   // Export các giá trị mặc định để sử dụng ở nơi khác

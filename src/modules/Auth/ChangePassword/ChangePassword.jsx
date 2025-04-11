@@ -6,8 +6,7 @@ import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
 
-
-const Login = () => {
+const ChangePassword = () => {
   const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -16,7 +15,6 @@ const Login = () => {
   const [errors, setErrors] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -45,21 +43,21 @@ const Login = () => {
   const handleSubmit = () => {
     setErrors({ username: "", password: "" });
   
-    if (!username) {
-      setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
-      return;
-    }
+    // if (!username) {
+    //   setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
+    //   return;
+    // }
   
-    if (!password) {
-      setErrors((prev) => ({ ...prev, password: t("validation.passwordRequired") }));
-      return;
-    } else if (!validatePassword(password)) {
-      setErrors((prev) => ({
-        ...prev,
-        password: t("validation.passwordStrength"),
-      }));
-      return;
-    }
+    // if (!password) {
+    //   setErrors((prev) => ({ ...prev, password: t("validation.passwordRequired") }));
+    //   return;
+    // } else if (!validatePassword(password)) {
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     password: t("validation.passwordStrength"),
+    //   }));
+    //   return;
+    // }
   
     setLoading(true);
   
@@ -73,10 +71,9 @@ const Login = () => {
         localStorage.setItem("password", password);
       }
   
-      navigate("/calendar"); // Chuyển đến trang calendar
+      navigate("/login"); // Chuyển đến trang calendar
     }, 1500); // Giả lập delay 1.5 giây
   };
-  
 
   // Thay đổi ngôn ngữ
   const handleLanguageChange = (lang) => {
@@ -156,30 +153,15 @@ const Login = () => {
               marginBottom: "30px",
             }}
           >
-            {t("login")}
+            {/* {t("login")} */}
+            Đổi mật khẩu
           </h2>
-
-          {/* Ô nhập tài khoản */}
-          <Input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder={t("username")}
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.username ? "red" : "",
-            }}
-          />
-          {errors.username && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.username}</div>
-          )}
 
           {/* Ô nhập mật khẩu */}
           <Input.Password
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={t("password")}
+            placeholder={"Mật khẩu hiện tại"}
             iconRender={(visible) =>
               visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
             }
@@ -194,25 +176,41 @@ const Login = () => {
             <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
           )}
 
-          {/* Nhớ mật khẩu + Quên mật khẩu */}
-          <div
+          <Input.Password
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={"Mật khẩu mới"}
+            iconRender={(visible) =>
+              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+            }
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
               marginBottom: "20px",
+              height: "50px",
+              fontSize: "16px",
+              borderColor: errors.password ? "red" : "",
             }}
-          >
-            <Checkbox
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            >
-              {t("rememberMe")}
-            </Checkbox>
-            <a href="/check-otp" style={{ color: "#1E3A8A" }}>
-              {t("forgotPassword")}
-            </a>
-          </div>
+          />
+          {errors.password && (
+            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
+          )}
+
+          <Input.Password
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={"Nhập lại mật khẩu"}
+            iconRender={(visible) =>
+              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+            }
+            style={{
+              marginBottom: "20px",
+              height: "50px",
+              fontSize: "16px",
+              borderColor: errors.password ? "red" : "",
+            }}
+          />
+          {errors.password && (
+            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
+          )}
 
           {/* Nút Đăng nhập */}
           <Button
@@ -223,16 +221,15 @@ const Login = () => {
               fontSize: "18px",
             }}
             loading={loading} // Hiệu ứng loading
-            disabled={loading} // Không nhấn được khi loading
+            disabled={loading}
             onClick={handleSubmit}
           >
-            {t("submit")}
+            Đổi mật khẩu
           </Button>
-
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default ChangePassword;

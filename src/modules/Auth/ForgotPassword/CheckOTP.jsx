@@ -6,8 +6,7 @@ import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
 
-
-const Login = () => {
+const CheckOTP = () => {
   const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -16,7 +15,6 @@ const Login = () => {
   const [errors, setErrors] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -42,41 +40,29 @@ const Login = () => {
   };
 
   // Hàm xử lý submit
-  const handleSubmit = () => {
-    setErrors({ username: "", password: "" });
-  
-    if (!username) {
-      setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
-      return;
-    }
-  
-    if (!password) {
-      setErrors((prev) => ({ ...prev, password: t("validation.passwordRequired") }));
-      return;
-    } else if (!validatePassword(password)) {
-      setErrors((prev) => ({
-        ...prev,
-        password: t("validation.passwordStrength"),
-      }));
-      return;
-    }
-  
-    setLoading(true);
-  
-    setTimeout(() => {
-      setLoading(false);
-      message.success(t("loginSuccess"));
-  
-      if (rememberMe) {
-        localStorage.setItem("rememberMe", true);
-        localStorage.setItem("username", username);
-        localStorage.setItem("password", password);
+   const handleSubmit = () => {
+      setErrors({ username: "", password: "" });
+    
+      if (!username) {
+        setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
+        return;
       }
-  
-      navigate("/calendar"); // Chuyển đến trang calendar
-    }, 1500); // Giả lập delay 1.5 giây
-  };
-  
+    
+      setLoading(true);
+    
+      setTimeout(() => {
+        setLoading(false);
+        message.success(t("loginSuccess"));
+    
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", true);
+          localStorage.setItem("username", username);
+          localStorage.setItem("password", password);
+        }
+    
+        navigate("/forgot-password"); // Chuyển đến trang calendar
+      }, 1500); // Giả lập delay 1.5 giây
+    };
 
   // Thay đổi ngôn ngữ
   const handleLanguageChange = (lang) => {
@@ -156,14 +142,15 @@ const Login = () => {
               marginBottom: "30px",
             }}
           >
-            {t("login")}
+            {/* {t("login")} */}
+            Quên mật khẩu
           </h2>
 
           {/* Ô nhập tài khoản */}
           <Input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder={t("username")}
+            placeholder={"Nhập email"}
             style={{
               marginBottom: "20px",
               height: "50px",
@@ -172,48 +159,10 @@ const Login = () => {
             }}
           />
           {errors.username && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.username}</div>
+            <div style={{ color: "red", fontSize: "12px",marginBottom: "10px", }}>{errors.username}</div>
           )}
 
-          {/* Ô nhập mật khẩu */}
-          <Input.Password
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t("password")}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
-            }}
-          />
-          {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
-          )}
-
-          {/* Nhớ mật khẩu + Quên mật khẩu */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <Checkbox
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            >
-              {t("rememberMe")}
-            </Checkbox>
-            <a href="/check-otp" style={{ color: "#1E3A8A" }}>
-              {t("forgotPassword")}
-            </a>
-          </div>
-
+          
           {/* Nút Đăng nhập */}
           <Button
             type="primary"
@@ -223,16 +172,15 @@ const Login = () => {
               fontSize: "18px",
             }}
             loading={loading} // Hiệu ứng loading
-            disabled={loading} // Không nhấn được khi loading
+            disabled={loading}
             onClick={handleSubmit}
           >
-            {t("submit")}
+            Gửi mã
           </Button>
-
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default CheckOTP;

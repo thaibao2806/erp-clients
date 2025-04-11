@@ -142,11 +142,11 @@ const MainLayout = () => {
     <Menu>
       {modules.map(module => (
         <Menu.Item key={module.value} onClick={() => handleModuleChange(module.value)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* <Avatar src={moduleIcons[module.value]} size={30} /> */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding:5 }}>
+            <Avatar src={moduleData[module.value]?.icon} size={50} />
             <div>
-              <div style={{ fontWeight: 'bold' }}>{module.label}</div>
-              <div style={{ fontSize: 12, color: '#666' }}>{moduleData[module.value]?.name}</div>
+              <div style={{ fontWeight: 'bold', fontSize: 18 }}>{moduleData[module.value]?.lable}</div>
+              <div style={{ fontSize: 16, color: '#666' }}>{moduleData[module.value]?.name}</div>
             </div>
           </div>
         </Menu.Item>
