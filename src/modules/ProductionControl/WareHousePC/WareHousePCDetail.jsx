@@ -20,12 +20,12 @@ import {
 import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import SystemSection from "../../../components/SystemSection";
-import TimekeepingModal from "./TimekeepingModal";
+import WareHousePCModal from "./WareHousePCModal";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
 
-const TimekeepingDetail = () => {
+const WareHousePCDetail = () => {
   const { id } = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingData, setEditingData] = useState(null);
@@ -76,22 +76,26 @@ const TimekeepingDetail = () => {
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Họ và tên", dataIndex: "hoTen" },
-    { title: "Chức vụ", dataIndex: "chucVu" },
-    ...Array.from({ length: 31 }, (_, i) => ({
-      title: `${i + 1}`,
-      dataIndex: `d${i + 1}`,
-      width: 40,
-    })),
+    { title: "Tên vật tư, thiết bị", dataIndex: "vattuthietbi" },
+    { title: "Ngày nhập", dataIndex: "ngaynhap" },
+    { title: "SL nhập", dataIndex: "slnhap" },
+    { title: "Ngày xuất", dataIndex: "ngayxuat" },
+    { title: "SL xuất", dataIndex: "slxuat" },
+    { title: "SL tồn", dataIndex: "sltồn" },
+    { title: "Ghi chú", dataIndex: "ghichu" },
   ];
 
   const timekeepingData = [
     {
       key: "1",
       stt: 1,
-      hoTen: "Nguyễn Văn A",
-      chucVu: "Nhân viên",
-      ...Array.from({ length: 31 }, (_, i) => ({ [`d${i + 1}`]: "" })).reduce((a, b) => ({ ...a, ...b })),
+      vattuthietbi: "Máy hàn",
+      ngaynhap: "12/04/2025",
+      slnhap: "5",
+      ngayxuat: "12/04/2025",
+      slxuat: "5",
+      slton: "0",
+      ghichu: "đã giao",
     },
   ];
 
@@ -99,7 +103,7 @@ const TimekeepingDetail = () => {
     <div style={{ padding: 10 }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Title level={3}>Xem chi tiết chấm công</Title>
+          <Title level={3}>Xem chi tiết sổ kho</Title>
         </Col>
         <Col>
           <Dropdown
@@ -118,17 +122,17 @@ const TimekeepingDetail = () => {
         style={{ marginTop: 16 }}
         expandIconPosition="end"
       >
-        <Panel header="Thông tin chấm công" key="1">
+        <Panel header="Thông tin sổ kho" key="1">
           <Space direction="vertical" size="middle">
             <div>Đơn vị: Công ty ABC</div>
-            <div>Mã chấm công: CC2025-03</div>
-            <div>Tên chấm công: Tháng 3 - Phòng Nhân sự</div>
-            <div>Tháng: 03/2025</div>
+            <div>Số chứng từ: CC2025-03</div>
+            <div>Loại vật tư: Tháng 3 - Phòng Nhân sự</div>
+            <div>Ngày chứng từ: 03/2025</div>
             <div>Ghi chú: Chấm công thử nghiệm</div>
           </Space>
         </Panel>
 
-        <Panel header="Bảng chấm công" key="2">
+        <Panel header="Bảng vật tư, thiết bị" key="2">
           <Table
             columns={columns}
             dataSource={timekeepingData}
@@ -163,7 +167,7 @@ const TimekeepingDetail = () => {
         </Panel>
       </Collapse>
 
-      <TimekeepingModal
+      <WareHousePCModal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
@@ -177,4 +181,4 @@ const TimekeepingDetail = () => {
   );
 };
 
-export default TimekeepingDetail;
+export default WareHousePCDetail;

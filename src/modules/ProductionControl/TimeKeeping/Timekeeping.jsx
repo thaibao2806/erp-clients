@@ -160,7 +160,7 @@ const Timekeeping = () => {
   };
 
   return (
-    <div style={{ padding: 10 }}>
+    <div style={{ padding: 5 }}>
       {/* Header */}
       <div
         style={{
@@ -169,7 +169,7 @@ const Timekeeping = () => {
           marginBottom: 16,
         }}
       >
-        <h2 style={{ margin: 0 }}>Chấm công</h2>
+        <h1 style={{ margin: 0 }}>Chấm công</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
             <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />

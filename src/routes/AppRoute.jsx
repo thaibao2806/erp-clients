@@ -15,6 +15,7 @@ import ForgotPassword from '../modules/Auth/ForgotPassword/ForgotPassword';
 import CheckOTP from '../modules/Auth/ForgotPassword/CheckOTP';
 import ChangePassword from '../modules/Auth/ChangePassword/ChangePassword'
 import TimekeepingDetail from '../modules/ProductionControl/TimeKeeping/TimekeepingDetail'
+import WareHousePCDetail from '../modules/ProductionControl/WareHousePC/WareHousePCDetail'
 
 function AppRoute() {
   return (
@@ -32,6 +33,7 @@ function AppRoute() {
             <Route path="/pm/tien-do" element={<ProgressProject />} />
             <Route path="/pm/cham-cong" element={<Timekeeping />} />
             <Route path="/pm/cham-cong-chi-tiet/:id" element={<TimekeepingDetail />} />
+            <Route path="/pm/so-kho-chi-tiet/:id" element={<WareHousePCDetail />} />
             <Route path="/pm/so-giao-nhan" element={<Delivery />} />
             <Route path="*" element={<NotFoundPage />} />
       </Route>

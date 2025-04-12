@@ -4,14 +4,23 @@ import {
   EditOutlined,
   CalendarOutlined,
   BellOutlined,
-  SettingOutlined,
   UserOutlined,
   LogoutOutlined,
   LockOutlined,
 } from '@ant-design/icons';
-import { Dropdown, Menu, Tooltip, Avatar, Typography, Divider } from 'antd';
+import {
+  Dropdown,
+  Tooltip,
+  Avatar,
+  Typography,
+  Button,
+  Tabs,
+  Divider,
+  Menu,
+} from 'antd';
 
 const { Text } = Typography;
+const { TabPane } = Tabs;
 
 const notifications = [
   {
@@ -23,51 +32,112 @@ const notifications = [
   {
     id: 2,
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
-    title: 'Cập nhật hệ thống',
+    title: 'Cập nhật tính năng mới',
     time: '14/06/2022 09:30',
   },
+];
+
+const reminders = [
   {
-    id: 3,
+    id: 1,
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
-    title: 'Cập nhật hệ thống',
-    time: '14/06/2022 09:30',
+    title: 'Nhắc bạn duyệt phiếu kho',
+    time: '15/06/2022 10:00',
   },
 ];
 
 const HeaderIcons = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeTab, setActiveTab] = useState('1'); // 1: Thông báo, 2: Nhắc nhở
 
-  // Menu Thông báo
-  const notificationMenu = (
-    <Menu style={{ width: 320 }}>
-      {notifications.length > 0 ? (
-        notifications.map((notif) => (
-          <Menu.Item key={notif.id} style={{ padding: 10, whiteSpace: 'normal' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar src={notif.image} size={32} style={{ marginRight: 10 }} />
-              <div>
-                <Text strong>{notif.title}</Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {notif.time}
-                </Text>
-              </div>
+  const handleItemClick = (type, id) => {
+    if (type === 'notification') {
+      navigate(`/notifications/${id}`);
+    } else if (type === 'reminder') {
+      navigate(`/reminders/${id}`);
+    }
+  };
+
+  const renderItems = (items, type) =>
+    items.map((item) => (
+      <div
+        key={`${type}-${item.id}`}
+        style={{
+          padding: '10px 16px',
+          cursor: 'pointer',
+          transition: 'background 0.3s',
+        }}
+        onClick={() => handleItemClick(type, item.id)}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f5f5')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar src={item.image} size={32} style={{ marginRight: 10 }} />
+          <div>
+            <Text strong>{item.title}</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {item.time}
+            </Text>
+          </div>
+        </div>
+        <Divider style={{ margin: '8px 0' }} />
+      </div>
+    ));
+  
+  
+
+    const notificationMenu = (
+      <div
+        style={{
+          width: 350,
+          maxHeight: 400,
+          background: '#fff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}
+      >
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key)}
+          centered
+          style={{ padding: '8px 0 0 0' }}
+        >
+          <TabPane tab="Thông báo" key="1">
+            <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+              {renderItems(notifications, 'notification')}
             </div>
-            <Divider style={{ margin: '8px 0' }} />
-          </Menu.Item>
-        ))
-      ) : (
-        <Menu.Item style={{ textAlign: 'center' }}>Không có thông báo</Menu.Item>
-      )}
+          </TabPane>
+          <TabPane tab="Nhắc nhở" key="2">
+            <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+              {renderItems(reminders, 'reminder')}
+            </div>
+          </TabPane>
+        </Tabs>
+    
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            padding: '8px 16px',
+            borderTop: '1px solid #f0f0f0',
+            background: '#ffffff',
+          }}
+        >
+          <Button type="link" onClick={() => navigate('/notifications')}>
+            Xem tất cả
+          </Button>
+          <Button type="link" onClick={() => console.log('Đánh dấu đã đọc')}>
+            Đánh dấu đã đọc
+          </Button>
+        </div>
+      </div>
+    );
+    
+    
 
-      <Menu.Item style={{ textAlign: 'center', padding: '10px' }}>
-        <Text type="link">Xem tất cả</Text> | <Text type="link">Đánh dấu đã đọc</Text>
-      </Menu.Item>
-    </Menu>
-  );
-
-  // Menu Tài khoản
   const accountMenu = (
     <Menu>
       <Menu.Item key="profile" icon={<UserOutlined />} onClick={() => navigate('/profile')}>
@@ -81,10 +151,7 @@ const HeaderIcons = () => {
         key="logout"
         icon={<LogoutOutlined />}
         style={{ color: 'red' }}
-        onClick={() => {
-          console.log('Đăng xuất');
-          navigate('/login'); // Chuyển về trang đăng nhập
-        }}
+        onClick={() => navigate('/login')}
       >
         Đăng xuất
       </Menu.Item>
@@ -93,7 +160,6 @@ const HeaderIcons = () => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-      {/* Ghi chú */}
       <Tooltip title="Xét duyệt">
         <EditOutlined
           style={{ fontSize: '20px', cursor: 'pointer' }}
@@ -101,7 +167,6 @@ const HeaderIcons = () => {
         />
       </Tooltip>
 
-      {/* Lịch */}
       <Tooltip title="Lịch">
         <CalendarOutlined
           style={{ fontSize: '20px', cursor: 'pointer' }}
@@ -109,14 +174,13 @@ const HeaderIcons = () => {
         />
       </Tooltip>
 
-      {/* Thông báo */}
       <Dropdown
         overlay={notificationMenu}
         trigger={['click']}
         placement="bottomRight"
         onOpenChange={setShowNotifications}
       >
-        <Tooltip>
+        <Tooltip >
           <BellOutlined
             style={{
               fontSize: '20px',
@@ -127,14 +191,8 @@ const HeaderIcons = () => {
         </Tooltip>
       </Dropdown>
 
-      {/* Cài đặt */}
-      {/* <Tooltip >
-        <SettingOutlined style={{ fontSize: '20px', cursor: 'pointer' }} />
-      </Tooltip> */}
-
-      {/* Tài khoản (Dropdown) */}
       <Dropdown overlay={accountMenu} trigger={['click']} placement="bottomRight">
-        <Tooltip >
+        <Tooltip title="Tài khoản">
           <UserOutlined style={{ fontSize: '20px', cursor: 'pointer' }} />
         </Tooltip>
       </Dropdown>
