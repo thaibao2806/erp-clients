@@ -16,6 +16,10 @@ import CheckOTP from '../modules/Auth/ForgotPassword/CheckOTP';
 import ChangePassword from '../modules/Auth/ChangePassword/ChangePassword'
 import TimekeepingDetail from '../modules/ProductionControl/TimeKeeping/TimekeepingDetail'
 import WareHousePCDetail from '../modules/ProductionControl/WareHousePC/WareHousePCDetail'
+import ProjectsDetail from '../modules/ProductionControl/Project/ProjectsDetail'
+import ProgressProjectDetail from '../modules/ProductionControl/ProgressProject/ProgressProjectDetail'
+import DeliveryDetail from '../modules/ProductionControl/Delivery/DeliveryDetail'
+import KanbanBoard from '../modules/ProductionControl/Tasks/KanbanBoard'
 
 function AppRoute() {
   return (
@@ -34,9 +38,14 @@ function AppRoute() {
             <Route path="/pm/cham-cong" element={<Timekeeping />} />
             <Route path="/pm/cham-cong-chi-tiet/:id" element={<TimekeepingDetail />} />
             <Route path="/pm/so-kho-chi-tiet/:id" element={<WareHousePCDetail />} />
+            <Route path="/pm/du-an-chi-tiet/:id" element={<ProjectsDetail />} />
+            <Route path="/pm/tien-do-du-an-chi-tiet/:id" element={<ProgressProjectDetail />} />
+            <Route path="/pm/so-giao-nhan-chi-tiet/:id" element={<DeliveryDetail />} />
             <Route path="/pm/so-giao-nhan" element={<Delivery />} />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="/pm/cong-viec" element={<KanbanBoard />} />
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
+
     </Routes>
   )
 }

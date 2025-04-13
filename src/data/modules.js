@@ -76,7 +76,7 @@ export const moduleData = {
           { key: 'pm-du-an', label: 'G. Dự án', path: '/pm/du-an' },
           { key: 'pm-tien-do', label: 'H. Tiến độ công việc', path: '/pm/tien-do' },
           { key: 'pm-so-giao-nhan', label: 'I. Sổ giao nhận', path: '/pm/so-giao-nhan' },
-          { key: 'pm-task', label: 'K. Công việc', path: '/pm/task' },
+          { key: 'pm-task', label: 'K. Công việc', path: '/pm/cong-viec' },
         ],
       },
     // Thêm các module khác nếu cần

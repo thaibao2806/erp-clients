@@ -11,6 +11,7 @@ export default defineConfig({
       '@fullcalendar/daygrid',
       '@fullcalendar/timegrid',
       '@fullcalendar/interaction',
+      '@hello-pangea/dnd'
     ],
   },
 })

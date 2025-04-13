@@ -7,6 +7,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   LockOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import {
   Dropdown,
@@ -18,6 +19,7 @@ import {
   Divider,
   Menu,
 } from 'antd';
+import ApprovalSettingModal from './ApprovalSettingModal';
 
 const { Text } = Typography;
 const { TabPane } = Tabs;
@@ -50,6 +52,7 @@ const HeaderIcons = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeTab, setActiveTab] = useState('1'); // 1: Thông báo, 2: Nhắc nhở
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
 
   const handleItemClick = (type, id) => {
     if (type === 'notification') {
@@ -146,6 +149,13 @@ const HeaderIcons = () => {
       <Menu.Item key="change-password" icon={<LockOutlined />} onClick={() => navigate('/change-password')}>
         Đổi mật khẩu
       </Menu.Item>
+      <Menu.Item
+      key="setting-review"
+      icon={<CheckCircleOutlined />}
+      onClick={() => setApprovalModalOpen(true)}
+    >
+      Thiết lập xét duyệt
+    </Menu.Item>
       <Menu.Divider />
       <Menu.Item
         key="logout"
@@ -196,6 +206,7 @@ const HeaderIcons = () => {
           <UserOutlined style={{ fontSize: '20px', cursor: 'pointer' }} />
         </Tooltip>
       </Dropdown>
+      <ApprovalSettingModal open={approvalModalOpen} onClose={() => setApprovalModalOpen(false)} />
     </div>
   );
 };
