@@ -20,6 +20,16 @@ import ProjectsDetail from '../modules/ProductionControl/Project/ProjectsDetail'
 import ProgressProjectDetail from '../modules/ProductionControl/ProgressProject/ProgressProjectDetail'
 import DeliveryDetail from '../modules/ProductionControl/Delivery/DeliveryDetail'
 import KanbanBoard from '../modules/ProductionControl/Tasks/KanbanBoard'
+import Repair from '../modules/ProductionControl/Propose/Repair/Repair'
+import RepairDetail from '../modules/ProductionControl/Propose/Repair/RepairDetail'
+import Liquidation from '../modules/ProductionControl/Propose/Liquidation/Liquidation'
+import LiquidationDetail from '../modules/ProductionControl/Propose/Liquidation/LiquidationDetail'
+import BuySupplies from '../modules/ProductionControl/Propose/BuySupplies/BuySupplies'
+import BuySuppliesDetail from '../modules/ProductionControl/Propose/BuySupplies/BuySuppliesDetail'
+import RepairSupplies from '../modules/ProductionControl/Propose/RepairSupplies/RepairSupplies'
+import RepairSuppliesDetail from '../modules/ProductionControl/Propose/RepairSupplies/RepairSuppliesDetail'
+import EquipmentSupply from '../modules/ProductionControl/Propose/EquipmentSupply/EquipmentSupply'
+import EquipmentSupplyDetail from '../modules/ProductionControl/Propose/EquipmentSupply/EquipmentSupplyDetail'
 
 function AppRoute() {
   return (
@@ -43,6 +53,16 @@ function AppRoute() {
             <Route path="/pm/so-giao-nhan-chi-tiet/:id" element={<DeliveryDetail />} />
             <Route path="/pm/so-giao-nhan" element={<Delivery />} />
             <Route path="/pm/cong-viec" element={<KanbanBoard />} />
+            <Route path="/pm/de-xuat/de-xuat-sua-chua" element={<Repair />} />
+            <Route path="/pm/de-xuat/sua-chua-chi-tiet/:id" element={<RepairDetail />} />
+            <Route path="/pm/de-xuat/de-xuat-thanh-ly" element={<Liquidation />} />
+            <Route path="/pm/de-xuat/thanh-ly-chi-tiet/:id" element={<LiquidationDetail />} />
+            <Route path="/pm/de-xuat/de-xuat-mua-vat-tu-ccdc" element={<BuySupplies />} />
+            <Route path="/pm/de-xuat/mua-vat-tu-ccdc-chi-tiet/:id" element={<BuySuppliesDetail />} />
+            <Route path="/pm/de-xuat/de-xuat-vat-tu-sua-chua" element={<RepairSupplies />} />
+            <Route path="/pm/de-xuat/vat-tu-sua-chua-chi-tiet/:id" element={<RepairSuppliesDetail />} />
+            <Route path="/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi" element={<EquipmentSupply />} />
+            <Route path="/pm/de-xuat/cap-may-moc-thiet-bi-chi-tiet/:id" element={<EquipmentSupplyDetail />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
 
