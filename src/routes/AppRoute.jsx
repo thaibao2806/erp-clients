@@ -30,6 +30,14 @@ import RepairSupplies from '../modules/ProductionControl/Propose/RepairSupplies/
 import RepairSuppliesDetail from '../modules/ProductionControl/Propose/RepairSupplies/RepairSuppliesDetail'
 import EquipmentSupply from '../modules/ProductionControl/Propose/EquipmentSupply/EquipmentSupply'
 import EquipmentSupplyDetail from '../modules/ProductionControl/Propose/EquipmentSupply/EquipmentSupplyDetail'
+import EquipmentHandover from '../modules/ProductionControl/Protocol/EquipmentHandover/EquipmentHandover'
+import EquipmentHandoverDetail from '../modules/ProductionControl/Protocol/EquipmentHandover/EquipmentHandoverDetail'
+import RecoveryMaterials from '../modules/ProductionControl/Protocol/RecoveryMaterials/RecoveryMaterials'
+import RecoveryMaterialsDetail from '../modules/ProductionControl/Protocol/RecoveryMaterials/RecoveryMaterialsDetail'
+import CheckRepairs from '../modules/ProductionControl/Protocol/CheckRepairs/CheckRepairs'
+import CheckRepairsDetail from '../modules/ProductionControl/Protocol/CheckRepairs/CheckRepairsDetail'
+import ConfirmStatus from '../modules/ProductionControl/Protocol/ConfirmStatus/ConfirmStatus'
+import ConfirmStatusDetail from '../modules/ProductionControl/Protocol/ConfirmStatus/ConfirmStatusDetail'
 
 function AppRoute() {
   return (
@@ -63,6 +71,14 @@ function AppRoute() {
             <Route path="/pm/de-xuat/vat-tu-sua-chua-chi-tiet/:id" element={<RepairSuppliesDetail />} />
             <Route path="/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi" element={<EquipmentSupply />} />
             <Route path="/pm/de-xuat/cap-may-moc-thiet-bi-chi-tiet/:id" element={<EquipmentSupplyDetail />} />
+            <Route path="/pm/bien-ban/bien-ban-ban-giao-vat-tu" element={<EquipmentHandover />} />
+            <Route path="/pm/de-xuat/bien-ban-ban-giao-chi-tiet/:id" element={<EquipmentHandoverDetail />} />
+            <Route path="/pm/bien-ban/bien-ban-thu-hoi-vat-tu" element={<RecoveryMaterials />} />
+            <Route path="/pm/de-xuat/bien-ban-thu-hoi-chi-tiet/:id" element={<RecoveryMaterialsDetail />} />
+            <Route path="/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua" element={<CheckRepairs />} />
+            <Route path="/pm/de-xuat/bien-ban-nghiem-thu-sau-sua-chua-chi-tiet/:id" element={<CheckRepairsDetail />} />
+            <Route path="/pm/bien-ban/bien-ban-khao-sat-thiet-bị" element={<ConfirmStatus />} />
+            <Route path="/pm/de-xuat/bien-ban-khao-sat-thiet-bị-chi-tiet/:id" element={<ConfirmStatusDetail />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
 
