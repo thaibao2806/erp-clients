@@ -38,6 +38,8 @@ import CheckRepairs from '../modules/ProductionControl/Protocol/CheckRepairs/Che
 import CheckRepairsDetail from '../modules/ProductionControl/Protocol/CheckRepairs/CheckRepairsDetail'
 import ConfirmStatus from '../modules/ProductionControl/Protocol/ConfirmStatus/ConfirmStatus'
 import ConfirmStatusDetail from '../modules/ProductionControl/Protocol/ConfirmStatus/ConfirmStatusDetail'
+import EquipmentInventory from '../modules/ProductionControl/Reports/EquipmentInventory/EquipmentInventory'
+import EquipmentInventoryDetail from '../modules/ProductionControl/Reports/EquipmentInventory/EquipmentInventoryDetail'
 
 function AppRoute() {
   return (
@@ -77,8 +79,10 @@ function AppRoute() {
             <Route path="/pm/de-xuat/bien-ban-thu-hoi-chi-tiet/:id" element={<RecoveryMaterialsDetail />} />
             <Route path="/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua" element={<CheckRepairs />} />
             <Route path="/pm/de-xuat/bien-ban-nghiem-thu-sau-sua-chua-chi-tiet/:id" element={<CheckRepairsDetail />} />
-            <Route path="/pm/bien-ban/bien-ban-khao-sat-thiet-bị" element={<ConfirmStatus />} />
-            <Route path="/pm/de-xuat/bien-ban-khao-sat-thiet-bị-chi-tiet/:id" element={<ConfirmStatusDetail />} />
+            <Route path="/pm/bien-ban/bien-ban-khao-sat-thiet-bi" element={<ConfirmStatus />} />
+            <Route path="/pm/de-xuat/bien-ban-khao-sat-thiet-bi-chi-tiet/:id" element={<ConfirmStatusDetail />} />
+            <Route path="/pm/bao-cao/kiem-ke-thiet-bi" element={<EquipmentInventory />} />
+            <Route path="/pm/bao-cao/kiem-ke-thiet-bi-chi-tiet/:id" element={<EquipmentInventoryDetail />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
 

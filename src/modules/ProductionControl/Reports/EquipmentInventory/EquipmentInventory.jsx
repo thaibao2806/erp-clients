@@ -17,12 +17,12 @@ import {
   PrinterOutlined,
   FileExcelOutlined,
 } from "@ant-design/icons";
-import ConfirmStatusModal from "./ConfirmStatusModal";
+import EquipmentInventoryModal from "./EquipmentInventoryModal";
 import { Link } from "react-router-dom";
 
 const { RangePicker } = DatePicker;
 
-const ConfirmStatus = () => {
+const EquipmentInventory = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [dataSource, setDataSource] = useState([
@@ -68,7 +68,7 @@ const ConfirmStatus = () => {
       title: "Số chứng từ",
       dataIndex: "sochungtu",
       render: (text, record) => (
-        <Link to={`/pm/de-xuat/bien-ban-khao-sat-thiet-bi-chi-tiet/${record.key}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+        <Link to={`/pm/bao-cao/kiem-ke-thiet-bi-chi-tiet/${record.key}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
@@ -76,7 +76,7 @@ const ConfirmStatus = () => {
       dataIndex: "ngaychungtu",
     },
     {
-      title: "Nội dung kiểm tra",
+      title: "Bộ phận",
       dataIndex: "tenthietbi",
     },
     {
@@ -166,7 +166,7 @@ const ConfirmStatus = () => {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Biên bản xác nhận tình trạng thiết bị</h1>
+        <h1 style={{ margin: 0 }}>Báo cáo kiểm kê thiết bị</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
             <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
@@ -221,9 +221,9 @@ const ConfirmStatus = () => {
               />
             </Col>
             <Col span={8}>
-              <label>Nội dung kiểm tra</label>
+              <label>Bộ phận</label>
               <Input
-                placeholder="Nội dung kiểm tra"
+                placeholder="Bộ phận"
                 value={filters.tenChamCong}
                 onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
               />
@@ -248,7 +248,7 @@ const ConfirmStatus = () => {
       />
 
       {/* Modal */}
-      <ConfirmStatusModal
+      <EquipmentInventoryModal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onSubmit={handleSubmit}
@@ -258,4 +258,4 @@ const ConfirmStatus = () => {
   );
 };
 
-export default ConfirmStatus;
+export default EquipmentInventory;
