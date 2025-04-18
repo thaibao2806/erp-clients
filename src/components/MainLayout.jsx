@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import HeaderIcons from './HeaderIcon';
 import Title from 'antd/es/typography/Title';
+import QuoteMarquee from './QuoteMarquee';
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -248,6 +249,8 @@ const MainLayout = () => {
               borderRadius: 0, // Bỏ bo góc nếu muốn
             }}
           />
+
+          <QuoteMarquee/>
 
           <HeaderIcons />
           {/* Có thể thêm các thành phần khác vào đây (VD: Avatar, chuông thông báo) */}
