@@ -202,7 +202,7 @@ const HeaderIcons = () => {
       </Dropdown>
 
       <Dropdown overlay={accountMenu} trigger={['click']} placement="bottomRight">
-        <Tooltip title="Tài khoản">
+        <Tooltip >
           <UserOutlined style={{ fontSize: '20px', cursor: 'pointer' }} />
         </Tooltip>
       </Dropdown>

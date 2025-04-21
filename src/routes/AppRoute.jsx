@@ -40,6 +40,8 @@ import ConfirmStatus from '../modules/ProductionControl/Protocol/ConfirmStatus/C
 import ConfirmStatusDetail from '../modules/ProductionControl/Protocol/ConfirmStatus/ConfirmStatusDetail'
 import EquipmentInventory from '../modules/ProductionControl/Reports/EquipmentInventory/EquipmentInventory'
 import EquipmentInventoryDetail from '../modules/ProductionControl/Reports/EquipmentInventory/EquipmentInventoryDetail'
+import AccountInfo from '../modules/Auth/Account'
+import Notifications from '../modules/Common/Notifications'
 
 function AppRoute() {
   return (
@@ -83,6 +85,8 @@ function AppRoute() {
             <Route path="/pm/de-xuat/bien-ban-khao-sat-thiet-bi-chi-tiet/:id" element={<ConfirmStatusDetail />} />
             <Route path="/pm/bao-cao/kiem-ke-thiet-bi" element={<EquipmentInventory />} />
             <Route path="/pm/bao-cao/kiem-ke-thiet-bi-chi-tiet/:id" element={<EquipmentInventoryDetail />} />
+            <Route path="/profile" element={<AccountInfo />} />
+            <Route path="/notifications" element={<Notifications />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
 
