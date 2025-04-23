@@ -21,9 +21,22 @@ export const moduleData = {
       name: 'Ban Kế hoạch - Kinh doanh',
       icon: PLIcon,
       pages: [
-        { key: 'po-orders', label: 'Đơn hàng mua', path: '/po/orders' },
-        { key: 'po-receipts', label: 'Nhập kho', path: '/po/receipts' },
-        { key: 'pl-task', label: 'Công việc', path: '/pl/task' },
+        { key: 'pl-phieu-giao-viec', label: 'A. Phiếu giao việc', path: '/pl/phieu-giao-viec' },
+        { key: 'pl-ke-hoach', label: 'B. Kế hoạch', children: [
+          { key: 'pl-ke-hoach', label: '1. Kế hoạch', path: '/pl/ke-hoach/ke-hoach' },
+          { key: 'pl-ke-hoach-chay-thu', label: '2. Kế hoạch chạy thử', path: '/pl/ke-hoach/ke-hoach-chay-thu' },
+          // { key: 'pm-bien-ban-khao-sat-thiet-bi', label: '3. Xác nhận tình trạng', path: '/pm/bien-ban/bien-ban-khao-sat-thiet-bi' },
+          // { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '4. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
+          // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
+        ] },
+        { key: 'pl-bien-ban', label: 'C. Biên bản', children: [
+          { key: 'pl-bien-ban-tiep-nhan', label: '1. Biên bản tiếp nhận', path: '/pl/bien-ban/bien-ban-tiep-nhan' },
+          // { key: 'pm-bien-ban-thu-hoi-vat-tu', label: '2. Thu hồi vật tư', path: '/pm/bien-ban/bien-ban-thu-hoi-vat-tu' },
+          // { key: 'pm-bien-ban-khao-sat-thiet-bi', label: '3. Xác nhận tình trạng', path: '/pm/bien-ban/bien-ban-khao-sat-thiet-bi' },
+          // { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '4. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
+          // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
+        ] },
+        { key: 'pl-task', label: 'D. Công việc', path: '/pl/task' },
       ],
     },
     FN: { // Warehouse Management

@@ -42,6 +42,14 @@ import EquipmentInventory from '../modules/ProductionControl/Reports/EquipmentIn
 import EquipmentInventoryDetail from '../modules/ProductionControl/Reports/EquipmentInventory/EquipmentInventoryDetail'
 import AccountInfo from '../modules/Auth/Account'
 import Notifications from '../modules/Common/Notifications'
+import AssignmentSlip from '../modules/Plant/AssignmentSlip/AssignmentSlip'
+import AssignmentSlipDetail from '../modules/Plant/AssignmentSlip/AssignmentSlipDetail'
+import Plants from '../modules/Plant/Plants/Plants'
+import PlantsDetail from '../modules/Plant/Plants/PlantDetail'
+import TestRunPlan from '../modules/Plant/TestRunPlan/TestRunPlan'
+import TestRunPlanDetail from '../modules/Plant/TestRunPlan/TestRunPlanDetail'
+import ReceptionMinutes from '../modules/Plant/ReceptionMinutes/ReceptionMinutes'
+import ReceptionMinutesDetail from '../modules/Plant/ReceptionMinutes/ReceptionMinutesDetail'
 
 function AppRoute() {
   return (
@@ -53,6 +61,7 @@ function AppRoute() {
         <Route path="/" element={<MainLayout />}>
             <Route path="/review" element={<Review />} />
             <Route path="/calendar" element={<Calendar />} />
+            {/* điều độ sản xuất */}
             <Route path="/pm/dashboard" element={<DashboardProductionControll />} />
             <Route path="/pm/so-kho" element={<WareHousePC />} />
             <Route path="/pm/du-an" element={<Projects />} />
@@ -87,6 +96,16 @@ function AppRoute() {
             <Route path="/pm/bao-cao/kiem-ke-thiet-bi-chi-tiet/:id" element={<EquipmentInventoryDetail />} />
             <Route path="/profile" element={<AccountInfo />} />
             <Route path="/notifications" element={<Notifications />} />
+            {/* kh-kd */}
+            <Route path="/pl/phieu-giao-viec" element={<AssignmentSlip />} />
+            <Route path="/pl/phieu-giao-viec-chi-tiet/:id" element={<AssignmentSlipDetail />} />
+            <Route path="/pl/ke-hoach/ke-hoach" element={<Plants />} />
+            <Route path="/pl/ke-hoach/ke-hoach-chi-tiet/:id" element={<PlantsDetail />} />
+            <Route path="/pl/ke-hoach/ke-hoach-chay-thu" element={<TestRunPlan />} />
+            <Route path="/pl/ke-hoach/ke-hoach-chay-thu-chi-tiet/:id" element={<TestRunPlanDetail />} />
+            <Route path="/pl/bien-ban/bien-ban-tiep-nhan" element={<ReceptionMinutes />} />
+            <Route path="/pl/bien-ban/bien-ban-tiep-nhan-chi-tiet/:id" element={<ReceptionMinutesDetail />} />
+            <Route path="/pl/task" element={<KanbanBoard />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
 
