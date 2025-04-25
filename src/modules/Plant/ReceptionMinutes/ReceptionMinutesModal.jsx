@@ -189,87 +189,57 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Tên phương tiện" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Tên phương tiện" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ngày tiếp nhận" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Ngày tiếp nhận" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item label="Ngày chứng từ" required>
               <DatePicker
-                picker="month"
+                picker="day"
                 style={{ width: "100%" }}
-                format="MM/YYYY"
+                format="DD/MM/YYYY"
                 value={monthYear}
                 onChange={handleMonthChange}
               />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện công ty" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Đại diện công ty" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Chức vụ" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Chức vụ" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện tàu (1)" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Đại diện tàu (1)" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="unit" label="Chức vụ" rules={[{ required: true }]}> 
+            <Form.Item name="unit" label="Chức vụ" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện tàu (2)" rules={[{ required: true }]}> 
+            <Form.Item name="name" label="Đại diện tàu (2)" > 
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="unit" label="Chức vụ" rules={[{ required: true }]}> 
+            <Form.Item name="unit" label="Chức vụ" > 
               <Input />
             </Form.Item>
           </Col>
-          {/* <Col span={12}>
-            <Form.Item name="name" label="Bộ phận" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col> */}
         </Row>
-
-        {/* <>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <h4>Nội dung kế hoạch</h4>
-              <Space>
-                <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                  Thêm dòng
-                </Button>
-                <Button onClick={() => setTableData([])}>Hủy</Button>
-              </Space>
-            </div>
-            <Table
-              columns={generateColumns()}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              bordered
-              size="small"
-            />
-          </> */}
       </Form>
     </Modal>
   );

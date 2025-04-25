@@ -10,6 +10,7 @@ import {
   Button,
   Space,
   Tooltip,
+  Select,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -164,11 +165,11 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   return (
     <Modal
-    title={
-      <span style={{ fontSize: 25, fontWeight: 600 }}>
-        {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
-      </span>
-    }
+      title={
+        <span style={{ fontSize: 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
+        </span>
+      }
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -182,19 +183,30 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
-          
           <Col span={12}>
-            <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
+            <Form.Item
+              name="code"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Tên phương tiện" rules={[{ required: true }]}> 
+            <Form.Item
+              name="name"
+              label="Tên phương tiện"
+              // rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đơn vị quản lý" rules={[{ required: true }]}> 
+            <Form.Item
+              name="name"
+              label="Đơn vị quản lý"
+              // rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -210,23 +222,49 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Nơi nhận" rules={[{ required: true }]}> 
+            <Form.Item
+              name="name"
+              label="Nơi nhận"
+              // rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Nơi chạy" rules={[{ required: true }]}> 
+            <Form.Item
+              name="name"
+              label="Nơi chạy"
+              // rules={[{ required: true, message: "Vui lòng chọn nơi chạy" }]}
+            >
+              <Select placeholder="Chọn nơi chạy">
+                <Option value="HCM">Hồ Chí Minh</Option>
+                <Option value="KG">Kiên Giang</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="name"
+              label="Lộ trình chạy"
+              // rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Lộ trình chạy" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="unit" label="Thời gian chạy" rules={[{ required: true }]}> 
-              <Input />
+            <Form.Item
+              name="unit"
+              label="Thời gian chạy"
+              // rules={[
+              //   { required: true, message: "Vui lòng chọn thời gian chạy" },
+              // ]}
+            >
+              <DatePicker
+                showTime
+                format="DD/MM/YYYY HH:mm"
+                style={{ width: "100%" }}
+                placeholder="Chọn ngày và giờ"
+              />
             </Form.Item>
           </Col>
           {/* <Col span={12}>
@@ -242,24 +280,30 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         </Row>
 
         <>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <h4>Nội dung kế hoạch</h4>
-              <Space>
-                <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                  Thêm dòng
-                </Button>
-                <Button onClick={() => setTableData([])}>Hủy</Button>
-              </Space>
-            </div>
-            <Table
-              columns={generateColumns()}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              bordered
-              size="small"
-            />
-          </>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <h4>Nội dung kế hoạch</h4>
+            <Space>
+              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                Thêm dòng
+              </Button>
+              <Button onClick={() => setTableData([])}>Hủy</Button>
+            </Space>
+          </div>
+          <Table
+            columns={generateColumns()}
+            dataSource={tableData}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            bordered
+            size="small"
+          />
+        </>
       </Form>
     </Modal>
   );

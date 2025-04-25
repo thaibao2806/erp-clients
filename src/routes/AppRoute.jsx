@@ -78,13 +78,13 @@ function AppRoute() {
             <Route path="/pm/de-xuat/sua-chua-chi-tiet/:id" element={<RepairDetail />} />
             <Route path="/pm/de-xuat/de-xuat-thanh-ly" element={<Liquidation />} />
             <Route path="/pm/de-xuat/thanh-ly-chi-tiet/:id" element={<LiquidationDetail />} />
-            <Route path="/pm/de-xuat/de-xuat-mua-vat-tu-ccdc" element={<BuySupplies />} />
+            <Route path="/pm/de-xuat/de-xuat-mua-cap-sua" element={<BuySupplies />} />
             <Route path="/pm/de-xuat/mua-vat-tu-ccdc-chi-tiet/:id" element={<BuySuppliesDetail />} />
             <Route path="/pm/de-xuat/de-xuat-vat-tu-sua-chua" element={<RepairSupplies />} />
             <Route path="/pm/de-xuat/vat-tu-sua-chua-chi-tiet/:id" element={<RepairSuppliesDetail />} />
             <Route path="/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi" element={<EquipmentSupply />} />
             <Route path="/pm/de-xuat/cap-may-moc-thiet-bi-chi-tiet/:id" element={<EquipmentSupplyDetail />} />
-            <Route path="/pm/bien-ban/bien-ban-ban-giao-vat-tu" element={<EquipmentHandover />} />
+            <Route path="/pm/bien-ban/bien-ban-ban-giao-thu-hoi" element={<EquipmentHandover />} />
             <Route path="/pm/de-xuat/bien-ban-ban-giao-chi-tiet/:id" element={<EquipmentHandoverDetail />} />
             <Route path="/pm/bien-ban/bien-ban-thu-hoi-vat-tu" element={<RecoveryMaterials />} />
             <Route path="/pm/de-xuat/bien-ban-thu-hoi-chi-tiet/:id" element={<RecoveryMaterialsDetail />} />

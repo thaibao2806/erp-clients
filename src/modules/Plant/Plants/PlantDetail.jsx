@@ -123,15 +123,30 @@ const PlantsDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin kế hoạch" key="1">
-          <Space direction="vertical" size="middle">
-            <div>Đơn vị: Công ty ABC</div>
-            <div>Số chứng từ: CC2025-03</div>
-            <div>Kế hoạch về việc: Tiếp nhận, kéo và hạ thủy tàu</div>
-            <div>Ngày chứng từ: 03/2025</div>
-            <div>Nơi nhận: Ban giám đốc, ĐĐSX, Tổ Đà đốc,...</div>
-            {/* <div>Bộ phận: Tổ Máy</div> */}
-            <div>Ghi chú: thử nghiệm</div>
-          </Space>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Đơn vị: Công ty ABC</div>
+                <div>Số chứng từ: CC2025-03</div>
+                <div>Kế hoạch về việc: Tiếp nhận, kéo và hạ thủy tàu</div>
+              </Space>
+            </Col>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Ngày chứng từ: 03/2025</div>
+                <div>Nơi nhận: Ban giám đốc, ĐĐSX, Tổ Đà đốc,...</div>
+                <div>Ghi chú: thử nghiệm</div>
+              </Space>
+            </Col>
+          </Row>
         </Panel>
 
         <Panel header="Nội dung kế hoạch" key="2">
@@ -146,26 +161,25 @@ const PlantsDetail = () => {
         </Panel>
 
         <Panel header="Đính kèm" key="3">
-            <AttachmentSection attachments={[]} />
+          <AttachmentSection attachments={[]} />
         </Panel>
 
-
         <Panel header="Ghi chú" key="4">
-          <NoteSection/>
+          <NoteSection />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-            <SystemSection
-                systemInfo={{
-                createdBy: "ASOFTADMIN",
-                createdAt: "18/11/2024 18:31:58",
-                updatedBy: "ASOFTADMIN",
-                updatedAt: "18/11/2024 18:31:58",
-                }}
-                onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-                }}
-            />
+          <SystemSection
+            systemInfo={{
+              createdBy: "ASOFTADMIN",
+              createdAt: "18/11/2024 18:31:58",
+              updatedBy: "ASOFTADMIN",
+              updatedAt: "18/11/2024 18:31:58",
+            }}
+            onAddFollower={() => {
+              console.log("Thêm người theo dõi");
+            }}
+          />
         </Panel>
       </Collapse>
 
@@ -173,12 +187,11 @@ const PlantsDetail = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-            console.log("Đã cập nhật:", data);
-            setIsModalOpen(false);
+          console.log("Đã cập nhật:", data);
+          setIsModalOpen(false);
         }}
         initialValues={editingData}
-        />
-
+      />
     </div>
   );
 };

@@ -223,16 +223,11 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
-          {/* <Col span={12}>
-            <Form.Item name="name" label="Bộ phận" rules={[{ required: true }]}> 
-              <Input />
+          <Col span={12}>
+            <Form.Item name="name" label="Ghi chú" > 
+              <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col> */}
         </Row>
 
         <>

@@ -202,11 +202,11 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
-          <Col span={12}>
+          {/* <Col span={12}>
             <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}> 
               <Input />
             </Form.Item>
-          </Col>
+          </Col> */}
           <Col span={12}>
             <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
               <Input />
@@ -220,9 +220,9 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
           <Col span={12}>
             <Form.Item label="Ngày chứng từ" required>
               <DatePicker
-                picker="month"
+                picker="day"
                 style={{ width: "100%" }}
-                format="MM/YYYY"
+                format="DD/MM/YYYY"
                 value={monthYear}
                 onChange={handleMonthChange}
               />
@@ -239,8 +239,8 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" rules={[{ required: true }]}> 
-              <Input />
+            <Form.Item name="name" label="Ghi chú" > 
+              <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
         </Row>
