@@ -105,7 +105,9 @@ const BuySuppliesDetail = () => {
     <div style={{ padding: 10 }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Title level={3}>Xem chi tiết đề xuất mua thiết bị, vật tư, CCDC</Title>
+          <Title level={3}>
+            Xem chi tiết đề xuất mua thiết bị, vật tư, CCDC
+          </Title>
         </Col>
         <Col>
           <Dropdown
@@ -125,12 +127,29 @@ const BuySuppliesDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin sổ kho" key="1">
-          <Space direction="vertical" size="middle">
-            <div>Đơn vị: Công ty ABC</div>
-            <div>Số chứng từ: CC2025-03</div>
-            <div>Nội dung mua: Tháng 3 - Phòng Nhân sự</div>
-            <div>Ngày chứng từ: 03/2025</div>
-          </Space>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Đơn vị: Công ty ABC</div>
+                <div>Số chứng từ: CC2025-03</div>
+                <div>Ngày chứng từ: 03/2025</div>
+              </Space>
+            </Col>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Loại đề xuất: Cấp thiết bị</div>
+                <div>Nội dung mua: Tháng 3 - Phòng Nhân sự</div>
+              </Space>
+            </Col>
+          </Row>
         </Panel>
 
         <Panel header="Bảng vật tư, thiết bị" key="2">
@@ -145,26 +164,25 @@ const BuySuppliesDetail = () => {
         </Panel>
 
         <Panel header="Đính kèm" key="3">
-            <AttachmentSection attachments={[]} />
+          <AttachmentSection attachments={[]} />
         </Panel>
 
-
         <Panel header="Ghi chú" key="4">
-          <NoteSection/>
+          <NoteSection />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-            <SystemSection
-                systemInfo={{
-                createdBy: "ASOFTADMIN",
-                createdAt: "18/11/2024 18:31:58",
-                updatedBy: "ASOFTADMIN",
-                updatedAt: "18/11/2024 18:31:58",
-                }}
-                onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-                }}
-            />
+          <SystemSection
+            systemInfo={{
+              createdBy: "ASOFTADMIN",
+              createdAt: "18/11/2024 18:31:58",
+              updatedBy: "ASOFTADMIN",
+              updatedAt: "18/11/2024 18:31:58",
+            }}
+            onAddFollower={() => {
+              console.log("Thêm người theo dõi");
+            }}
+          />
         </Panel>
       </Collapse>
 
@@ -172,12 +190,11 @@ const BuySuppliesDetail = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-            console.log("Đã cập nhật:", data);
-            setIsModalOpen(false);
+          console.log("Đã cập nhật:", data);
+          setIsModalOpen(false);
         }}
         initialValues={editingData}
-        />
-
+      />
     </div>
   );
 };

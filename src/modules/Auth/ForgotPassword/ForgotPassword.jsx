@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Checkbox, message, Select } from "antd";
+import { Button, Input, Checkbox, message, Select, notification } from "antd";
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next"; // Import hook useTranslation
 import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
+import { resetPasswords } from "../../../services/apiAuth";
 
 const ForgotPassword = () => {
   const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [otp, setOTP] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState({ username: "", password: "" });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -35,45 +42,80 @@ const ForgotPassword = () => {
 
   // Hàm để kiểm tra mật khẩu
   const validatePassword = (password) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
     return regex.test(password);
   };
 
+  // Hàm để kiểm tra email
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   // Hàm xử lý submit
-  const handleSubmit = () => {
-      setErrors({ username: "", password: "" });
-    
-      // if (!username) {
-      //   setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
-      //   return;
-      // }
-    
-      // if (!password) {
-      //   setErrors((prev) => ({ ...prev, password: t("validation.passwordRequired") }));
-      //   return;
-      // } else if (!validatePassword(password)) {
-      //   setErrors((prev) => ({
-      //     ...prev,
-      //     password: t("validation.passwordStrength"),
-      //   }));
-      //   return;
-      // }
-    
-      setLoading(true);
-    
-      setTimeout(() => {
+  const handleSubmit = async () => {
+    setErrors({ email: "", password: "", confirmPassword: "" });
+
+    if (!email) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Cần nhập email",
+      }));
+      return;
+    } else if (!validateEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Email không đúng định dạng",
+      }));
+      return;
+    }
+
+    if (!password) {
+      setErrors((prev) => ({
+        ...prev,
+        password: t("validation.passwordRequired"),
+      }));
+      return;
+    } else if (!validatePassword(password)) {
+      setErrors((prev) => ({
+        ...prev,
+        password: t("validation.passwordStrength"),
+      }));
+      return;
+    }
+
+    if (password != confirmPassword) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Mật khẩu nhập lại không đúng",
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let res = await resetPasswords(email, otp, password);
+      if (res && res.status === 200) {
         setLoading(false);
-        message.success(t("loginSuccess"));
-    
-        if (rememberMe) {
-          localStorage.setItem("rememberMe", true);
-          localStorage.setItem("username", username);
-          localStorage.setItem("password", password);
-        }
-    
-        navigate("/login"); // Chuyển đến trang calendar
-      }, 1500); // Giả lập delay 1.5 giây
-    };
+        notification.success({
+          message: "Thành công",
+          description: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại",
+          placement: "topRight",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
+      if (error.status) {
+        setLoading(false);
+        setErrors((prev) => ({
+          ...prev,
+          email: error.response.data,
+        }));
+        return;
+      }
+    }
+  };
 
   // Thay đổi ngôn ngữ
   const handleLanguageChange = (lang) => {
@@ -136,14 +178,6 @@ const ForgotPassword = () => {
             backgroundColor: "#FFFFFF",
           }}
         >
-          {/* Dropdown chọn ngôn ngữ */}
-          {/* <div style={{ textAlign: "right", marginBottom: "0px" }}>
-            <Select defaultValue="vi" onChange={handleLanguageChange} style={{ width: 120 }}>
-              <Select.Option value="vi">Tiếng Việt</Select.Option>
-              <Select.Option value="en">English</Select.Option>
-            </Select>
-          </div> */}
-
           <h2
             style={{
               textAlign: "center",
@@ -153,25 +187,35 @@ const ForgotPassword = () => {
               marginBottom: "30px",
             }}
           >
-            {/* {t("login")} */}
             Quên mật khẩu
           </h2>
 
           {/* Ô nhập tài khoản */}
           <Input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={"Email"}
+            style={{
+              marginBottom: "20px",
+              height: "50px",
+              fontSize: "16px",
+              borderColor: errors.email ? "red" : "",
+            }}
+          />
+          {errors.email && (
+            <div style={{ color: "red", fontSize: "12px" }}>{errors.email}</div>
+          )}
+
+          <Input
+            value={otp}
+            onChange={(e) => setOTP(e.target.value)}
             placeholder={"Mã OTP"}
             style={{
               marginBottom: "20px",
               height: "50px",
               fontSize: "16px",
-              borderColor: errors.username ? "red" : "",
             }}
           />
-          {errors.username && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.username}</div>
-          )}
 
           {/* Ô nhập mật khẩu */}
           <Input.Password
@@ -189,12 +233,14 @@ const ForgotPassword = () => {
             }}
           />
           {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
+            <div style={{ color: "red", fontSize: "12px" }}>
+              {errors.password}
+            </div>
           )}
 
           <Input.Password
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder={"Nhập lại mật khẩu"}
             iconRender={(visible) =>
               visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
@@ -203,11 +249,13 @@ const ForgotPassword = () => {
               marginBottom: "20px",
               height: "50px",
               fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
+              borderColor: errors.confirmPassword ? "red" : "",
             }}
           />
-          {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
+          {errors.confirmPassword && (
+            <div style={{ color: "red", fontSize: "12px" }}>
+              {errors.confirmPassword}
+            </div>
           )}
 
           {/* Nút Đăng nhập */}

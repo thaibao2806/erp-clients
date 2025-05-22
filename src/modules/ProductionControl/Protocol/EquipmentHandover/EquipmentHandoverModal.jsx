@@ -10,6 +10,7 @@ import {
   Button,
   Space,
   Tooltip,
+  Select,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -224,11 +225,11 @@ const EquipmentHandoverModal = ({ open, onCancel, onSubmit, initialValues }) => 
 
   return (
     <Modal
-    title={
-      <span style={{ fontSize: 25, fontWeight: 600 }}>
-        {initialValues ? "Cập nhật biên bản" : "Thêm biên bản"}
-      </span>
-    }
+      title={
+        <span style={{ fontSize: 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật biên bản" : "Thêm biên bản"}
+        </span>
+      }
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -243,62 +244,81 @@ const EquipmentHandoverModal = ({ open, onCancel, onSubmit, initialValues }) => 
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}> 
+            <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="name" label="Nội dung bàn giao" rules={[{ required: true }]}> 
+            <Form.Item
+              name="code"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item label="Ngày chứng từ" required>
               <DatePicker
-                picker="month"
+                picker="day"
                 style={{ width: "100%" }}
-                format="MM/YYYY"
+                format="DD/MM/YYYY"
                 value={monthYear}
                 onChange={handleMonthChange}
               />
-            </Form.Item>     
-          </Col>
-          {/* <Col span={12}>
-            <Form.Item name="name" label="Bộ phận" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>  
+            </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" rules={[{ required: true }]}> 
+            <Form.Item
+              name="name"
+              label="Loại biên bản"
+              rules={[
+                { required: true, message: "Vui lòng chọn loại biên bản" },
+              ]}
+            >
+              <Select placeholder="Chọn loại biên bản">
+                <Option value="BG">Bàn giao</Option>
+                <Option value="TH">Thu hồi</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="name" label="Nội dung bàn giao, thu hồi">
               <Input />
-            </Form.Item>  
-          </Col> */}
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="name" label="Ghi chú">
+              <Input.TextArea rows={1} />
+            </Form.Item>
+          </Col>
         </Row>
 
         <>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <h4>Bảng vật tư, thiết bị</h4>
-              <Space>
-                <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                  Thêm dòng
-                </Button>
-                <Button onClick={() => setTableData([])}>Hủy</Button>
-              </Space>
-            </div>
-            <Table
-              columns={generateColumns()}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              bordered
-              size="small"
-            />
-          </>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <h4>Bảng vật tư, thiết bị</h4>
+            <Space>
+              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                Thêm dòng
+              </Button>
+              <Button onClick={() => setTableData([])}>Hủy</Button>
+            </Space>
+          </div>
+          <Table
+            columns={generateColumns()}
+            dataSource={tableData}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            bordered
+            size="small"
+          />
+        </>
       </Form>
     </Modal>
   );

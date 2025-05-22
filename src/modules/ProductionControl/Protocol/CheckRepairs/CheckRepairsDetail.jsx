@@ -124,51 +124,55 @@ const CheckRepairsDetail = () => {
         style={{ marginTop: 16 }}
         expandIconPosition="end"
       >
-        <Panel header="Thông tin sổ kho" key="1">
-          <Space direction="vertical" size="middle">
-            <div>Đơn vị: Công ty ABC</div>
-            <div>Số chứng từ: CC2025-03</div>
-            <div>Nội dung kiểm tra: Tháng 3 - Phòng Nhân sự</div>
-            <div>Giám sát kỹ thuật: Huỳnh Tấn Thuận</div>
-            <div>Quản lý CCDC: Vũ Viết Khuyến</div>
-            <div>Người nhận: Hoàng Anh</div>
-            <div>Đánh giá sau sữa chữa: đã sữa</div>
-            <div>Ngày chứng từ: 03/2025</div>
-          </Space>
+        <Panel header="Thông tin biên bản" key="1">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Đơn vị: Công ty ABC</div>
+                <div>Số chứng từ: CC2025-03</div>
+                <div>Nội dung kiểm tra: Tháng 3 - Phòng Nhân sự</div>
+                <div>Giám sát kỹ thuật: Huỳnh Tấn Thuận</div>
+              </Space>
+            </Col>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Quản lý CCDC: Vũ Viết Khuyến</div>
+                <div>Người nhận: Hoàng Anh</div>
+                <div>Đánh giá sau sữa chữa: đã sữa</div>
+                <div>Ngày chứng từ: 03/2025</div>
+              </Space>
+            </Col>
+          </Row>
         </Panel>
-
-        {/* <Panel header="Bảng vật tư, thiết bị" key="2">
-          <Table
-            columns={columns}
-            dataSource={timekeepingData}
-            scroll={{ x: "max-content" }}
-            size="small"
-            bordered
-            pagination={false}
-          />
-        </Panel> */}
 
         <Panel header="Đính kèm" key="3">
-            <AttachmentSection attachments={[]} />
+          <AttachmentSection attachments={[]} />
         </Panel>
 
-
         <Panel header="Ghi chú" key="4">
-          <NoteSection/>
+          <NoteSection />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-            <SystemSection
-                systemInfo={{
-                createdBy: "ASOFTADMIN",
-                createdAt: "18/11/2024 18:31:58",
-                updatedBy: "ASOFTADMIN",
-                updatedAt: "18/11/2024 18:31:58",
-                }}
-                onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-                }}
-            />
+          <SystemSection
+            systemInfo={{
+              createdBy: "ASOFTADMIN",
+              createdAt: "18/11/2024 18:31:58",
+              updatedBy: "ASOFTADMIN",
+              updatedAt: "18/11/2024 18:31:58",
+            }}
+            onAddFollower={() => {
+              console.log("Thêm người theo dõi");
+            }}
+          />
         </Panel>
       </Collapse>
 
@@ -176,12 +180,11 @@ const CheckRepairsDetail = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-            console.log("Đã cập nhật:", data);
-            setIsModalOpen(false);
+          console.log("Đã cập nhật:", data);
+          setIsModalOpen(false);
         }}
         initialValues={editingData}
-        />
-
+      />
     </div>
   );
 };

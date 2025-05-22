@@ -9,6 +9,7 @@ import {
   Space,
   Tooltip,
   Modal,
+  Select,
 } from "antd";
 import {
   SearchOutlined,
@@ -35,6 +36,7 @@ const EquipmentHandover = () => {
       ngaychungtu: "01/04/2025",
       bophan: "Tổ đóng mới",
       ghiChu: "Không có",
+      loaibienban: "Bàn giao"
     },
     {
       key: "2",
@@ -45,6 +47,7 @@ const EquipmentHandover = () => {
       ngaychungtu: "01/05/2025",
       bophan: "Tổ hệ trục",
       ghiChu: "Nghỉ lễ 1 ngày",
+      loaibienban: "Thu hồi"
     },
   ]);
 
@@ -74,6 +77,10 @@ const EquipmentHandover = () => {
     {
       title: "Ngày chứng từ",
       dataIndex: "ngaychungtu",
+    },
+    {
+      title: "Loại biên bản",
+      dataIndex: "loaibienban",
     },
     {
       title: "Nội dung bàn giao",
@@ -166,10 +173,13 @@ const EquipmentHandover = () => {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Biên bản bàn giao thiết bị</h1>
+        <h1 style={{ margin: 0 }}>Biên bản bàn giao, thu hồi TB-VT</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button
+              icon={<SearchOutlined />}
+              onClick={() => setShowFilters(!showFilters)}
+            />
           </Tooltip>
           <Tooltip title="Thêm">
             <Button onClick={handleAdd} icon={<PlusOutlined />} />
@@ -217,7 +227,9 @@ const EquipmentHandover = () => {
               <Input
                 placeholder="Số chứng từ"
                 value={filters.maChamCong}
-                onChange={(e) => handleFilterChange("maChamCong", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("maChamCong", e.target.value)
+                }
               />
             </Col>
             <Col span={8}>
@@ -225,12 +237,30 @@ const EquipmentHandover = () => {
               <Input
                 placeholder="Nội dung bàn giao"
                 value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("tenChamCong", e.target.value)
+                }
               />
+            </Col>
+            <Col span={8}>
+              <label>Loại biên bản</label>
+              <Select
+                placeholder="Chọn loại biên bản"
+                value={filters.tenChamCong}
+                onChange={(value) => handleFilterChange("tenChamCong", value)}
+                style={{ width: "100%" }}
+              >
+                <Option value="ban_giao">Bàn giao</Option>
+                <Option value="thu_hoi">Thu hồi</Option>
+              </Select>
             </Col>
           </Row>
           <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Button type="primary" onClick={handleSearch} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              onClick={handleSearch}
+              style={{ marginRight: 8 }}
+            >
               Lọc
             </Button>
             <Button onClick={handleReset}>Hủy</Button>

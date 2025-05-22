@@ -9,6 +9,7 @@ import {
   Space,
   Tooltip,
   Modal,
+  Select,
 } from "antd";
 import {
   SearchOutlined,
@@ -35,6 +36,7 @@ const Repair = () => {
       ngaychungtu: "01/04/2025",
       bophan: "Tổ đóng mới",
       ghiChu: "Không có",
+      loaidexuat:"Sửa chữa"
     },
     {
       key: "2",
@@ -45,6 +47,7 @@ const Repair = () => {
       ngaychungtu: "01/05/2025",
       bophan: "Tổ hệ trục",
       ghiChu: "Nghỉ lễ 1 ngày",
+      loaidexuat: "Thanh lý"
     },
   ]);
 
@@ -74,6 +77,10 @@ const Repair = () => {
     {
       title: "Ngày chứng từ",
       dataIndex: "ngaychungtu",
+    },
+    {
+      title: "Loại đề xuất",
+      dataIndex: "loaidexuat",
     },
     {
       title: "Tên thiết bị",
@@ -170,7 +177,7 @@ const Repair = () => {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Đề xuất sửa chữa</h1>
+        <h1 style={{ margin: 0 }}>Đề xuất sửa chữa, thanh lý</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
             <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
@@ -225,9 +232,9 @@ const Repair = () => {
               />
             </Col>
             <Col span={8}>
-              <label>Tên thiết bị</label>
+              <label>Nội dung đề xuất</label>
               <Input
-                placeholder="Tên thiết bị"
+                placeholder="Nội dung đề xuất"
                 value={filters.tenChamCong}
                 onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
               />
@@ -239,6 +246,18 @@ const Repair = () => {
                 value={filters.tenChamCong}
                 onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
               />
+            </Col>
+            <Col span={8}>
+              <label>Loại đề xuất</label>
+              <Select
+                placeholder="Chọn loại đề xuất"
+                value={filters.tenChamCong}
+                onChange={(value) => handleFilterChange("tenChamCong", value)}
+                style={{ width: "100%" }}
+              >
+                <Option value="SC">Sửa chữa</Option>
+                <Option value="TL">Thanh lý</Option>
+              </Select>
             </Col>
           </Row>
           <div style={{ marginTop: 16, textAlign: "right" }}>

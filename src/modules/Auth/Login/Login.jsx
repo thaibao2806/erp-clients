@@ -5,9 +5,11 @@ import { useTranslation } from "react-i18next"; // Import hook useTranslation
 import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
-
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../../../redux/apiRequest";
 
 const Login = () => {
+  const dispatch = useDispatch();
   const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -15,8 +17,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [errorLogin, setErrorLogin] = useState();
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -37,21 +39,33 @@ const Login = () => {
 
   // Hàm để kiểm tra mật khẩu
   const validatePassword = (password) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
     return regex.test(password);
   };
 
   // Hàm xử lý submit
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setErrorLogin("");
+    const user = {
+      username,
+      password,
+    };
     setErrors({ username: "", password: "" });
-  
+
     if (!username) {
-      setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
+      setErrors((prev) => ({
+        ...prev,
+        username: t("validation.usernameRequired"),
+      }));
       return;
     }
-  
+
     if (!password) {
-      setErrors((prev) => ({ ...prev, password: t("validation.passwordRequired") }));
+      setErrors((prev) => ({
+        ...prev,
+        password: t("validation.passwordRequired"),
+      }));
       return;
     } else if (!validatePassword(password)) {
       setErrors((prev) => ({
@@ -60,23 +74,15 @@ const Login = () => {
       }));
       return;
     }
-  
+
     setLoading(true);
-  
-    setTimeout(() => {
-      setLoading(false);
-      message.success(t("loginSuccess"));
-  
-      if (rememberMe) {
-        localStorage.setItem("rememberMe", true);
-        localStorage.setItem("username", username);
-        localStorage.setItem("password", password);
-      }
-  
-      navigate("/calendar"); // Chuyển đến trang calendar
-    }, 1500); // Giả lập delay 1.5 giây
+
+    let res = await loginUser(user, dispatch, navigate);
+    if (res) {
+      setErrorLogin(res);
+    }
+    setLoading(false);
   };
-  
 
   // Thay đổi ngôn ngữ
   const handleLanguageChange = (lang) => {
@@ -158,6 +164,15 @@ const Login = () => {
           >
             {t("login")}
           </h2>
+          <h5
+            style={{
+              color: "red",
+              fontSize: "16px",
+              marginBottom: "10px",
+            }}
+          >
+            {errorLogin}
+          </h5>
 
           {/* Ô nhập tài khoản */}
           <Input
@@ -172,7 +187,9 @@ const Login = () => {
             }}
           />
           {errors.username && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.username}</div>
+            <div style={{ color: "red", fontSize: "12px" }}>
+              {errors.username}
+            </div>
           )}
 
           {/* Ô nhập mật khẩu */}
@@ -191,7 +208,9 @@ const Login = () => {
             }}
           />
           {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.password}</div>
+            <div style={{ color: "red", fontSize: "12px" }}>
+              {errors.password}
+            </div>
           )}
 
           {/* Nhớ mật khẩu + Quên mật khẩu */}
@@ -228,7 +247,6 @@ const Login = () => {
           >
             {t("submit")}
           </Button>
-
         </div>
       </div>
     </div>

@@ -5,14 +5,17 @@ import { useTranslation } from "react-i18next"; // Import hook useTranslation
 import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
+import { checkMailOTP } from "../../../services/apiAuth";
+import { notification } from "antd";
 
 const CheckOTP = () => {
   const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [email, setEmail] = useState();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState({ username: "", password: "" });
+  const [errors, setErrors] = useState({ email: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -33,36 +36,54 @@ const CheckOTP = () => {
     };
   }, []);
 
-  // Hàm để kiểm tra mật khẩu
-  const validatePassword = (password) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-    return regex.test(password);
+  // Hàm để kiểm tra email
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   // Hàm xử lý submit
-   const handleSubmit = () => {
-      setErrors({ username: "", password: "" });
-    
-      if (!username) {
-        setErrors((prev) => ({ ...prev, username: t("validation.usernameRequired") }));
+  const handleSubmit = async () => {
+    setErrors({ email: "" });
+
+    if (!email) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Cần nhập email",
+      }));
+      return;
+    } else if (!validateEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Email không đúng định dạng",
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let res = await checkMailOTP(email);
+      if (res && res.status === 200) {
+        notification.success({
+          message: "Thành công",
+          description:
+            "Đã gửi mã xác thực đến email của bạn. Nếu không tìm thấy vui lòng kiểm tra thư rác.",
+          placement: "topRight",
+        });
+        setLoading(false);
+        navigate("/forgot-password");
+      }
+    } catch (error) {
+      if (error.status) {
+        setLoading(false);
+        setErrors((prev) => ({
+          ...prev,
+          email: error.response.data,
+        }));
         return;
       }
-    
-      setLoading(true);
-    
-      setTimeout(() => {
-        setLoading(false);
-        message.success(t("loginSuccess"));
-    
-        if (rememberMe) {
-          localStorage.setItem("rememberMe", true);
-          localStorage.setItem("username", username);
-          localStorage.setItem("password", password);
-        }
-    
-        navigate("/forgot-password"); // Chuyển đến trang calendar
-      }, 1500); // Giả lập delay 1.5 giây
-    };
+    }
+  };
 
   // Thay đổi ngôn ngữ
   const handleLanguageChange = (lang) => {
@@ -148,21 +169,24 @@ const CheckOTP = () => {
 
           {/* Ô nhập tài khoản */}
           <Input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder={"Nhập email"}
             style={{
               marginBottom: "20px",
               height: "50px",
               fontSize: "16px",
-              borderColor: errors.username ? "red" : "",
+              borderColor: errors.email ? "red" : "",
             }}
           />
-          {errors.username && (
-            <div style={{ color: "red", fontSize: "12px",marginBottom: "10px", }}>{errors.username}</div>
+          {errors.email && (
+            <div
+              style={{ color: "red", fontSize: "12px", marginBottom: "10px" }}
+            >
+              {errors.email}
+            </div>
           )}
 
-          
           {/* Nút Đăng nhập */}
           <Button
             type="primary"

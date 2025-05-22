@@ -105,7 +105,9 @@ const ConfirmStatusDetail = () => {
     <div style={{ padding: 10 }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Title level={3}>Xem chi tiết biên bản xác nhận tình trạng thiết bị</Title>
+          <Title level={3}>
+            Xem chi tiết biên bản xác nhận tình trạng thiết bị
+          </Title>
         </Col>
         <Col>
           <Dropdown
@@ -124,18 +126,34 @@ const ConfirmStatusDetail = () => {
         style={{ marginTop: 16 }}
         expandIconPosition="end"
       >
-        <Panel header="Thông tin sổ kho" key="1">
-          <Space direction="vertical" size="middle">
-            <div>Đơn vị: Công ty ABC</div>
-            <div>Số chứng từ: CC2025-03</div>
-            <div>Nội dung kiểm tra: Tháng 3 - Phòng Nhân sự</div>
-            <div>Giám sát kỹ thuật: Huỳnh Tấn Thuận</div>
-            <div>Quản lý CCDC: Vũ Viết Khuyến</div>
-            <div>Người nhận: Hoàng Anh</div>
-            <div>Tình trạng thiết bị: hư heo dầu</div>
-            <div>Nội dung sửa chữa: sửa heo dầu</div>
-            <div>Ghi chú: đang sửa</div>
-          </Space>
+        <Panel header="Thông tin biên bản" key="1">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Đơn vị: Công ty ABC</div>
+                <div>Số chứng từ: CC2025-03</div>
+                <div>Nội dung kiểm tra: Tháng 3 - Phòng Nhân sự</div>
+                <div>Giám sát kỹ thuật: Huỳnh Tấn Thuận</div>
+                <div>Quản lý CCDC: Vũ Viết Khuyến</div>
+              </Space>
+            </Col>
+            <Col span={12}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>Người nhận: Hoàng Anh</div>
+                <div>Tình trạng thiết bị: hư heo dầu</div>
+                <div>Nội dung sửa chữa: sửa heo dầu</div>
+                <div>Ghi chú: đang sửa</div>
+              </Space>
+            </Col>
+          </Row>
         </Panel>
 
         {/* <Panel header="Bảng vật tư, thiết bị" key="2">
@@ -150,26 +168,25 @@ const ConfirmStatusDetail = () => {
         </Panel> */}
 
         <Panel header="Đính kèm" key="3">
-            <AttachmentSection attachments={[]} />
+          <AttachmentSection attachments={[]} />
         </Panel>
 
-
         <Panel header="Ghi chú" key="4">
-          <NoteSection/>
+          <NoteSection />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-            <SystemSection
-                systemInfo={{
-                createdBy: "ASOFTADMIN",
-                createdAt: "18/11/2024 18:31:58",
-                updatedBy: "ASOFTADMIN",
-                updatedAt: "18/11/2024 18:31:58",
-                }}
-                onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-                }}
-            />
+          <SystemSection
+            systemInfo={{
+              createdBy: "ASOFTADMIN",
+              createdAt: "18/11/2024 18:31:58",
+              updatedBy: "ASOFTADMIN",
+              updatedAt: "18/11/2024 18:31:58",
+            }}
+            onAddFollower={() => {
+              console.log("Thêm người theo dõi");
+            }}
+          />
         </Panel>
       </Collapse>
 
@@ -177,12 +194,11 @@ const ConfirmStatusDetail = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-            console.log("Đã cập nhật:", data);
-            setIsModalOpen(false);
+          console.log("Đã cập nhật:", data);
+          setIsModalOpen(false);
         }}
         initialValues={editingData}
-        />
-
+      />
     </div>
   );
 };

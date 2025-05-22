@@ -80,7 +80,7 @@ export const moduleData = {
             // { key: 'pm-bao-cao-chap-hanh-noi-quy', label: '3. Chấp hành nội quy', path: '/pm/bao-cao/bao-cao-chap-hanh-noi-quy' },
           ] },
           { key: 'pm-de-xuat', label: 'D. Đề xuất', children: [
-            { key: 'pm-de-xuat-sua-chua', label: '1. Sửa chữa, thanh lý', path: '/pm/de-xuat/de-xuat-sua-chua' },
+            { key: 'pm-de-xuat-sua-chua', label: '1. Sửa chữa, thanh lý', path: '/pm/de-xuat/de-xuat-sua-chua-thanh-ly' },
             // { key: 'pm-de-xuat-thanh-ly', label: '2. Thanh lý', path: '/pm/de-xuat/de-xuat-thanh-ly' },
             { key: 'pm-de-xuat-mua-vat-tu-ccdc', label: '2. Mua, cấp, sửa VT CCDC', path: '/pm/de-xuat/de-xuat-mua-cap-sua' },
           //   { key: 'pm-de-xuat-vat-tu-sua-chua', label: '4. Vật tư sửa chữa', path: '/pm/de-xuat/de-xuat-vat-tu-sua-chua' },

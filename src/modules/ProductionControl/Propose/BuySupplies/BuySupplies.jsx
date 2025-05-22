@@ -9,6 +9,7 @@ import {
   Space,
   Tooltip,
   Modal,
+  Select,
 } from "antd";
 import {
   SearchOutlined,
@@ -35,6 +36,7 @@ const BuySupplies = () => {
       ngaychungtu: "01/04/2025",
       bophan: "Tổ đóng mới",
       ghiChu: "Không có",
+      loaidexuat:"Sửa chữa thiết bị"
     },
     {
       key: "2",
@@ -45,6 +47,7 @@ const BuySupplies = () => {
       ngaychungtu: "01/05/2025",
       bophan: "Tổ hệ trục",
       ghiChu: "Nghỉ lễ 1 ngày",
+      loaidexuat:"Cấp thiết bị"
     },
   ]);
 
@@ -76,8 +79,12 @@ const BuySupplies = () => {
       dataIndex: "ngaychungtu",
     },
     {
-      title: "Nội dung mua",
+      title: "Nội dung đề xuất",
       dataIndex: "tenthietbi",
+    },
+    {
+      title: "Loại đề xuất",
+      dataIndex: "loaidexuat",
     },
     {
       title: "Ghi chú",
@@ -166,10 +173,13 @@ const BuySupplies = () => {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Đề xuất mua vật tư, CCDC</h1>
+        <h1 style={{ margin: 0 }}>Đề xuất mua, cấp, sửa chữa vật tư, CCDC</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button
+              icon={<SearchOutlined />}
+              onClick={() => setShowFilters(!showFilters)}
+            />
           </Tooltip>
           <Tooltip title="Thêm">
             <Button onClick={handleAdd} icon={<PlusOutlined />} />
@@ -217,20 +227,41 @@ const BuySupplies = () => {
               <Input
                 placeholder="Số chứng từ"
                 value={filters.maChamCong}
-                onChange={(e) => handleFilterChange("maChamCong", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("maChamCong", e.target.value)
+                }
               />
             </Col>
             <Col span={8}>
-              <label>Nội dung mua</label>
+              <label>Nội dung đề xuất</label>
               <Input
-                placeholder="Nội dung mua"
+                placeholder="Nội dung đề xuất"
                 value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("tenChamCong", e.target.value)
+                }
               />
+            </Col>
+            <Col span={8}>
+              <label>Loại đề xuất</label>
+              <Select
+                placeholder="Chọn loại đề xuất"
+                value={filters.tenChamCong}
+                onChange={(value) => handleFilterChange("tenChamCong", value)}
+                style={{ width: "100%" }}
+              >
+                <Option value="MV">Mua vật tư, ccdc</Option>
+                <Option value="CV">Cấp vật tư, ccdc</Option>
+                <Option value="SC">Sửa chữa thiết bị, CCDC</Option>
+              </Select>
             </Col>
           </Row>
           <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Button type="primary" onClick={handleSearch} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              onClick={handleSearch}
+              style={{ marginRight: 8 }}
+            >
               Lọc
             </Button>
             <Button onClick={handleReset}>Hủy</Button>
