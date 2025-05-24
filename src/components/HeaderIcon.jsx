@@ -247,16 +247,44 @@ const HeaderIcons = () => {
         trigger={["click"]}
         placement="bottomRight"
       >
-        <Tooltip title={user ? user.data.fullName : "Tài khoản"}>
-          {user ? (
-            <Avatar style={{ backgroundColor: color, cursor: "pointer" }}>
-              {initials.toUpperCase()}
-            </Avatar>
-          ) : (
-            <UserOutlined style={{ fontSize: "20px", cursor: "pointer" }} />
-          )}
-        </Tooltip>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            cursor: "pointer",
+            gap: "8px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              lineHeight: "1",
+              whiteSpace: "nowrap",
+              textAlign: "right",
+            }}
+          >
+            <span style={{ fontWeight: 600, fontSize: "16px" }}>
+              {user.data.fullName}
+            </span>
+            <span
+              style={{
+                fontSize: "12px",
+                color: "#999",
+                fontWeight: 500,
+                paddingTop: "4px",
+              }}
+            >
+              {user.data.department}
+            </span>
+          </div>
+
+          <Avatar style={{ backgroundColor: color }}>
+            {initials.toUpperCase()}
+          </Avatar>
+        </div>
       </Dropdown>
+
       <ApprovalSettingModal
         open={approvalModalOpen}
         onClose={() => setApprovalModalOpen(false)}

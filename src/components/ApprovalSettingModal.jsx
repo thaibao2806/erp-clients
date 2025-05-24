@@ -16,7 +16,9 @@ const ApprovalSettingModal = ({ open, onClose }) => {
   const user = useSelector((state) => state.auth.login?.currentUser);
 
   useEffect(() => {
-    getApproval();
+    if (selectedModule || selectedPage) {
+      getApproval();
+    }
   }, [selectedModule, selectedPage]);
 
   const getApproval = async () => {

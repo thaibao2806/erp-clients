@@ -12,3 +12,12 @@ export const updateAccounts= "/api/v1/Auth/users"
 export const createApprove = "/api/v1/khkd/approval-settings"
 export const getApprove = "/api/v1/khkd/approval-settings"
 export const getApproveByMoudle = "/api/v1/khkd/approval-settings/"
+
+//task
+export const getBoard = "/api/v1/boards"
+export const createBoard = "/api/v1/boards"
+export const deleteBoard = "/api/v1/boards/"
+export const getCardInBoard = "/api/v1/cards/board/"
+export const createCard ="/api/v1/cards"
+export const deleteCard ="/api/v1/cards/"
+export const moveCard = "/api/v1/cards/"

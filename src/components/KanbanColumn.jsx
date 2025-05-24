@@ -1,17 +1,30 @@
-import { Card, Button } from 'antd';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import KanbanCard from './KanbanCard';
-import { DeleteOutlined } from '@ant-design/icons';
+import { Card, Button } from "antd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import KanbanCard from "./KanbanCard";
+import { DeleteOutlined } from "@ant-design/icons";
 
-const KanbanColumn = ({ column, tasks, onAddCard, onDeleteTask, onDeleteBoard }) => {
+const KanbanColumn = ({
+  column,
+  tasks,
+  onAddCard,
+  onDeleteTask,
+  onDeleteBoard,
+}) => {
   return (
     <Card
-      title={column.title}
+      title={column.name}
       style={{ width: 360, marginRight: 16 }} // 👈 tăng chiều ngang
       extra={
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button type="link" onClick={onAddCard}>+ Add Card</Button>
-          <Button type="text" icon={<DeleteOutlined />} danger onClick={onDeleteBoard} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button type="link" onClick={onAddCard}>
+            + Add Card
+          </Button>
+          <Button
+            type="text"
+            icon={<DeleteOutlined />}
+            danger
+            onClick={onDeleteBoard}
+          />
         </div>
       }
     >
@@ -30,7 +43,10 @@ const KanbanColumn = ({ column, tasks, onAddCard, onDeleteTask, onDeleteBoard })
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                   >
-                    <KanbanCard task={task} onDelete={() => onDeleteTask(task.id)} />
+                    <KanbanCard
+                      task={task}
+                      onDelete={() => onDeleteTask(task.id)}
+                    />
                   </div>
                 )}
               </Draggable>
