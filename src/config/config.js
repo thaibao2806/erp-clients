@@ -21,3 +21,13 @@ export const getCardInBoard = "/api/v1/cards/board/"
 export const createCard ="/api/v1/cards"
 export const deleteCard ="/api/v1/cards/"
 export const moveCard = "/api/v1/cards/"
+
+// assignmentSlip
+export const createAssignment = "/api/v1/JobAssignment"
+export const updateAssignment = "/api/v1/JobAssignment/"
+export const getAssignById = "/api/v1/JobAssignment/"
+export const deleteAssignment = "/api/v1/JobAssignment/"
+export const filterAssignment = "/api/v1/JobAssignment/filter"
+export const getAllAssignment = "/api/v1/JobAssignment"
+
+

@@ -10,10 +10,12 @@ import {
   Button,
   Space,
   Tooltip,
+  notification,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { addAssignmentSlip } from "../../../services/apiPlan/apiAssignmentSlip";
 dayjs.extend(customParseFormat);
 
 const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
@@ -103,51 +105,61 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "Nội dung",
-        dataIndex: "thietbivattu",
+        dataIndex: "content",
         render: (_, record) => (
           <Input
-            value={record.hoTen}
-            onChange={(e) => handleInputChange(record.key, "hoTen", e.target.value)}
+            value={record.content}
+            onChange={(e) =>
+              handleInputChange(record.key, "content", e.target.value)
+            }
           />
         ),
       },
       {
         title: "ĐVT",
-        dataIndex: "ngaynhap",
+        dataIndex: "unit",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.unit}
+            onChange={(e) =>
+              handleInputChange(record.key, "unit", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Số lượng",
-        dataIndex: "soluongnhap",
+        dataIndex: "quantity",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.quantity}
+            onChange={(e) =>
+              handleInputChange(record.key, "quantity", e.target.value)
+            }
           />
         ),
       },
       {
         title: "N/Công",
-        dataIndex: "soluongxua",
+        dataIndex: "workDay",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.workDay}
+            onChange={(e) =>
+              handleInputChange(record.key, "workDay", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Ghi chú",
-        dataIndex: "ghichu",
+        dataIndex: "note",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.note}
+            onChange={(e) =>
+              handleInputChange(record.key, "note", e.target.value)
+            }
           />
         ),
       },
@@ -163,7 +175,9 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
             render: (_, record) => (
               <Input
                 value={record[`d${day}`] || ""}
-                onChange={(e) => handleInputChange(record.key, `d${day}`, e.target.value)}
+                onChange={(e) =>
+                  handleInputChange(record.key, `d${day}`, e.target.value)
+                }
               />
             ),
           };
@@ -174,21 +188,62 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onSubmit({ ...values, month: monthYear, data: tableData });
-      form.resetFields();
-      setMonthYear(dayjs());
-      setTableData([]);
-    });
+    if (!initialValues) {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              content: item.content || "",
+              unit: item.unit || "",
+              quantity: Number(item.quantity) || 0,
+              workDay: Number(item.workDay) || 0,
+              note: item.note || "",
+            })),
+          };
+
+          let res = await addAssignmentSlip(
+            payload.documentNumber,
+            payload.productName,
+            payload.documentDate,
+            payload.department,
+            payload.managementUnit,
+            payload.note,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    }
   };
 
   return (
     <Modal
-    title={
-      <span style={{ fontSize: 25, fontWeight: 600 }}>
-        {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
-      </span>
-    }
+      title={
+        <span style={{ fontSize: 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
+        </span>
+      }
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -208,12 +263,20 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col> */}
           <Col span={12}>
-            <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
+            <Form.Item
+              name="documentNumber"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true }]}> 
+            <Form.Item
+              name="productName"
+              label="Tên sản phẩm"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -229,41 +292,55 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đơn bị quản lý sử dụng" rules={[{ required: true }]}> 
+            <Form.Item
+              name="managementUnit"
+              label="Đơn bị quản lý sử dụng"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Bộ phận" rules={[{ required: true }]}> 
+            <Form.Item
+              name="department"
+              label="Bộ phận"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" > 
+            <Form.Item name="note" label="Ghi chú">
               <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
         </Row>
 
         <>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <h4>Nội dung giao việc</h4>
-              <Space>
-                <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                  Thêm dòng
-                </Button>
-                <Button onClick={() => setTableData([])}>Hủy</Button>
-              </Space>
-            </div>
-            <Table
-              columns={generateColumns()}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              bordered
-              size="small"
-            />
-          </>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <h4>Nội dung giao việc</h4>
+            <Space>
+              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                Thêm dòng
+              </Button>
+              <Button onClick={() => setTableData([])}>Hủy</Button>
+            </Space>
+          </div>
+          <Table
+            columns={generateColumns()}
+            dataSource={tableData}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            bordered
+            size="small"
+          />
+        </>
       </Form>
     </Modal>
   );

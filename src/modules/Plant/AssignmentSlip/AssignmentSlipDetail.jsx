@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Row,
@@ -21,6 +21,8 @@ import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import SystemSection from "../../../components/SystemSection";
 import AssignmentSlipModal from "./AssignmentSlipModal";
+import { getAssignmentSlipById } from "../../../services/apiPlan/apiAssignmentSlip";
+import dayjs from "dayjs";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -29,6 +31,23 @@ const AssignmentSlipDetail = () => {
   const { id } = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
+  const [data, setData] = useState();
+
+  useEffect(() => {
+    getData();
+    console.log(data);
+  }, []);
+
+  const getData = async () => {
+    try {
+      let res = await getAssignmentSlipById(id);
+      if (res && res.status === 200) {
+        setData(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const items = [
     {
@@ -74,13 +93,11 @@ const AssignmentSlipDetail = () => {
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "vattuthietbi" },
-    { title: "ĐVT", dataIndex: "ngaynhap" },
-    { title: "SL", dataIndex: "slnhap" },
-    { title: "N/Công", dataIndex: "ngayxuat" },
-    // { title: "SL xuất", dataIndex: "slxuat" },
-    // { title: "SL tồn", dataIndex: "sltồn" },
-    { title: "Ghi chú", dataIndex: "ghichu" },
+    { title: "Nội dung", dataIndex: "content" },
+    { title: "ĐVT", dataIndex: "unit" },
+    { title: "SL", dataIndex: "quantity" },
+    { title: "N/Công", dataIndex: "workDay" },
+    { title: "Ghi chú", dataIndex: "note" },
   ];
 
   const timekeepingData = [
@@ -121,42 +138,53 @@ const AssignmentSlipDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin phiếu giao việc" key="1">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Space
-                direction="vertical"
-                size="small"
-                style={{ width: "100%" }}
-              >
-                <div>Đơn vị: Công ty ABC</div>
-                <div>Số chứng từ: CC2025-03</div>
-                <div>Tên sản phẩm: Xe triền 150T</div>
-                <div>Ngày chứng từ: 03/2025</div>
-              </Space>
-            </Col>
-            <Col span={12}>
-              <Space
-                direction="vertical"
-                size="small"
-                style={{ width: "100%" }}
-              >
-                <div>Đơn bị quản lý: CN Công ty Sơn Hải</div>
-                <div>Bộ phận: Tổ Máy</div>
-                <div>Ghi chú: thử nghiệm</div>
-              </Space>
-            </Col>
-          </Row>
+          {data && (
+            <Row gutter={16}>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Số chứng từ: {data.documentNumber || ""}</div>
+                  <div>Tên sản phẩm: {data.productName || ""}</div>
+                  <div>
+                    Ngày chứng từ:{" "}
+                    {data.documentDate
+                      ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                      : "---"}
+                  </div>
+                </Space>
+              </Col>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Đơn bị quản lý: {data.documentNumber || ""}</div>
+                  <div>Bộ phận: {data.department || ""}</div>
+                  <div>Ghi chú: {data.note || ""}</div>
+                </Space>
+              </Col>
+            </Row>
+          )}
         </Panel>
 
         <Panel header="Nội dung phiếu giao việc" key="2">
-          <Table
-            columns={columns}
-            dataSource={timekeepingData}
-            scroll={{ x: "max-content" }}
-            size="small"
-            bordered
-            pagination={false}
-          />
+          {data && (
+            <Table
+              columns={columns}
+              dataSource={data.details?.map((item, index) => ({
+                ...item,
+                stt: index + 1,
+              }))}
+              scroll={{ x: "max-content" }}
+              size="small"
+              bordered
+              pagination={false}
+            />
+          )}
         </Panel>
 
         <Panel header="Đính kèm" key="3">
@@ -168,17 +196,23 @@ const AssignmentSlipDetail = () => {
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-          <SystemSection
-            systemInfo={{
-              createdBy: "ASOFTADMIN",
-              createdAt: "18/11/2024 18:31:58",
-              updatedBy: "ASOFTADMIN",
-              updatedAt: "18/11/2024 18:31:58",
-            }}
-            onAddFollower={() => {
-              console.log("Thêm người theo dõi");
-            }}
-          />
+          {data && (
+            <SystemSection
+              systemInfo={{
+                createdBy: `${data.createdBy}`,
+                createdAt: data.createdAt
+                  ? dayjs(data.createdAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+                updatedBy: `${data.updatedBy}`,
+                updatedAt: data.updatedAt
+                  ? dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+              }}
+              onAddFollower={() => {
+                console.log("Thêm người theo dõi");
+              }}
+            />
+          )}
         </Panel>
       </Collapse>
 

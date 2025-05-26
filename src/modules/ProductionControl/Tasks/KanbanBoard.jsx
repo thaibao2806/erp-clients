@@ -125,24 +125,6 @@ const KanbanBoard = () => {
         });
       }
     }
-
-    // const sourceCol = data.columns[source.droppableId];
-    // const destCol = data.columns[destination.droppableId];
-
-    // const sourceTaskIds = [...sourceCol.taskIds];
-    // sourceTaskIds.splice(source.index, 1);
-
-    // const destTaskIds = [...destCol.taskIds];
-    // destTaskIds.splice(destination.index, 0, draggableId);
-
-    // setData({
-    //   ...data,
-    //   columns: {
-    //     ...data.columns,
-    //     [sourceCol.id]: { ...sourceCol, taskIds: sourceTaskIds },
-    //     [destCol.id]: { ...destCol, taskIds: destTaskIds },
-    //   },
-    // });
   };
 
   const addTask = async (columnId, task) => {
