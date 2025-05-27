@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Row,
@@ -23,6 +23,8 @@ import SystemSection from "../../../components/SystemSection";
 import AssignmentSlipModal from "./AssignmentSlipModal";
 import { getAssignmentSlipById } from "../../../services/apiPlan/apiAssignmentSlip";
 import dayjs from "dayjs";
+import { addAttachments } from "../../../services/apiAttachment";
+import { useSelector } from "react-redux";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -32,10 +34,13 @@ const AssignmentSlipDetail = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [data, setData] = useState();
+  const [refreshFlag, setRefreshFlag] = useState(0);
+  const user = useSelector((state) => state.auth.login.currentUser);
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     getData();
-    console.log(data);
   }, []);
 
   const getData = async () => {
@@ -78,14 +83,10 @@ const AssignmentSlipDetail = () => {
 
   const handleMenuClick = ({ key }) => {
     if (key === "edit") {
-      // Giả sử dữ liệu đang xem là 1 đơn chấm công duy nhất
-      setEditingData({
-        unit: "Công ty ABC",
-        code: "CC2025-03",
-        name: "Tháng 3 - Phòng Nhân sự",
-        // Bạn có thể convert string -> dayjs nếu cần: dayjs("2025-03", "YYYY-MM")
-      });
+      setEditingData(data);
       setIsModalOpen(true);
+    } else if (key === "attach") {
+      fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else {
       message.info(`Bạn đã chọn: ${key}`);
     }
@@ -188,11 +189,15 @@ const AssignmentSlipDetail = () => {
         </Panel>
 
         <Panel header="Đính kèm" key="3">
-          <AttachmentSection attachments={[]} />
+          <AttachmentSection
+            refId={data ? data.id : ""}
+            refType={"AssignmentSlip"}
+            refreshTrigger={refreshFlag}
+          />
         </Panel>
 
         <Panel header="Ghi chú" key="4">
-          <NoteSection />
+          <NoteSection refId={data ? data.id : ""} refType={"AssignmentSlip"} />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
@@ -219,11 +224,43 @@ const AssignmentSlipDetail = () => {
       <AssignmentSlipModal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onSubmit={(data) => {
-          console.log("Đã cập nhật:", data);
+        onSubmit={() => {
+          getData();
           setIsModalOpen(false);
         }}
         initialValues={editingData}
+      />
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        multiple
+        onChange={async (e) => {
+          const files = e.target.files;
+          if (!files.length || !data?.id) return;
+
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refType", "AssignmentSlip");
+
+            try {
+              const res = await addAttachments(formData, user.data.token);
+
+              message.success(`Đã upload file: ${file.name}`);
+              // Có thể reload danh sách file nếu muốn
+            } catch (err) {
+              console.error(err);
+              message.error(`Upload thất bại: ${file.name}`);
+            }
+          }
+
+          // Reset lại input để có thể chọn cùng file lần nữa nếu muốn
+          e.target.value = "";
+          setRefreshFlag((prev) => prev + 1);
+        }}
       />
     </div>
   );

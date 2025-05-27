@@ -1,0 +1,20 @@
+import { addNote, deleteNote, getNote } from "../config/config"
+import axiosInstance from "./axiosInstance"
+
+const getNotes = (refId, refType) => {
+    return axiosInstance.get(getNote + `?refId=${refId}&refType=${refType}`)
+}
+
+const addNotes = (id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt) => {
+    return axiosInstance.post(addNote, {id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt})
+}
+
+const deleteNotes = (id) => {
+    return axiosInstance.delete(deleteNote + `${id}`)
+}
+
+export {
+    getNotes,
+    addNotes,
+    deleteNotes
+}

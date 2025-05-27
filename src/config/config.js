@@ -30,4 +30,13 @@ export const deleteAssignment = "/api/v1/JobAssignment/"
 export const filterAssignment = "/api/v1/JobAssignment/filter"
 export const getAllAssignment = "/api/v1/JobAssignment"
 
+//notes
+export const getNote = "/api/v1/khkd/notes"
+export const addNote = "/api/v1/khkd/notes"
+export const deleteNote = "/api/v1/khkd/notes/"
 
+//attechment
+export const addAttachment = "/api/v1/khkd/attachments/upload"
+export const getAttachment = "/api/v1/khkd/attachments"
+export const downloadAttachment = "/api/v1/khkd/attachments/download/"
+export const deleteAttachment = "/api/v1/khkd/attachments/"

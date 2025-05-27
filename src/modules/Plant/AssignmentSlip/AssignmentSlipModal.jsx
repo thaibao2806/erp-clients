@@ -15,7 +15,10 @@ import {
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { addAssignmentSlip } from "../../../services/apiPlan/apiAssignmentSlip";
+import {
+  addAssignmentSlip,
+  updateAssignmentSlip,
+} from "../../../services/apiPlan/apiAssignmentSlip";
 dayjs.extend(customParseFormat);
 
 const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
@@ -26,8 +29,31 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
   useEffect(() => {
     if (open) {
       form.setFieldsValue(initialValues || {});
-      setTableData([]);
-      setMonthYear(dayjs());
+      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      if (initialValues?.details?.length) {
+        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        const formattedDetails = initialValues.details.map((item, index) => ({
+          key: `${Date.now()}_${index}`,
+          stt: index + 1,
+          hoTen: item.hoTen || "", // Nếu bạn dùng field này
+          chucVu: item.chucVu || "", // Nếu bạn dùng field này
+          content: item.content || "",
+          unit: item.unit || "",
+          quantity: item.quantity || "",
+          workDay: item.workDay || "",
+          note: item.note || "",
+          ...columns.reduce((acc, day) => {
+            acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
+            return acc;
+          }, {}),
+        }));
+
+        setTableData(formattedDetails);
+      } else {
+        setTableData([]);
+      }
     }
   }, [open, initialValues, form]);
 
@@ -37,19 +63,6 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
     const daysInMonth = date.daysInMonth();
     const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    setTableData([
-      {
-        key: "1",
-        stt: 1,
-        hoTen: "",
-        chucVu: "",
-        ...columns.reduce((acc, day) => {
-          acc[`d${day}`] = "";
-          return acc;
-        }, {}),
-      },
-    ]);
   };
 
   const handleAddRow = () => {
@@ -59,8 +72,6 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
     const newRow = {
       key: newKey,
       stt: tableData.length + 1,
-      hoTen: "",
-      chucVu: "",
       ...columns.reduce((acc, day) => {
         acc[`d${day}`] = "";
         return acc;
@@ -165,26 +176,7 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
     ];
 
-    const dynamicColumns = monthYear
-      ? Array.from({ length: monthYear.daysInMonth() }, (_, i) => {
-          const day = i + 1;
-          return {
-            title: `${day}`,
-            dataIndex: `d${day}`,
-            width: 40,
-            render: (_, record) => (
-              <Input
-                value={record[`d${day}`] || ""}
-                onChange={(e) =>
-                  handleInputChange(record.key, `d${day}`, e.target.value)
-                }
-              />
-            ),
-          };
-        })
-      : [];
-
-    return [...baseColumns];
+    return baseColumns;
   };
 
   const handleOk = () => {
@@ -205,6 +197,53 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
           };
 
           let res = await addAssignmentSlip(
+            payload.documentNumber,
+            payload.productName,
+            payload.documentDate,
+            payload.department,
+            payload.managementUnit,
+            payload.note,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    } else {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              content: item.content || "",
+              unit: item.unit || "",
+              quantity: Number(item.quantity) || 0,
+              workDay: Number(item.workDay) || 0,
+              note: item.note || "",
+            })),
+          };
+
+          let res = await updateAssignmentSlip(
+            initialValues.id,
             payload.documentNumber,
             payload.productName,
             payload.documentDate,
