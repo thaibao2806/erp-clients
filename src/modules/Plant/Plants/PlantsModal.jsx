@@ -10,10 +10,12 @@ import {
   Button,
   Space,
   Tooltip,
+  notification,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { createPlan, updatePlans } from "../../../services/apiPlan/apiPlan";
 dayjs.extend(customParseFormat);
 
 const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
@@ -24,8 +26,28 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   useEffect(() => {
     if (open) {
       form.setFieldsValue(initialValues || {});
-      setTableData([]);
-      setMonthYear(dayjs());
+      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      if (initialValues?.details?.length) {
+        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        const formattedDetails = initialValues.details.map((item, index) => ({
+          key: `${Date.now()}_${index}`,
+          stt: index + 1,
+          vehicleName: item.vehicleName || "",
+          content: item.content || "",
+          expectedTime: item.expectedTime || "",
+          note: item.note || "",
+          ...columns.reduce((acc, day) => {
+            acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
+            return acc;
+          }, {}),
+        }));
+
+        setTableData(formattedDetails);
+      } else {
+        setTableData([]);
+      }
     }
   }, [open, initialValues, form]);
 
@@ -35,19 +57,6 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
     const daysInMonth = date.daysInMonth();
     const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    setTableData([
-      {
-        key: "1",
-        stt: 1,
-        hoTen: "",
-        chucVu: "",
-        ...columns.reduce((acc, day) => {
-          acc[`d${day}`] = "";
-          return acc;
-        }, {}),
-      },
-    ]);
   };
 
   const handleAddRow = () => {
@@ -103,82 +112,165 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "Tên phương tiện",
-        dataIndex: "thietbivattu",
+        dataIndex: "vehicleName",
         render: (_, record) => (
           <Input
-            value={record.hoTen}
-            onChange={(e) => handleInputChange(record.key, "hoTen", e.target.value)}
+            value={record.vehicleName}
+            onChange={(e) =>
+              handleInputChange(record.key, "vehicleName", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Nội dung",
-        dataIndex: "ngaynhap",
+        dataIndex: "content",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.content}
+            onChange={(e) =>
+              handleInputChange(record.key, "content", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Thời gian dự kiến",
-        dataIndex: "soluongnhap",
+        dataIndex: "expectedTime",
         render: (_, record) => (
-          <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+          <DatePicker
+            value={record.expectedTime ? dayjs(record.expectedTime) : null}
+            format="DD/MM/YYYY"
+            onChange={(date) =>
+              handleInputChange(
+                record.key,
+                "expectedTime",
+                date ? date.toISOString() : null
+              )
+            }
           />
         ),
       },
+
       {
         title: "Ghi chú",
-        dataIndex: "ghichu",
+        dataIndex: "note",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.note}
+            onChange={(e) =>
+              handleInputChange(record.key, "note", e.target.value)
+            }
           />
         ),
       },
     ];
 
-    const dynamicColumns = monthYear
-      ? Array.from({ length: monthYear.daysInMonth() }, (_, i) => {
-          const day = i + 1;
-          return {
-            title: `${day}`,
-            dataIndex: `d${day}`,
-            width: 40,
-            render: (_, record) => (
-              <Input
-                value={record[`d${day}`] || ""}
-                onChange={(e) => handleInputChange(record.key, `d${day}`, e.target.value)}
-              />
-            ),
-          };
-        })
-      : [];
-
-    return [...baseColumns];
+    return baseColumns;
   };
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onSubmit({ ...values, month: monthYear, data: tableData });
-      form.resetFields();
-      setMonthYear(dayjs());
-      setTableData([]);
-    });
+    if (!initialValues) {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              vehicleName: item.vehicleName || "",
+              content: item.content || "",
+              expectedTime: item.expectedTime,
+              note: item.note || "",
+            })),
+          };
+
+          let res = await createPlan(
+            payload.department,
+            payload.documentNumber,
+            payload.planContent,
+            payload.documentDate,
+            payload.receiver,
+            payload.note,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    } else {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              vehicleName: item.vehicleName || "",
+              content: item.content || "",
+              expectedTime: item.expectedTime,
+              note: item.note || "",
+            })),
+          };
+
+          let res = await updatePlans(
+            initialValues.id,
+            payload.department,
+            payload.documentNumber,
+            payload.planContent,
+            payload.documentDate,
+            payload.receiver,
+            payload.note,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    }
   };
 
   return (
     <Modal
-    title={
-      <span style={{ fontSize: 25, fontWeight: 600 }}>
-        {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
-      </span>
-    }
+      title={
+        <span style={{ fontSize: 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
+        </span>
+      }
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -193,17 +285,29 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}> 
+            <Form.Item
+              name="department"
+              label="Đơn vị"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
+            <Form.Item
+              name="documentNumber"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Kế hoạch về việc" rules={[{ required: true }]}> 
+            <Form.Item
+              name="planContent"
+              label="Kế hoạch về việc"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -212,43 +316,53 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <DatePicker
                 picker="month"
                 style={{ width: "100%" }}
-                format="MM/YYYY"
+                format="DD/MM/YYYY"
                 value={monthYear}
                 onChange={handleMonthChange}
               />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Nơi nhận" rules={[{ required: true }]}> 
+            <Form.Item
+              name="receiver"
+              label="Nơi nhận"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ghi chú" > 
+            <Form.Item name="note" label="Ghi chú">
               <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
         </Row>
 
         <>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <h4>Nội dung kế hoạch</h4>
-              <Space>
-                <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                  Thêm dòng
-                </Button>
-                <Button onClick={() => setTableData([])}>Hủy</Button>
-              </Space>
-            </div>
-            <Table
-              columns={generateColumns()}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              bordered
-              size="small"
-            />
-          </>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <h4>Nội dung kế hoạch</h4>
+            <Space>
+              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                Thêm dòng
+              </Button>
+              <Button onClick={() => setTableData([])}>Hủy</Button>
+            </Space>
+          </div>
+          <Table
+            columns={generateColumns()}
+            dataSource={tableData}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            bordered
+            size="small"
+          />
+        </>
       </Form>
     </Modal>
   );

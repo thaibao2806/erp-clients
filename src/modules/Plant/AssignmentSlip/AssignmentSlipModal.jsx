@@ -37,8 +37,6 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
         const formattedDetails = initialValues.details.map((item, index) => ({
           key: `${Date.now()}_${index}`,
           stt: index + 1,
-          hoTen: item.hoTen || "", // Nếu bạn dùng field này
-          chucVu: item.chucVu || "", // Nếu bạn dùng field này
           content: item.content || "",
           unit: item.unit || "",
           quantity: item.quantity || "",

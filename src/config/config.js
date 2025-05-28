@@ -7,6 +7,7 @@ export const resetPassword = "/api/v1/Auth/reset-password"
 export const changePassword = "/api/v1/Auth/change-password"
 export const getUserById = "/api/v1/Auth/users/"
 export const updateAccounts= "/api/v1/Auth/users"
+export const getAllAccount = "/api/v1/Auth/users"
 
 //approveSetting
 export const createApprove = "/api/v1/khkd/approval-settings"
@@ -40,3 +41,15 @@ export const addAttachment = "/api/v1/khkd/attachments/upload"
 export const getAttachment = "/api/v1/khkd/attachments"
 export const downloadAttachment = "/api/v1/khkd/attachments/download/"
 export const deleteAttachment = "/api/v1/khkd/attachments/"
+
+//follower
+export const addFollow = "/api/v1/khkd/followers/assign"
+export const getFollow = "/api/v1/khkd/followers"
+
+//plan
+export const getPlan = "/api/v1/khdk/plan"
+export const addPlan = "/api/v1/khdk/plan"
+export const getPlanByID = "/api/v1/khdk/plan/"
+export const updatePlan = "/api/v1/khdk/plan/"
+export const deletePlan = "/api/v1/khdk/plan/"
+export const filterPlan = "/api/v1/khdk/plan/filter"

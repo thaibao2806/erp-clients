@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -10,6 +10,7 @@ import {
   Table,
   Space,
   message,
+  Modal,
 } from "antd";
 import {
   DownOutlined,
@@ -21,7 +22,10 @@ import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import SystemSection from "../../../components/SystemSection";
 import AssignmentSlipModal from "./AssignmentSlipModal";
-import { getAssignmentSlipById } from "../../../services/apiPlan/apiAssignmentSlip";
+import {
+  deleteAssignmetSlip,
+  getAssignmentSlipById,
+} from "../../../services/apiPlan/apiAssignmentSlip";
 import dayjs from "dayjs";
 import { addAttachments } from "../../../services/apiAttachment";
 import { useSelector } from "react-redux";
@@ -36,7 +40,7 @@ const AssignmentSlipDetail = () => {
   const [data, setData] = useState();
   const [refreshFlag, setRefreshFlag] = useState(0);
   const user = useSelector((state) => state.auth.login.currentUser);
-
+  const navigator = useNavigate();
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -81,14 +85,28 @@ const AssignmentSlipDetail = () => {
     },
   ];
 
-  const handleMenuClick = ({ key }) => {
+  const handleMenuClick = async ({ key }) => {
     if (key === "edit") {
       setEditingData(data);
       setIsModalOpen(true);
     } else if (key === "attach") {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
-    } else {
-      message.info(`Bạn đã chọn: ${key}`);
+    } else if (key === "delete") {
+      try {
+        let res = await deleteAssignmetSlip(data.id);
+        if ((res && res.status === 200) || res.status === 204) {
+          Modal.success({
+            title: "Xóa thành công",
+            content: `Đã xóa thành công phiếu`,
+          });
+          navigator("/pl/phieu-giao-viec");
+        }
+      } catch (error) {
+        Modal.error({
+          title: "Xóa thất bại",
+          content: `Đã có lỗi xãy ra. Vui lòng thử lại sau`,
+        });
+      }
     }
   };
 
@@ -99,20 +117,6 @@ const AssignmentSlipDetail = () => {
     { title: "SL", dataIndex: "quantity" },
     { title: "N/Công", dataIndex: "workDay" },
     { title: "Ghi chú", dataIndex: "note" },
-  ];
-
-  const timekeepingData = [
-    {
-      key: "1",
-      stt: 1,
-      vattuthietbi: "Máy hàn",
-      ngaynhap: "12/04/2025",
-      slnhap: "5",
-      ngayxuat: "12/04/2025",
-      slxuat: "5",
-      slton: "0",
-      ghichu: "đã giao",
-    },
   ];
 
   return (
@@ -213,9 +217,8 @@ const AssignmentSlipDetail = () => {
                   ? dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm:ss")
                   : "",
               }}
-              onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-              }}
+              refId={data.id}
+              refType={"AssignmentSlip"}
             />
           )}
         </Panel>

@@ -217,7 +217,6 @@ const AssignmentSlip = () => {
   };
 
   const handleReset = () => {
-    fetchData(1, pagination.pageSize);
     setFilters({
       dateRange: null,
       documentNumber: "",
@@ -225,6 +224,7 @@ const AssignmentSlip = () => {
       managementUnit: "",
       department: "",
     });
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   return (

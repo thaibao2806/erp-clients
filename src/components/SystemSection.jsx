@@ -1,12 +1,103 @@
-import React from "react";
-import { Row, Col, Button } from "antd";
+import React, { useEffect, useState } from "react";
+import { Row, Col, Button, Modal, Table, Tag, notification } from "antd";
+import { getAllUser } from "../services/apiAuth";
+import { addFollower, getFollower } from "../services/apiFollower";
 
-const SystemSection = ({ systemInfo, onAddFollower }) => {
+const SystemSection = ({ systemInfo, refId, refType }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [followers, setFollowers] = useState([]);
+  const [dataUser, setDataUser] = useState();
+
+  useEffect(() => {
+    getFollowers();
+  }, [refId]);
+
+  const getFollowers = async () => {
+    try {
+      let res = await getFollower(refId, refType);
+      if (res && res.status === 200) {
+        setFollowers(res.data.data);
+      }
+    } catch (error) {}
+  };
+
+  const getUser = async () => {
+    try {
+      let res = await getAllUser();
+      if (res && res.status === 200) {
+        setDataUser(res.data.data);
+      }
+    } catch (error) {}
+  };
+
+  const handleAddFollower = () => {
+    setIsModalOpen(true);
+    getUser();
+  };
+
+  const handleModalOk = async () => {
+    const selectedUsers = dataUser.filter((user) =>
+      selectedRowKeys.includes(user.key)
+    );
+
+    const newFollowers = selectedUsers.filter(
+      (u) => !followers.some((p) => p.key === u.key)
+    );
+
+    try {
+      let res = await addFollower(
+        refId,
+        refType,
+        newFollowers.map((u) => ({
+          userId: u.apk,
+          userName: u.userName,
+        }))
+      );
+
+      if (res && res.status === 200) {
+        setIsModalOpen(false);
+        setSelectedRowKeys([]);
+        notification.success({
+          message: "Thành công",
+          description: "Đã gán người theo dõi.",
+          placement: "topRight",
+        });
+        getFollowers();
+      }
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Đã có lỗi xảy ra. Vui lòng thử lại sau.",
+        placement: "topRight",
+      });
+    }
+  };
+
+  const handleModalCancel = () => {
+    setIsModalOpen(false);
+    setSelectedRowKeys([]);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: setSelectedRowKeys,
+    getCheckboxProps: (record) => ({
+      disabled: followers.some((user) => user.key === record.key), // Disable nếu đã chọn
+    }),
+  };
+
+  const columns = [
+    { title: "Tên người dùng", dataIndex: "userName", key: "userName" },
+    { title: "Bộ phận", dataIndex: "department", key: "department" },
+  ];
+
   return (
     <Row gutter={24}>
-      {/* Thông tin hệ thống bên trái */}
       <Col span={12}>
-        <div style={{ fontWeight: "bold", marginBottom: 8 }}>Thông tin hệ thống</div>
+        <div style={{ fontWeight: "bold", marginBottom: 8 }}>
+          Thông tin hệ thống
+        </div>
         <div>
           <Row gutter={8}>
             <Col span={8}>Người tạo:</Col>
@@ -27,22 +118,45 @@ const SystemSection = ({ systemInfo, onAddFollower }) => {
         </div>
       </Col>
 
-      {/* Danh sách người theo dõi bên phải */}
       <Col span={12}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-          <div style={{ fontWeight: "bold", marginRight: 8 }}>Danh sách người theo dõi</div>
-          <Button shape="circle" type="primary" size="small" onClick={onAddFollower}>+</Button>
+          <div style={{ fontWeight: "bold", marginRight: 8 }}>
+            Danh sách người theo dõi
+          </div>
+          <Button
+            shape="circle"
+            type="primary"
+            size="small"
+            onClick={handleAddFollower}
+          >
+            +
+          </Button>
         </div>
-        <input
-          style={{
-            width: "100%",
-            border: "1px solid #d9d9d9",
-            borderRadius: 4,
-            padding: "4px 8px",
-          }}
-          placeholder="Nhập người theo dõi..."
-        />
+
+        <div style={{ marginBottom: 8 }}>
+          {followers.map((user) => (
+            <Tag key={user.key}>{user.userName}</Tag>
+          ))}
+        </div>
       </Col>
+
+      <Modal
+        title="Chọn người theo dõi"
+        open={isModalOpen}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        okText="Thêm"
+        cancelText="Hủy"
+        width={600}
+      >
+        <Table
+          rowSelection={rowSelection}
+          columns={columns}
+          dataSource={dataUser}
+          pagination={false}
+          rowKey="key"
+        />
+      </Modal>
     </Row>
   );
 };

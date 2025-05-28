@@ -1,5 +1,5 @@
 import axios from "axios";
-import { forgotPassword, url,resetPassword, changePassword, getUserById, updateAccounts } from "../config/config";
+import { forgotPassword, url,resetPassword, changePassword, getUserById, updateAccounts, getAllAccount } from "../config/config";
 import { getAuthHeader } from "../utils/authHeader";
 import axiosInstance from "./axiosInstance";
 
@@ -23,10 +23,15 @@ const updateAccount = (apk, userName, fullName, email, phoneNumber, address, dat
     return axiosInstance.put(updateAccounts, {apk, userName, fullName, email, phoneNumber, address, dateOfBirth, department})
 }
 
+const getAllUser = () => {
+    return axiosInstance.get(getAllAccount)
+}
+
 export {
     checkMailOTP,
     resetPasswords,
     changePasswords,
     getAccount,
-    updateAccount
+    updateAccount,
+    getAllUser
 }
