@@ -53,3 +53,19 @@ export const getPlanByID = "/api/v1/khdk/plan/"
 export const updatePlan = "/api/v1/khdk/plan/"
 export const deletePlan = "/api/v1/khdk/plan/"
 export const filterPlan = "/api/v1/khdk/plan/filter"
+
+//test run plan
+export const getTestRunPlan = "/api/v1/khkd/test-run-plan"
+export const addTestRunPlan = "/api/v1/khkd/test-run-plan"
+export const getTestRunPlanByID = "/api/v1/khkd/test-run-plan/"
+export const updateTestRunPlan = "/api/v1/khkd/test-run-plan/"
+export const deleteTestRunPlan = "/api/v1/khkd/test-run-plan/"
+export const filterTestRunPlan = "/api/v1/khkd/test-run-plan/filter"
+
+//receiving report
+export const getReceiving = "/api/v1/khkd/receiving-report"
+export const addReceiving = "/api/v1/khkd/receiving-report"
+export const getReceivingByID = "/api/v1/khkd/receiving-report/"
+export const updateReceiving = "/api/v1/khkd/receiving-report/"
+export const deleteReceiving = "/api/v1/khkd/receiving-report/"
+export const filterReceiving = "/api/v1/khkd/receiving-report/filter"

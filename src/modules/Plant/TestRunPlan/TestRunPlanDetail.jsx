@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -10,6 +10,7 @@ import {
   Table,
   Space,
   message,
+  Modal,
 } from "antd";
 import {
   DownOutlined,
@@ -21,6 +22,13 @@ import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import SystemSection from "../../../components/SystemSection";
 import TestRunPlanModal from "./TestRunPlanModal";
+import { useSelector } from "react-redux";
+import {
+  deleteTestRunPlans,
+  getTestRunPlans,
+} from "../../../services/apiPlan/apiTestRunPlan";
+import { addAttachments } from "../../../services/apiAttachment";
+import dayjs from "dayjs";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -28,8 +36,27 @@ const { Panel } = Collapse;
 const TestRunPlanDetail = () => {
   const { id } = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingData, setEditingData] = useState(null);
+  const [editingData, setEditingData] = useState(null);
+  const [data, setData] = useState();
+  const [refreshFlag, setRefreshFlag] = useState(0);
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const fileInputRef = useRef(null);
+  const navigator = useNavigate();
 
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    try {
+      let res = await getTestRunPlans(id);
+      if (res && res.status === 200) {
+        setData(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const items = [
     {
@@ -58,45 +85,36 @@ const TestRunPlanDetail = () => {
     },
   ];
 
-  const handleMenuClick = ({ key }) => {
+  const handleMenuClick = async ({ key }) => {
     if (key === "edit") {
-      // Giả sử dữ liệu đang xem là 1 đơn chấm công duy nhất
-      setEditingData({
-        unit: "Công ty ABC",
-        code: "CC2025-03",
-        name: "Tháng 3 - Phòng Nhân sự",
-        // Bạn có thể convert string -> dayjs nếu cần: dayjs("2025-03", "YYYY-MM")
-      });
+      setEditingData(data);
       setIsModalOpen(true);
-    } else {
-      message.info(`Bạn đã chọn: ${key}`);
+    } else if (key === "attach") {
+      fileInputRef.current?.click(); // Mở hộp thoại chọn file
+    } else if (key === "delete") {
+      try {
+        let res = await deleteTestRunPlans(data.id);
+        if ((res && res.status === 200) || res.status === 204) {
+          Modal.success({
+            title: "Xóa thành công",
+            content: `Đã xóa thành công phiếu`,
+          });
+          navigator("/pl/ke-hoach/ke-hoach-chay-thu");
+        }
+      } catch (error) {
+        Modal.error({
+          title: "Xóa thất bại",
+          content: `Đã có lỗi xãy ra. Vui lòng thử lại sau`,
+        });
+      }
     }
   };
-  
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Đơn vị", dataIndex: "vattuthietbi" },
-    { title: "Số lượng người tham gia", dataIndex: "ngaynhap" },
-    // { title: "Thời gian (dự kiến)", dataIndex: "slnhap" },
-    // { title: "N/Công", dataIndex: "ngayxuat" },
-    // { title: "SL xuất", dataIndex: "slxuat" },
-    // { title: "SL tồn", dataIndex: "sltồn" },
-    { title: "Ghi chú", dataIndex: "ghichu" },
-  ];
-
-  const timekeepingData = [
-    {
-      key: "1",
-      stt: 1,
-      vattuthietbi: "Máy hàn",
-      ngaynhap: "12/04/2025",
-      slnhap: "5",
-      ngayxuat: "12/04/2025",
-      slxuat: "5",
-      slton: "0",
-      ghichu: "đã giao",
-    },
+    { title: "Đơn vị", dataIndex: "department" },
+    { title: "Số lượng người tham gia", dataIndex: "participantCount" },
+    { title: "Ghi chú", dataIndex: "note" },
   ];
 
   return (
@@ -123,72 +141,136 @@ const TestRunPlanDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin kế hoạch" key="1">
+          {data && (
             <Row gutter={16}>
-                <Col span={12}>
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    <div>Số chứng từ: CC2025-03</div>
-                    <div>Ngày chứng từ: 1/5/2025</div>
-                    <div>Tên phương tiện: Tàu BP...</div>
-                    <div>Đơn vị quản lý: Biên phòng...</div>
-                    <div>Nơi nhận: Ban giám đốc, ĐĐSX, Tổ Đà đốc,...</div>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Số chứng từ: {data.documentNumber || ""}</div>
+                  <div>
+                    Ngày chứng từ:{" "}
+                    {data.documentDate
+                      ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                      : "---"}
+                  </div>
+                  <div>Tên phương tiện: {data.vehicleName || ""}</div>
+                  <div>Đơn vị quản lý: {data.managingDepartment || ""}</div>
+                  <div>Nơi nhận: {data.receivingLocation || ""}</div>
                 </Space>
-                </Col>
-                <Col span={12}>
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    <div>Nơi chạy: HCM</div>
-                    <div>Lộ trình chạy: đến phà Bình Khánh</div>
-                    <div>Thời gian chạy: 15h ngày 1/5/2025</div>
-                    <div>Ghi chú: thử nghiệm</div>
+              </Col>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Nơi chạy: {data.runLocation || ""}</div>
+                  <div>Lộ trình chạy: {data.runSchedule || ""}</div>
+                  <div>
+                    Thời gian chạy:{" "}
+                    {data.runTime
+                      ? dayjs(data.runTime).format("DD/MM/YYYY HH:mm:ss")
+                      : "" || ""}
+                  </div>
+                  <div>Ghi chú: thử nghiệm</div>
                 </Space>
-                </Col>
+              </Col>
             </Row>
+          )}
         </Panel>
 
         <Panel header="Nội dung kế hoạch" key="2">
-          <Table
-            columns={columns}
-            dataSource={timekeepingData}
-            scroll={{ x: "max-content" }}
-            size="small"
-            bordered
-            pagination={false}
-          />
+          {data && (
+            <Table
+              columns={columns}
+              dataSource={data.details?.map((item, index) => ({
+                ...item,
+                stt: index + 1,
+              }))}
+              scroll={{ x: "max-content" }}
+              size="small"
+              bordered
+              pagination={false}
+            />
+          )}
         </Panel>
 
         <Panel header="Đính kèm" key="3">
-            <AttachmentSection attachments={[]} />
+          <AttachmentSection
+            refId={data ? data.id : ""}
+            refType={"TestRunPlan"}
+            refreshTrigger={refreshFlag}
+          />
         </Panel>
 
-
         <Panel header="Ghi chú" key="4">
-          <NoteSection/>
+          <NoteSection refId={data ? data.id : ""} refType={"TestRunPlan"} />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
+          {data && (
             <SystemSection
-                systemInfo={{
-                createdBy: "ASOFTADMIN",
-                createdAt: "18/11/2024 18:31:58",
-                updatedBy: "ASOFTADMIN",
-                updatedAt: "18/11/2024 18:31:58",
-                }}
-                onAddFollower={() => {
-                console.log("Thêm người theo dõi");
-                }}
+              systemInfo={{
+                createdBy: `${data.createdBy}`,
+                createdAt: data.createdAt
+                  ? dayjs(data.createdAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+                updatedBy: `${data.updatedBy}`,
+                updatedAt: data.updatedAt
+                  ? dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+              }}
+              refId={data.id}
+              refType={"TestRunPlan"}
             />
+          )}
         </Panel>
       </Collapse>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        multiple
+        onChange={async (e) => {
+          const files = e.target.files;
+          if (!files.length || !data?.id) return;
+
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refType", "TestRunPlan");
+
+            try {
+              const res = await addAttachments(formData, user.data.token);
+
+              message.success(`Đã upload file: ${file.name}`);
+              // Có thể reload danh sách file nếu muốn
+            } catch (err) {
+              console.error(err);
+              message.error(`Upload thất bại: ${file.name}`);
+            }
+          }
+
+          // Reset lại input để có thể chọn cùng file lần nữa nếu muốn
+          e.target.value = "";
+          setRefreshFlag((prev) => prev + 1);
+        }}
+      />
 
       <TestRunPlanModal
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-            console.log("Đã cập nhật:", data);
-            setIsModalOpen(false);
+          getData();
+          setIsModalOpen(false);
         }}
         initialValues={editingData}
-        />
-
+      />
     </div>
   );
 };

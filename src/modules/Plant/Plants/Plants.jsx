@@ -154,7 +154,6 @@ const Plants = () => {
   };
 
   // Xử lý nút xóa
-  // Xử lý nút xóa
   const handleDelete = () => {
     if (selectedRowKeys.length === 0) {
       Modal.warning({

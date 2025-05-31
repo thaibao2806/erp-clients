@@ -10,65 +10,47 @@ import {
   Button,
   Space,
   Tooltip,
+  notification,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { useSelector } from "react-redux";
+import {
+  createReceivingReport,
+  updateReceivingReport,
+} from "../../../services/apiPlan/apiReceptionMinute";
 dayjs.extend(customParseFormat);
 
 const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
+  const [receivingDate, setReceivingDate] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
+  const user = useSelector((state) => state.auth.login?.currentUser);
 
   useEffect(() => {
     if (open) {
-      form.setFieldsValue(initialValues || {});
-      setTableData([]);
-      setMonthYear(dayjs());
+      const values = { ...initialValues };
+
+      if (values.runTime) {
+        values.runTime = dayjs(values.runTime);
+      }
+      form.setFieldsValue(values || {});
+      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      setReceivingDate(dayjs(initialValues?.receivingDate || dayjs()));
+      console.log(initialValues);
     }
   }, [open, initialValues, form]);
 
   const handleMonthChange = (date) => {
     setMonthYear(date);
     if (!date) return;
-
-    const daysInMonth = date.daysInMonth();
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    setTableData([
-      {
-        key: "1",
-        stt: 1,
-        hoTen: "",
-        chucVu: "",
-        ...columns.reduce((acc, day) => {
-          acc[`d${day}`] = "";
-          return acc;
-        }, {}),
-      },
-    ]);
   };
 
-  const handleAddRow = () => {
-    const daysInMonth = monthYear?.daysInMonth() || 0;
-    const newKey = `${Date.now()}`;
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const newRow = {
-      key: newKey,
-      stt: tableData.length + 1,
-      hoTen: "",
-      chucVu: "",
-      ...columns.reduce((acc, day) => {
-        acc[`d${day}`] = "";
-        return acc;
-      }, {}),
-    };
-    setTableData((prev) => [...prev, newRow]);
-  };
-
-  const handleDeleteRow = (key) => {
-    setTableData((prev) => prev.filter((item) => item.key !== key));
+  const handleReceivingDateChange = (date) => {
+    setReceivingDate(date);
+    if (!date) return;
   };
 
   const handleInputChange = (key, field, value) => {
@@ -79,96 +61,112 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
     );
   };
 
-  const generateColumns = () => {
-    const baseColumns = [
-      {
-        title: "",
-        dataIndex: "action",
-        width: 40,
-        render: (_, record) => (
-          <Tooltip title="Xóa dòng">
-            <Button
-              icon={<DeleteOutlined />}
-              size="small"
-              danger
-              onClick={() => handleDeleteRow(record.key)}
-            />
-          </Tooltip>
-        ),
-      },
-      {
-        title: "STT",
-        dataIndex: "stt",
-        width: 50,
-      },
-      {
-        title: "Đơn vị",
-        dataIndex: "thietbivattu",
-        render: (_, record) => (
-          <Input
-            value={record.hoTen}
-            onChange={(e) => handleInputChange(record.key, "hoTen", e.target.value)}
-          />
-        ),
-      },
-      {
-        title: "Số lượng người tham gia",
-        dataIndex: "ngaynhap",
-        render: (_, record) => (
-          <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
-          />
-        ),
-      },
-      {
-        title: "Ghi chú",
-        dataIndex: "ghichu",
-        render: (_, record) => (
-          <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
-          />
-        ),
-      },
-    ];
-
-    const dynamicColumns = monthYear
-      ? Array.from({ length: monthYear.daysInMonth() }, (_, i) => {
-          const day = i + 1;
-          return {
-            title: `${day}`,
-            dataIndex: `d${day}`,
-            width: 40,
-            render: (_, record) => (
-              <Input
-                value={record[`d${day}`] || ""}
-                onChange={(e) => handleInputChange(record.key, `d${day}`, e.target.value)}
-              />
-            ),
-          };
-        })
-      : [];
-
-    return [...baseColumns];
-  };
-
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onSubmit({ ...values, month: monthYear, data: tableData });
-      form.resetFields();
-      setMonthYear(dayjs());
-      setTableData([]);
-    });
+    if (!initialValues) {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            receivingDate: receivingDate.toISOString(),
+          };
+
+          let id = crypto.randomUUID();
+
+          let res = await createReceivingReport(
+            id,
+            payload.documentNumber,
+            payload.vehicleName,
+            payload.receivingDate,
+            payload.documentDate,
+            payload.companyRepresentative,
+            payload.companyRepresentativePosition,
+            payload.shipRepresentative1,
+            payload.shipRepresentative1Position,
+            payload.shipRepresentative2,
+            payload.shipRepresentative2Position,
+            user.data.userName,
+            new Date().toISOString(),
+            user.data.userName,
+            new Date().toISOString()
+          );
+          if ((res && res.status === 200) || res.status === 201) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    } else {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            receivingDate: receivingDate.toISOString(),
+          };
+          let res = await updateReceivingReport(
+            initialValues.id,
+            payload.documentNumber,
+            payload.vehicleName,
+            payload.receivingDate,
+            payload.documentDate,
+            payload.companyRepresentative,
+            payload.companyRepresentativePosition,
+            payload.shipRepresentative1,
+            payload.shipRepresentative1Position,
+            payload.shipRepresentative2,
+            payload.shipRepresentative2Position,
+            initialValues.createdBy,
+            initialValues.createdAt,
+            user.data.userName,
+            new Date().toISOString()
+          );
+          if ((res && res.status === 200) || res.status === 204) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    }
   };
 
   return (
     <Modal
-    title={
-      <span style={{ fontSize: 25, fontWeight: 600 }}>
-        {initialValues ? "Cập nhật biên bản" : "Thêm biên bản"}
-      </span>
-    }
+      title={
+        <span style={{ fontSize: 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật biên bản" : "Thêm biên bản"}
+        </span>
+      }
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -182,20 +180,29 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
-          
           <Col span={12}>
-            <Form.Item name="code" label="Số chứng từ" rules={[{ required: true }]}> 
+            <Form.Item
+              name="documentNumber"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Tên phương tiện" > 
+            <Form.Item name="vehicleName" label="Tên phương tiện">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Ngày tiếp nhận" > 
-              <Input />
+            <Form.Item label="Ngày tiếp nhận">
+              <DatePicker
+                picker="day"
+                style={{ width: "100%" }}
+                format="DD/MM/YYYY"
+                value={receivingDate}
+                onChange={handleReceivingDateChange}
+              />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -210,32 +217,32 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện công ty" > 
+            <Form.Item name="companyRepresentative" label="Đại diện công ty">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Chức vụ" > 
+            <Form.Item name="companyRepresentativePosition" label="Chức vụ">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện tàu (1)" > 
+            <Form.Item name="shipRepresentative1" label="Đại diện tàu (1)">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="unit" label="Chức vụ" > 
+            <Form.Item name="shipRepresentative1Position" label="Chức vụ">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="name" label="Đại diện tàu (2)" > 
+            <Form.Item name="shipRepresentative2" label="Đại diện tàu (2)">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="unit" label="Chức vụ" > 
+            <Form.Item name="shipRepresentative2Position" label="Chức vụ">
               <Input />
             </Form.Item>
           </Col>

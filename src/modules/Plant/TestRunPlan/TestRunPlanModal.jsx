@@ -11,10 +11,15 @@ import {
   Space,
   Tooltip,
   Select,
+  notification,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import {
+  createTestRunPlan,
+  updateTestRunPlans,
+} from "../../../services/apiPlan/apiTestRunPlan";
 dayjs.extend(customParseFormat);
 
 const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
@@ -24,9 +29,33 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   useEffect(() => {
     if (open) {
-      form.setFieldsValue(initialValues || {});
-      setTableData([]);
-      setMonthYear(dayjs());
+      const values = { ...initialValues };
+
+      if (values.runTime) {
+        values.runTime = dayjs(values.runTime);
+      }
+      form.setFieldsValue(values || {});
+      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      if (initialValues?.details?.length) {
+        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+        const formattedDetails = initialValues.details.map((item, index) => ({
+          key: `${Date.now()}_${index}`,
+          stt: index + 1,
+          department: item.department || "",
+          participantCount: item.participantCount || "",
+          note: item.note || "",
+          ...columns.reduce((acc, day) => {
+            acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
+            return acc;
+          }, {}),
+        }));
+
+        setTableData(formattedDetails);
+      } else {
+        setTableData([]);
+      }
     }
   }, [open, initialValues, form]);
 
@@ -36,19 +65,6 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
     const daysInMonth = date.daysInMonth();
     const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-    setTableData([
-      {
-        key: "1",
-        stt: 1,
-        hoTen: "",
-        chucVu: "",
-        ...columns.reduce((acc, day) => {
-          acc[`d${day}`] = "";
-          return acc;
-        }, {}),
-      },
-    ]);
   };
 
   const handleAddRow = () => {
@@ -104,63 +120,141 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "Đơn vị",
-        dataIndex: "thietbivattu",
+        dataIndex: "department",
         render: (_, record) => (
           <Input
-            value={record.hoTen}
-            onChange={(e) => handleInputChange(record.key, "hoTen", e.target.value)}
+            value={record.department}
+            onChange={(e) =>
+              handleInputChange(record.key, "department", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Số lượng người tham gia",
-        dataIndex: "ngaynhap",
+        dataIndex: "participantCount",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.participantCount}
+            onChange={(e) =>
+              handleInputChange(record.key, "participantCount", e.target.value)
+            }
           />
         ),
       },
       {
         title: "Ghi chú",
-        dataIndex: "ghichu",
+        dataIndex: "note",
         render: (_, record) => (
           <Input
-            value={record.chucVu}
-            onChange={(e) => handleInputChange(record.key, "chucVu", e.target.value)}
+            value={record.note}
+            onChange={(e) =>
+              handleInputChange(record.key, "note", e.target.value)
+            }
           />
         ),
       },
     ];
 
-    const dynamicColumns = monthYear
-      ? Array.from({ length: monthYear.daysInMonth() }, (_, i) => {
-          const day = i + 1;
-          return {
-            title: `${day}`,
-            dataIndex: `d${day}`,
-            width: 40,
-            render: (_, record) => (
-              <Input
-                value={record[`d${day}`] || ""}
-                onChange={(e) => handleInputChange(record.key, `d${day}`, e.target.value)}
-              />
-            ),
-          };
-        })
-      : [];
-
-    return [...baseColumns];
+    return baseColumns;
   };
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onSubmit({ ...values, month: monthYear, data: tableData });
-      form.resetFields();
-      setMonthYear(dayjs());
-      setTableData([]);
-    });
+    if (!initialValues) {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              department: item.department || "",
+              participantCount: item.participantCount || "",
+              note: item.note || "",
+            })),
+          };
+
+          console.log(payload);
+
+          let res = await createTestRunPlan(
+            payload.documentNumber,
+            payload.managingDepartment,
+            payload.vehicleName,
+            payload.documentDate,
+            payload.receivingLocation,
+            payload.runLocation,
+            payload.runSchedule,
+            payload.runTime,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    } else {
+      form.validateFields().then(async (values) => {
+        try {
+          const payload = {
+            ...values,
+            documentDate: monthYear.toISOString(), // ISO định dạng
+            note: values.note || "",
+            details: tableData.map((item) => ({
+              department: item.department || "",
+              participantCount: item.participantCount || "",
+              note: item.note || "",
+            })),
+          };
+          let res = await updateTestRunPlans(
+            initialValues.id,
+            payload.documentNumber,
+            payload.managingDepartment,
+            payload.vehicleName,
+            payload.documentDate,
+            payload.receivingLocation,
+            payload.runLocation,
+            payload.runSchedule,
+            payload.runTime,
+            payload.details
+          );
+          if (res && res.status === 200) {
+            onSubmit(); // callback từ cha để reload
+            form.resetFields();
+            setMonthYear(dayjs());
+            setTableData([]);
+            notification.success({
+              message: "Thành công",
+              description: "Lưu phiếu thành công.",
+              placement: "topRight",
+            });
+          }
+        } catch (error) {
+          if (error) {
+            notification.error({
+              message: "Thất bại",
+              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+              placement: "topRight",
+            });
+          }
+        }
+      });
+    }
   };
 
   return (
@@ -185,7 +279,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="code"
+              name="documentNumber"
               label="Số chứng từ"
               rules={[{ required: true }]}
             >
@@ -194,7 +288,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="vehicleName"
               label="Tên phương tiện"
               // rules={[{ required: true }]}
             >
@@ -203,7 +297,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="managingDepartment"
               label="Đơn vị quản lý"
               // rules={[{ required: true }]}
             >
@@ -215,7 +309,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <DatePicker
                 picker="month"
                 style={{ width: "100%" }}
-                format="MM/YYYY"
+                format="DD/MM/YYYY"
                 value={monthYear}
                 onChange={handleMonthChange}
               />
@@ -223,7 +317,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="receivingLocation"
               label="Nơi nhận"
               // rules={[{ required: true }]}
             >
@@ -232,7 +326,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="runLocation"
               label="Nơi chạy"
               // rules={[{ required: true, message: "Vui lòng chọn nơi chạy" }]}
             >
@@ -244,7 +338,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="runSchedule"
               label="Lộ trình chạy"
               // rules={[{ required: true }]}
             >
@@ -253,7 +347,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="unit"
+              name="runTime"
               label="Thời gian chạy"
               // rules={[
               //   { required: true, message: "Vui lòng chọn thời gian chạy" },
