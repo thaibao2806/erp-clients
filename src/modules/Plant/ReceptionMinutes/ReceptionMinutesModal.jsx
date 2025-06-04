@@ -11,6 +11,7 @@ import {
   Space,
   Tooltip,
   notification,
+  Select,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -20,7 +21,14 @@ import {
   createReceivingReport,
   updateReceivingReport,
 } from "../../../services/apiPlan/apiReceptionMinute";
+import { getDocumentNumber } from "../../../services/apiAutoNumbering";
 dayjs.extend(customParseFormat);
+
+const approvalStatusOptions = [
+  { value: "pending", label: "Chờ duyệt" },
+  { value: "approved", label: "Đã duyệt" },
+  { value: "rejected", label: "Từ chối" },
+];
 
 const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
@@ -28,10 +36,16 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [receivingDate, setReceivingDate] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
   const user = useSelector((state) => state.auth.login?.currentUser);
+  const [approvalNumber, setApprovalNumber] = useState();
+  const [approvers, setApprovers] = useState([]);
+  const [dataUser, setDataUser] = useState([]);
 
   useEffect(() => {
     if (open) {
       const values = { ...initialValues };
+      if (!initialValues) {
+        getVoucherNo();
+      }
 
       if (values.runTime) {
         values.runTime = dayjs(values.runTime);
@@ -39,9 +53,53 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
       form.setFieldsValue(values || {});
       setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
       setReceivingDate(dayjs(initialValues?.receivingDate || dayjs()));
-      console.log(initialValues);
+      getApprovalByModulePage();
+      getUser();
     }
   }, [open, initialValues, form]);
+
+  useEffect(() => {
+    if (open && !initialValues && approvalNumber > 0) {
+      setApprovers(Array(approvalNumber).fill({ user: null }));
+    }
+  }, [approvalNumber, open, initialValues]);
+
+  const getUser = async () => {
+    try {
+      let res = await getAllUser();
+      if (res && res.status === 200) {
+        const options = res.data.data.map((user) => ({
+          value: user.userName, // hoặc user.id nếu cần
+          label: user.fullName || user.userName,
+        }));
+        setDataUser(options);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getApprovalByModulePage = async () => {
+    try {
+      let res = await getApprovalSetting("PL", "pl-bien-ban-tiep-nhan");
+      if (res && res.status === 200) {
+        setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getVoucherNo = async () => {
+    try {
+      let res = await getDocumentNumber("BBTN");
+      if (res && res.status === 200) {
+        form.setFieldsValue({ documentNumber: res.data.data.code });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleMonthChange = (date) => {
     setMonthYear(date);
@@ -246,6 +304,55 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
+          {approvalNumber > 0 && (
+            <>
+              {approvers.map((item, idx) => (
+                <React.Fragment key={idx}>
+                  <Col span={12}>
+                    <Form.Item
+                      label={`Người duyệt cấp ${idx + 1}`}
+                      name={["approvers", idx, "username"]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng chọn người duyệt",
+                        },
+                      ]}
+                    >
+                      <Select
+                        options={dataUser}
+                        placeholder="Chọn người duyệt"
+                        showSearch
+                        optionFilterProp="label"
+                      />
+                    </Form.Item>
+                  </Col>
+                  {initialValues && (
+                    <Col span={12}>
+                      <Form.Item label="Trạng thái duyệt">
+                        <Form.Item
+                          label="Trạng thái duyệt"
+                          name={["approvers", idx, "status"]}
+                          rules={[
+                            {
+                              required: true,
+                              message: "Vui lòng chọn trạng thái duyệt",
+                            },
+                          ]}
+                        >
+                          <Select
+                            options={approvalStatusOptions}
+                            placeholder="Chọn trạng thái"
+                            disabled={!!initialValues}
+                          />
+                        </Form.Item>
+                      </Form.Item>
+                    </Col>
+                  )}
+                </React.Fragment>
+              ))}
+            </>
+          )}
         </Row>
       </Form>
     </Modal>

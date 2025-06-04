@@ -26,7 +26,11 @@ const SystemSection = ({ systemInfo, refId, refType }) => {
     try {
       let res = await getAllUser();
       if (res && res.status === 200) {
-        setDataUser(res.data.data);
+        const usersWithKey = res.data.data.map((user) => ({
+          ...user,
+          key: user.apk || user.id, // chọn 1 trường duy nhất làm key
+        }));
+        setDataUser(usersWithKey);
       }
     } catch (error) {}
   };

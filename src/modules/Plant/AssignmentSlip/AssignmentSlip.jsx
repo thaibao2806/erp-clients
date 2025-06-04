@@ -33,7 +33,7 @@ const AssignmentSlip = () => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 5,
+    pageSize: 10,
     total: 0,
   });
 
@@ -41,7 +41,7 @@ const AssignmentSlip = () => {
     fetchData(pagination.current, pagination.pageSize);
   }, []);
 
-  const fetchData = async (page = 1, pageSize = 5) => {
+  const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
       const {
@@ -61,6 +61,7 @@ const AssignmentSlip = () => {
         managementUnit,
         fromDate,
         toDate,
+        "",
         page,
         pageSize
       );
@@ -124,6 +125,15 @@ const AssignmentSlip = () => {
       dataIndex: "department",
     },
     {
+      title: "Trạng thái duyệt",
+      dataIndex: "approvalStatus",
+      render: (status) => {
+        if (status === "approved") return "Đã duyệt";
+        if (status === "rejected") return "Từ chối";
+        if (status === "pending") return "Chờ duyệt";
+      },
+    },
+    {
       title: "Ghi chú",
       dataIndex: "note",
     },
@@ -166,6 +176,22 @@ const AssignmentSlip = () => {
       Modal.warning({
         title: "Chưa chọn dòng nào",
         content: "Vui lòng chọn ít nhất một dòng để xóa.",
+      });
+      return;
+    }
+
+    const selectedRows = dataSource.filter((item) =>
+      selectedRowKeys.includes(item.key)
+    );
+
+    const approvedRows = selectedRows.filter(
+      (item) => item.approvalStatus === "approved"
+    );
+
+    if (approvedRows.length > 0) {
+      Modal.warning({
+        title: "Không thể xóa phiếu đã duyệt",
+        content: `Có ${approvedRows.length} phiếu đã được duyệt. Vui lòng bỏ chọn chúng trước khi xóa.`,
       });
       return;
     }

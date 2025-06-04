@@ -69,3 +69,14 @@ export const getReceivingByID = "/api/v1/khkd/receiving-report/"
 export const updateReceiving = "/api/v1/khkd/receiving-report/"
 export const deleteReceiving = "/api/v1/khkd/receiving-report/"
 export const filterReceiving = "/api/v1/khkd/receiving-report/filter"
+
+//auto numbering
+export const getNumbering = "/api/DocumentNumber/generate?prefix="
+
+//approvals
+export const addApproval = "/api/Approvals"
+export const updateStatusApproval = "/api/Approvals"
+export const getApprovalByUser = "/api/Approvals/my"
+export const getApprovalByRef = "/api/Approvals/by-ref"
+export const changeUserApproval = "/api/Approvals/change-user"
+export const filterApproval = "/api/Approvals/filter"

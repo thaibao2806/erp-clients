@@ -21,8 +21,8 @@ const deleteTestRunPlans = (id) => {
     return axiosInstance.delete(deleteTestRunPlan + `${id}`)
 }
 
-const filterTestRunPlans = (documentNumber, managingDepartment, vehicleName, receivingLocation, runLocation, runSchedule, fromDate, toDate, page, pageSize) => {
-    return axiosInstance.post(filterTestRunPlan, {documentNumber, managingDepartment, vehicleName, receivingLocation, runLocation, runSchedule, fromDate, toDate, page, pageSize})
+const filterTestRunPlans = (documentNumber, managingDepartment, vehicleName, receivingLocation, runLocation, runSchedule, fromDate, toDate,currentUserName, page, pageSize) => {
+    return axiosInstance.post(filterTestRunPlan, {documentNumber, managingDepartment, vehicleName, receivingLocation, runLocation, runSchedule, fromDate, toDate,currentUserName, page, pageSize})
 }
 
 export {

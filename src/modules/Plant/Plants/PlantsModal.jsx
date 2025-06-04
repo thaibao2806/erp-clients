@@ -11,21 +11,44 @@ import {
   Space,
   Tooltip,
   notification,
+  Select,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { createPlan, updatePlans } from "../../../services/apiPlan/apiPlan";
+import { getDocumentNumber } from "../../../services/apiAutoNumbering";
+import { getAllUser } from "../../../services/apiAuth";
+import { getApprovalSetting } from "../../../services/apiApproveSetting";
+import {
+  createApprovals,
+  getApprovalsByRef,
+  updateStatusApprovals,
+} from "../../../services/apiApprovals";
 dayjs.extend(customParseFormat);
+
+const approvalStatusOptions = [
+  { value: "pending", label: "Chờ duyệt" },
+  { value: "approved", label: "Đã duyệt" },
+  { value: "rejected", label: "Từ chối" },
+];
 
 const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
+  const [approvalNumber, setApprovalNumber] = useState();
+  const [approvers, setApprovers] = useState([]);
+  const [dataUser, setDataUser] = useState([]);
+  const [isEditApproval, setIsEditApproval] = useState(false);
 
   useEffect(() => {
     if (open) {
+      if (!initialValues) {
+        getVoucherNo();
+      }
       form.setFieldsValue(initialValues || {});
+      setIsEditApproval(!!initialValues?.type);
       setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
       if (initialValues?.details?.length) {
         const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
@@ -48,8 +71,72 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       } else {
         setTableData([]);
       }
+      getApprovalByModulePage();
+      if (initialValues) {
+        getApprovals(initialValues.id);
+      }
+      getUser();
     }
   }, [open, initialValues, form]);
+
+  useEffect(() => {
+    if (open && !initialValues && approvalNumber > 0) {
+      setApprovers(Array(approvalNumber).fill({ user: null }));
+    }
+  }, [approvalNumber, open, initialValues]);
+
+  const getApprovals = async (refId) => {
+    try {
+      let res = await getApprovalsByRef(refId, "KH");
+      if (res && res.status === 200) {
+        const list = res.data.data.map((ap) => ({
+          id: ap.id,
+          username: ap.userName, // phải trùng key với name trong Form
+          status: ap.status,
+          note: ap.note,
+        }));
+        setApprovers(list);
+        form.setFieldsValue({ approvers: list });
+      }
+    } catch (error) {}
+  };
+
+  const getUser = async () => {
+    try {
+      let res = await getAllUser();
+      if (res && res.status === 200) {
+        const options = res.data.data.map((user) => ({
+          value: user.userName, // hoặc user.id nếu cần
+          label: user.fullName || user.userName,
+        }));
+        setDataUser(options);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getApprovalByModulePage = async () => {
+    try {
+      let res = await getApprovalSetting("PL", "pl-ke-hoach");
+      if (res && res.status === 200) {
+        setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getVoucherNo = async () => {
+    try {
+      let res = await getDocumentNumber("KH");
+      if (res && res.status === 200) {
+        form.setFieldsValue({ documentNumber: res.data.data.code });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleMonthChange = (date) => {
     setMonthYear(date);
@@ -169,6 +256,55 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
     return baseColumns;
   };
 
+  const handleAddApprovals = async (refId, documentNumber) => {
+    try {
+      const approversData = form.getFieldValue("approvers") || [];
+
+      const formattedApprovers = approversData.map((item, index) => {
+        const user = dataUser.find((u) => u.value === item.username);
+        return {
+          userName: item.username,
+          fullName: user?.label || "", // hoặc tìm từ danh sách user để lấy fullName
+          level: index + 1,
+        };
+      });
+
+      const res = await createApprovals(
+        refId,
+        "KH",
+        formattedApprovers,
+        documentNumber,
+        `/pl/ke-hoach/ke-hoach-chi-tiet/${refId}?type=KH`
+      );
+      if (res && res.status === 200) {
+        console.log("Tạo danh sách duyệt thành công");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo duyệt:", error);
+    }
+  };
+
+  const handleUpdateApprovals = async () => {
+    try {
+      const approversData = form.getFieldValue("approvers") || [];
+      const updatePromises = approversData.map((item) => {
+        if (item.id) {
+          return updateStatusApprovals(item.id, item.status, item.note);
+        }
+        return null;
+      });
+
+      // Lọc null (nếu có), chờ tất cả promise hoàn thành
+      const responses = await Promise.all(updatePromises.filter(Boolean));
+    } catch (error) {
+      console.error("Lỗi cập nhật phê duyệt:", error);
+      notification.error({
+        message: "Cập nhật thất bại",
+        description: "Có lỗi xảy ra khi cập nhật trạng thái duyệt.",
+      });
+    }
+  };
+
   const handleOk = () => {
     if (!initialValues) {
       form.validateFields().then(async (values) => {
@@ -196,6 +332,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
           );
           if (res && res.status === 200) {
             onSubmit(); // callback từ cha để reload
+            await handleAddApprovals(res.data.data, payload.documentNumber);
             form.resetFields();
             setMonthYear(dayjs());
             setTableData([]);
@@ -207,6 +344,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
           }
         } catch (error) {
           if (error) {
+            alert(error);
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
@@ -241,6 +379,9 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.details
           );
           if (res && res.status === 200) {
+            if (isEditApproval) {
+              await handleUpdateApprovals();
+            }
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -336,6 +477,69 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
+          {approvalNumber > 0 && (
+            <>
+              {approvers.map((item, idx) => (
+                <React.Fragment key={idx}>
+                  <Col span={12}>
+                    <Form.Item
+                      label={`Người duyệt cấp ${idx + 1}`}
+                      name={["approvers", idx, "username"]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng chọn người duyệt",
+                        },
+                      ]}
+                    >
+                      <Select
+                        options={dataUser}
+                        placeholder="Chọn người duyệt"
+                        showSearch
+                        optionFilterProp="label"
+                        disabled={!!initialValues}
+                      />
+                    </Form.Item>
+                  </Col>
+                  {initialValues && (
+                    <>
+                      <Col span={12}>
+                        <Form.Item
+                          label={`Trạng thái duyệt ${idx + 1}`}
+                          name={["approvers", idx, "status"]}
+                          rules={[
+                            {
+                              required: true,
+                              message: "Vui lòng chọn trạng thái duyệt",
+                            },
+                          ]}
+                        >
+                          <Select
+                            options={approvalStatusOptions}
+                            placeholder="Chọn trạng thái"
+                            disabled={!isEditApproval}
+                          />
+                        </Form.Item>
+                      </Col>
+                      {isEditApproval && (
+                        <Col span={12}>
+                          <Form.Item
+                            label={`Ghi chú duyệt ${idx + 1}`}
+                            name={["approvers", idx, "note"]}
+                          >
+                            <Input.TextArea
+                              rows={1}
+                              placeholder="Ghi chú duyệt"
+                            />
+                          </Form.Item>
+                        </Col>
+                      )}
+                    </>
+                  )}
+                </React.Fragment>
+              ))}
+            </>
+          )}
         </Row>
 
         <>

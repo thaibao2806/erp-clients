@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -26,15 +26,22 @@ import { useSelector } from "react-redux";
 import { deletePlans, getPlansByID } from "../../../services/apiPlan/apiPlan";
 import dayjs from "dayjs";
 import { addAttachments } from "../../../services/apiAttachment";
+import { getApprovalSetting } from "../../../services/apiApproveSetting";
+import { getApprovalsByRef } from "../../../services/apiApprovals";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
 
 const PlantsDetail = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const type = queryParams.get("type");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [data, setData] = useState();
+  const [approvals, setApproval] = useState();
+  const [approvalNumber, setApprovalNumber] = useState();
   const [refreshFlag, setRefreshFlag] = useState(0);
   const user = useSelector((state) => state.auth.login.currentUser);
   const fileInputRef = useRef(null);
@@ -42,7 +49,29 @@ const PlantsDetail = () => {
 
   useEffect(() => {
     getData();
+    getApprovalByModulePage();
+    getApprovals();
   }, []);
+
+  const getApprovalByModulePage = async () => {
+    try {
+      let res = await getApprovalSetting("PL", "pl-ke-hoach");
+      if (res && res.status === 200) {
+        setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getApprovals = async () => {
+    try {
+      let res = await getApprovalsByRef(id, "KH");
+      if (res && res.status === 200) {
+        setApproval(res.data.data);
+      }
+    } catch (error) {}
+  };
 
   const getData = async () => {
     try {
@@ -55,6 +84,10 @@ const PlantsDetail = () => {
     }
   };
 
+  const isEditDisabled = approvals?.some(
+    (a) => a.level === approvalNumber && a.status === "approved" && !type
+  );
+
   const items = [
     {
       key: "edit",
@@ -63,6 +96,7 @@ const PlantsDetail = () => {
           <EditOutlined /> Sửa
         </span>
       ),
+      disabled: isEditDisabled,
     },
     {
       key: "attach",
@@ -79,12 +113,20 @@ const PlantsDetail = () => {
           <DeleteOutlined /> Xóa
         </span>
       ),
+      disabled: isEditDisabled,
     },
   ];
 
   const handleMenuClick = async ({ key }) => {
     if (key === "edit") {
-      setEditingData(data);
+      if (type) {
+        setEditingData({
+          ...data,
+          type: type, // hoặc đơn giản: type
+        });
+      } else {
+        setEditingData(data);
+      }
       setIsModalOpen(true);
     } else if (key === "attach") {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
@@ -173,6 +215,35 @@ const PlantsDetail = () => {
                   <div>Ghi chú: {data.note || ""}</div>
                 </Space>
               </Col>
+              {approvals?.length > 0 && (
+                <>
+                  {approvals.map((item, index) => (
+                    <Col span={12}>
+                      <Space
+                        direction="vertical"
+                        size="small"
+                        style={{ width: "100%", paddingTop: "10px" }}
+                        key={index}
+                      >
+                        <div>
+                          Người duyệt {index + 1}: {item.fullName}
+                        </div>
+                        <div>
+                          Trạng thái duyệt {index + 1}:{" "}
+                          {item.status === "rejected"
+                            ? "Từ chối"
+                            : item.status === "approved"
+                            ? "Đã duyệt"
+                            : "Chờ duyệt"}
+                        </div>
+                        <div>
+                          Ghi chú người duyệt {index + 1}: {item.note || ""}
+                        </div>
+                      </Space>
+                    </Col>
+                  ))}
+                </>
+              )}
             </Row>
           )}
         </Panel>
@@ -219,7 +290,7 @@ const PlantsDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"AssignmentSlip"}
+              refType={"Plan"}
             />
           )}
         </Panel>
@@ -262,6 +333,7 @@ const PlantsDetail = () => {
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
           getData();
+          getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}

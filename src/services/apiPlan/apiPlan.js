@@ -21,8 +21,8 @@ const deletePlans = (id) => {
     return axiosInstance.delete(deletePlan + `${id}`)
 }
 
-const filterPlans = (department, documentNumber, planContent, receiver, fromDate, toDate, page, pageSize) => {
-    return axiosInstance.post(filterPlan, {department, documentNumber, planContent, receiver, fromDate, toDate, page, pageSize})
+const filterPlans = (department, documentNumber, planContent, receiver, fromDate, toDate,currentUserName, page, pageSize) => {
+    return axiosInstance.post(filterPlan, {department, documentNumber, planContent, receiver, fromDate, toDate,currentUserName, page, pageSize})
 }
 
 export {

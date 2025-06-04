@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -29,15 +29,22 @@ import {
 import dayjs from "dayjs";
 import { addAttachments } from "../../../services/apiAttachment";
 import { useSelector } from "react-redux";
+import { getApprovalsByRef } from "../../../services/apiApprovals";
+import { getApprovalSetting } from "../../../services/apiApproveSetting";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
 
 const AssignmentSlipDetail = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const type = queryParams.get("type");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [data, setData] = useState();
+  const [approvals, setApproval] = useState();
+  const [approvalNumber, setApprovalNumber] = useState();
   const [refreshFlag, setRefreshFlag] = useState(0);
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
@@ -45,7 +52,29 @@ const AssignmentSlipDetail = () => {
 
   useEffect(() => {
     getData();
+    getApprovals();
+    getApprovalByModulePage();
   }, []);
+
+  const getApprovalByModulePage = async () => {
+    try {
+      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
+      if (res && res.status === 200) {
+        setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getApprovals = async () => {
+    try {
+      let res = await getApprovalsByRef(id, "PGV");
+      if (res && res.status === 200) {
+        setApproval(res.data.data);
+      }
+    } catch (error) {}
+  };
 
   const getData = async () => {
     try {
@@ -58,6 +87,10 @@ const AssignmentSlipDetail = () => {
     }
   };
 
+  const isEditDisabled = approvals?.some(
+    (a) => a.level === approvalNumber && a.status === "approved" && !type
+  );
+
   const items = [
     {
       key: "edit",
@@ -66,6 +99,7 @@ const AssignmentSlipDetail = () => {
           <EditOutlined /> Sửa
         </span>
       ),
+      disabled: isEditDisabled,
     },
     {
       key: "attach",
@@ -82,12 +116,20 @@ const AssignmentSlipDetail = () => {
           <DeleteOutlined /> Xóa
         </span>
       ),
+      disabled: isEditDisabled,
     },
   ];
 
   const handleMenuClick = async ({ key }) => {
     if (key === "edit") {
-      setEditingData(data);
+      if (type) {
+        setEditingData({
+          ...data,
+          type: type, // hoặc đơn giản: type
+        });
+      } else {
+        setEditingData(data);
+      }
       setIsModalOpen(true);
     } else if (key === "attach") {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
@@ -172,6 +214,35 @@ const AssignmentSlipDetail = () => {
                   <div>Ghi chú: {data.note || ""}</div>
                 </Space>
               </Col>
+              {approvals?.length > 0 && (
+                <>
+                  {approvals.map((item, index) => (
+                    <Col span={12}>
+                      <Space
+                        direction="vertical"
+                        size="small"
+                        style={{ width: "100%", paddingTop: "10px" }}
+                        key={index}
+                      >
+                        <div>
+                          Người duyệt {index + 1}: {item.fullName}
+                        </div>
+                        <div>
+                          Trạng thái duyệt {index + 1}:{" "}
+                          {item.status === "rejected"
+                            ? "Từ chối"
+                            : item.status === "approved"
+                            ? "Đã duyệt"
+                            : "Chờ duyệt"}
+                        </div>
+                        <div>
+                          Ghi chú người duyệt {index + 1}: {item.note || ""}
+                        </div>
+                      </Space>
+                    </Col>
+                  ))}
+                </>
+              )}
             </Row>
           )}
         </Panel>
@@ -229,6 +300,7 @@ const AssignmentSlipDetail = () => {
         onCancel={() => setIsModalOpen(false)}
         onSubmit={() => {
           getData();
+          getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}

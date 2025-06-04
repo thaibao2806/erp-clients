@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Input,
@@ -10,13 +10,19 @@ import {
   Button,
   Dropdown,
   Checkbox,
-} from 'antd';
+  Modal,
+} from "antd";
 import {
   SearchOutlined,
   CloseCircleOutlined,
   CheckCircleOutlined,
   SettingOutlined,
-} from '@ant-design/icons';
+} from "@ant-design/icons";
+import { useSelector } from "react-redux";
+import {
+  filterApprovals,
+  updateStatusApprovals,
+} from "../../services/apiApprovals";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -25,8 +31,65 @@ const Review = () => {
   const [searchVisible, setSearchVisible] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState([
-    'STT', 'donVi', 'maPhieu', 'loai', 'trangThai', 'dienGiai', 'yKien',
+    "STT",
+    "voucherNo",
+    "refType",
+    "status",
+    "note",
   ]);
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const [dataSource, setDataSource] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [search, setSearch] = useState({
+    voucherNo: "",
+    refType: "",
+    status: "pending",
+  });
+  const [approveModalVisible, setApproveModalVisible] = useState(false);
+  const [approveStatus, setApproveStatus] = useState(null);
+  const [approveNote, setApproveNote] = useState("");
+
+  useEffect(() => {
+    fetchData(pagination.current, pagination.pageSize);
+  }, []);
+
+  const fetchData = async (page = 1, pageSize = 10) => {
+    try {
+      setLoading(true);
+      const { voucherNo, refType, status } = search;
+
+      let res = await filterApprovals(
+        refType,
+        user.data.userName,
+        voucherNo,
+        status,
+        page,
+        pageSize
+      );
+      if (res && res.status === 200) {
+        let { items, totalCount } = res.data.data;
+
+        // Thêm STT và key
+        let dataWithStt = items.map((item, index) => ({
+          ...item,
+          key: item.id,
+          stt: (page - 1) * pageSize + index + 1,
+        }));
+
+        setDataSource(dataWithStt);
+        setPagination({ current: page, pageSize, total: totalCount });
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSearch = () => {
     setSearchVisible(!searchVisible);
@@ -34,51 +97,53 @@ const Review = () => {
 
   const allColumns = [
     {
-      title: 'STT',
-      dataIndex: 'index',
-      key: 'index',
+      title: "STT",
+      dataIndex: "index",
+      key: "index",
       render: (_, __, index) => index + 1,
       width: 70,
-      align: 'center',
+      align: "center",
     },
     {
-      title: 'Đơn vị',
-      dataIndex: 'donVi',
-      key: 'donVi',
+      title: "Mã phiếu",
+      dataIndex: "voucherNo",
+      key: "voucherNo",
+      render: (text, record) => (
+        <a href={record.linkDetail} target="_blank" rel="noopener noreferrer">
+          {text}
+        </a>
+      ),
     },
     {
-      title: 'Mã phiếu',
-      dataIndex: 'maPhieu',
-      key: 'maPhieu',
+      title: "Loại",
+      dataIndex: "refType",
+      key: "refType",
     },
     {
-      title: 'Loại',
-      dataIndex: 'loai',
-      key: 'loai',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => {
+        if (status === "approved") return "Đã duyệt";
+        if (status === "rejected") return "Từ chối";
+        return "Chờ duyệt";
+      },
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'trangThai',
-      key: 'trangThai',
-    },
-    {
-      title: 'Diễn giải',
-      dataIndex: 'dienGiai',
-      key: 'dienGiai',
-    },
-    {
-      title: 'Ý kiến người duyệt',
-      dataIndex: 'yKien',
-      key: 'yKien',
+      title: "Ý kiến người duyệt",
+      dataIndex: "note",
+      key: "note",
     },
   ];
 
   const filteredColumns = allColumns.filter((col) =>
-    col.key === 'index' ? visibleColumns.includes('STT') : visibleColumns.includes(col.dataIndex)
+    col.key === "index"
+      ? visibleColumns.includes("STT")
+      : visibleColumns.includes(col.dataIndex)
   );
 
   const columnOptions = [
-    { label: 'STT', value: 'STT' },
+    { label: "STT", value: "STT" },
     ...allColumns.slice(1).map((col) => ({
       label: col.title,
       value: col.dataIndex,
@@ -90,51 +155,51 @@ const Review = () => {
   };
 
   const handleApproveSelected = () => {
-    console.log('Duyệt các dòng sau:', selectedRows);
-    // Gọi API tại đây nếu cần
+    setApproveModalVisible(true);
   };
 
-  const [search, setSearch] = useState({
-    maPhieu: '',
-    donVi: '',
-    loai: '',
-    trangThai: '',
-  });
+  const handleSubmitApproval = async () => {
+    if (!approveStatus || selectedRows.length === 0) return;
 
-  const data = [
-    {
-      key: '1',
-      donVi: 'Phòng Kế Toán',
-      maPhieu: 'MP001',
-      loai: 'Chi phí',
-      trangThai: 'Chờ duyệt',
-      dienGiai: 'Thanh toán hóa đơn điện',
-      yKien: 'Cần thêm hóa đơn gốc',
-    },
-    {
-      key: '2',
-      donVi: 'Phòng Nhân sự',
-      maPhieu: 'MP002',
-      loai: 'Lương',
-      trangThai: 'Đã duyệt',
-      dienGiai: 'Chi lương tháng 4',
-      yKien: 'OK',
-    },
-  ];
+    setLoading(true);
+
+    const ids = selectedRows
+      .map((row) => row.id)
+      .filter((id) => /^[0-9a-fA-F-]{36}$/.test(id)); // Đảm bảo là GUID
+
+    try {
+      // Duyệt tuần tự (có thể thay bằng Promise.all nếu muốn chạy song song)
+      for (const id of ids) {
+        await updateStatusApprovals(id, approveStatus, approveNote || "");
+      }
+
+      // Sau khi duyệt xong:
+      setApproveModalVisible(false);
+      setSelectedRows([]);
+      fetchData(pagination.current, pagination.pageSize);
+    } catch (err) {
+      console.error("Lỗi khi duyệt từng phiếu:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
       {/* === Header === */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}>
-        <Title level={3} style={{ margin: 0 }}>Xét duyệt</Title>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <Title level={3} style={{ margin: 0 }}>
+          Xét duyệt
+        </Title>
 
         <Space>
-          
           <Button
             icon={searchVisible ? <CloseCircleOutlined /> : <SearchOutlined />}
             onClick={toggleSearch}
@@ -155,74 +220,68 @@ const Review = () => {
       {/* === Form Tìm kiếm === */}
       {searchVisible && (
         <>
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={6}>
-            <Input
-              placeholder="Tìm theo mã phiếu"
-              value={search.maPhieu}
-              onChange={(e) => setSearch({ ...search, maPhieu: e.target.value })}
-            />
-          </Col>
-          <Col span={6}>
-            <Input
-              placeholder="Tìm theo đơn vị"
-              value={search.donVi}
-              onChange={(e) => setSearch({ ...search, donVi: e.target.value })}
-            />
-          </Col>
-          <Col span={6}>
-            <Select
-              placeholder="Loại phiếu"
-              value={search.loai}
-              onChange={(value) => setSearch({ ...search, loai: value })}
-              style={{ width: '100%' }}
-              allowClear
-            >
-              <Option value="Chi phí">Chi phí</Option>
-              <Option value="Lương">Lương</Option>
-            </Select>
-          </Col>
-          <Col span={6}>
-            <Select
-              placeholder="Trạng thái"
-              value={search.trangThai}
-              onChange={(value) => setSearch({ ...search, trangThai: value })}
-              style={{ width: '100%' }}
-              allowClear
-            >
-              <Option value="Chờ duyệt">Chờ duyệt</Option>
-              <Option value="Đã duyệt">Đã duyệt</Option>
-              <Option value="Từ chối">Từ chối</Option>
-            </Select>
-          </Col>
-        </Row>
-        <Row justify="end" style={{ marginBottom: 16 }}>
-      <Space>
-        <Button
-          type="primary"
-          icon={<SearchOutlined />}
-          onClick={() => {
-            console.log('Giá trị tìm kiếm:', search);
-            // TODO: Gọi API tìm kiếm hoặc filter dữ liệu tại đây
-          }}
-        >
-          Lọc
-        </Button>
-        <Button
-          onClick={() => {
-            setSearch({
-              maPhieu: '',
-              donVi: '',
-              loai: '',
-              trangThai: '',
-            });
-          }}
-        >
-          Hủy
-        </Button>
-      </Space>
-    </Row>
-        </> 
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={6}>
+              <label>Mã phiếu</label>
+              <Input
+                placeholder="Tìm theo mã phiếu"
+                value={search.voucherNo}
+                onChange={(e) =>
+                  setSearch({ ...search, voucherNo: e.target.value })
+                }
+              />
+            </Col>
+            <Col span={6}>
+              <label>Loại phiếu</label>
+              <Input
+                placeholder="Loại phiếu"
+                value={search.refType}
+                onChange={(e) =>
+                  setSearch({ ...search, refType: e.target.value })
+                }
+              />
+            </Col>
+            <Col span={6}>
+              <label>Trạng thái </label>
+              <Select
+                placeholder="Trạng thái"
+                value={search.status}
+                onChange={(value) => setSearch({ ...search, status: value })}
+                style={{ width: "100%" }}
+                allowClear
+              >
+                <Option value="pending">Chờ duyệt</Option>
+                <Option value="approved">Đã duyệt</Option>
+                <Option value="rejected">Từ chối</Option>
+              </Select>
+            </Col>
+          </Row>
+          <Row justify="end" style={{ marginBottom: 16 }}>
+            <Space>
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={() => {
+                  fetchData(1, pagination.pageSize);
+                }}
+              >
+                Lọc
+              </Button>
+              <Button
+                onClick={() => {
+                  setSearch({
+                    voucherNo: "",
+                    refType: "",
+                    status: "",
+                  });
+                  fetchData(1, pagination.pageSize);
+                }}
+              >
+                Hủy
+              </Button>
+            </Space>
+          </Row>
+        </>
       )}
 
       {/* === Bảng dữ liệu === */}
@@ -231,10 +290,57 @@ const Review = () => {
           onChange: (_, rows) => setSelectedRows(rows),
         }}
         columns={filteredColumns}
-        dataSource={data}
-        pagination={{ pageSize: 5 }}
-        scroll={{ x: 'max-content' }}
+        dataSource={dataSource}
+        loading={loading}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        onChange={(pagination) => {
+          fetchData(pagination.current, pagination.pageSize);
+        }}
+        bordered
       />
+
+      <Modal
+        title="Xét duyệt hàng loạt"
+        visible={approveModalVisible}
+        onCancel={() => setApproveModalVisible(false)}
+        onOk={handleSubmitApproval}
+        okText="Duyệt"
+        cancelText="Hủy"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label>Trạng thái</label>
+          <Select
+            value={approveStatus}
+            onChange={setApproveStatus}
+            style={{ width: "100%" }}
+            placeholder="Chọn trạng thái"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn trạng thái duyệt",
+              },
+            ]}
+          >
+            <Option value="approved">Đã duyệt</Option>
+            <Option value="rejected">Từ chối</Option>
+          </Select>
+        </div>
+        <div>
+          <label>Ghi chú</label>
+          <Input.TextArea
+            rows={4}
+            placeholder="Nhập ý kiến duyệt"
+            value={approveNote}
+            onChange={(e) => setApproveNote(e.target.value)}
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

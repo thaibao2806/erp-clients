@@ -21,8 +21,8 @@ const deleteAssignmetSlip = (id) => {
     return axiosInstance.delete(deleteAssignment + `${id}`)
 }
 
-const fillterAssignmentSlip = (documentNumber, productName, department, managementUnit, fromDate, toDate, page, pageSize) => {
-    return axiosInstance.post(filterAssignment, {documentNumber, productName, department, managementUnit, fromDate, toDate, page, pageSize})
+const fillterAssignmentSlip = (documentNumber, productName, department, managementUnit, fromDate, toDate,currentUserName, page, pageSize) => {
+    return axiosInstance.post(filterAssignment, {documentNumber, productName, department, managementUnit, fromDate, toDate,currentUserName, page, pageSize})
 }
 
 export {
