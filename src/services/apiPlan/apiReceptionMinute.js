@@ -13,8 +13,8 @@ const updateReceivingReport = (id, documentNumber, vehicleName, receivingDate, d
     return axiosInstance.put(updateReceiving + `${id}`, {id, documentNumber, vehicleName, receivingDate, documentDate, companyRepresentative, companyRepresentativePosition, shipRepresentative1, shipRepresentative1Position, shipRepresentative2, shipRepresentative2Position, createdBy, createdAt, updatedBy, updatedAt})
 }
 
-const filterReceivingReport = (documentNumber, vehicleName, receivingDate, fromDate, toDate, page, pageSize) => {
-    return axiosInstance.post(filterReceiving, {documentNumber, vehicleName, receivingDate, fromDate, toDate, page, pageSize})
+const filterReceivingReport = (documentNumber, vehicleName, receivingDate, fromDate, toDate, currentUserName, page, pageSize) => {
+    return axiosInstance.post(filterReceiving, {documentNumber, vehicleName, receivingDate, fromDate, toDate,currentUserName, page, pageSize})
 }
 
 const deleteReceivingReport = (id) => {
