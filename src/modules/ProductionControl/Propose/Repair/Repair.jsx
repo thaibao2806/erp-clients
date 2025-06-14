@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -20,41 +20,30 @@ import {
 } from "@ant-design/icons";
 import RepairModal from "./RepairModal";
 import { Link } from "react-router-dom";
+import {
+  deleteRepair,
+  filterRepair,
+} from "../../../../services/apiProductControl/apiRepair";
 
 const { RangePicker } = DatePicker;
 
 const Repair = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [dataSource, setDataSource] = useState([
-    {
-      key: "1",
-      stt: 1,
-      donVi: "Phòng A",
-      sochungtu: "CC001",
-      tenthietbi: "Chấm công T1",
-      ngaychungtu: "01/04/2025",
-      bophan: "Tổ đóng mới",
-      ghiChu: "Không có",
-      loaidexuat:"Sửa chữa"
-    },
-    {
-      key: "2",
-      stt: 2,
-      donVi: "Phòng B",
-      sochungtu: "CC002",
-      tenthietbi: "Chấm công T2",
-      ngaychungtu: "01/05/2025",
-      bophan: "Tổ hệ trục",
-      ghiChu: "Nghỉ lễ 1 ngày",
-      loaidexuat: "Thanh lý"
-    },
-  ]);
+  const [dataSource, setDataSource] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    maChamCong: "",
-    tenChamCong: "",
+    voucherNo: "",
+    assetName: "",
+    assetType: "",
+    department: "",
   });
 
   const columns = [
@@ -64,37 +53,87 @@ const Repair = () => {
       width: 60,
     },
     {
-      title: "Đơn vị",
-      dataIndex: "donVi",
-    },
-    {
       title: "Số chứng từ",
-      dataIndex: "sochungtu",
+      dataIndex: "voucherNo",
       render: (text, record) => (
         <Link to={`/pm/de-xuat/sua-chua-chi-tiet/${record.key}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
       title: "Ngày chứng từ",
-      dataIndex: "ngaychungtu",
+      dataIndex: "voucherDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Loại đề xuất",
-      dataIndex: "loaidexuat",
+      dataIndex: "assetType",
     },
     {
       title: "Tên thiết bị",
-      dataIndex: "tenthietbi",
+      dataIndex: "assetName",
     },
     {
-        title: "Bộ phận",
-        dataIndex: "bophan",
-      },
+      title: "Bộ phận",
+      dataIndex: "department",
+    },
     {
       title: "Ghi chú",
-      dataIndex: "ghiChu",
+      dataIndex: "note",
+    },
+    {
+      title: "Trạng thái duyệt",
+      dataIndex: "approvalStatus",
+      render: (status) => {
+        if (status === "approved") return "Đã duyệt";
+        if (status === "rejected") return "Từ chối";
+        if (status === "pending") return "Chờ duyệt";
+      },
     },
   ];
+
+  useEffect(() => {
+    fetchData(pagination.current, pagination.pageSize);
+  }, []);
+
+  const fetchData = async (page = 1, pageSize = 10) => {
+    try {
+      setLoading(true);
+      const { voucherNo, assetName, assetType, department, dateRange } =
+        filters;
+      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
+      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
+
+      let res = await filterRepair(
+        voucherNo,
+        assetName,
+        assetType,
+        department,
+        fromDate,
+        toDate,
+        "",
+        page,
+        pageSize
+      );
+      if (res && res.status === 200) {
+        let { items, totalCount } = res.data.data;
+
+        // Thêm STT và key
+        let dataWithStt = items.map((item, index) => ({
+          ...item,
+          key: item.id,
+          stt: (page - 1) * pageSize + index + 1,
+        }));
+
+        setDataSource(dataWithStt);
+        setPagination({ current: page, pageSize, total: totalCount });
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
@@ -114,8 +153,7 @@ const Repair = () => {
       console.log("Cập nhật:", values);
       // Gọi API update ở đây
     } else {
-      console.log("Thêm mới:", values);
-      // Gọi API thêm mới ở đây
+      fetchData(pagination.current, pagination.pageSize);
     }
     setModalOpen(false);
   };
@@ -138,15 +176,52 @@ const Repair = () => {
       return;
     }
 
+    const selectedRows = dataSource.filter((item) =>
+      selectedRowKeys.includes(item.key)
+    );
+
+    const approvedRows = selectedRows.filter(
+      (item) => item.approvalStatus === "approved"
+    );
+
+    if (approvedRows.length > 0) {
+      Modal.warning({
+        title: "Không thể xóa phiếu đã duyệt",
+        content: `Có ${approvedRows.length} phiếu đã được duyệt. Vui lòng bỏ chọn chúng trước khi xóa.`,
+      });
+      return;
+    }
+
     Modal.confirm({
       title: "Xác nhận xóa",
       content: `Bạn có chắc chắn muốn xóa ${selectedRowKeys.length} dòng này không?`,
-      onOk: () => {
-        const newData = dataSource.filter(
-          (item) => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newData);
-        setSelectedRowKeys([]);
+      onOk: async () => {
+        try {
+          setLoading(true); // bật loading cho Table
+
+          // Gọi API xóa từng ID
+          await Promise.all(selectedRowKeys.map((id) => deleteRepair(id)));
+
+          // Sau khi xóa thành công, cập nhật lại danh sách
+          const remainingData = dataSource.filter(
+            (item) => !selectedRowKeys.includes(item.key)
+          );
+
+          setDataSource(remainingData);
+          setSelectedRowKeys([]);
+          Modal.success({
+            title: "Xóa thành công",
+            content: `${selectedRowKeys.length} dòng đã được xóa.`,
+          });
+        } catch (error) {
+          console.error("Lỗi khi xóa:", error);
+          Modal.error({
+            title: "Lỗi",
+            content: "Đã xảy ra lỗi khi xóa. Vui lòng thử lại.",
+          });
+        } finally {
+          setLoading(false);
+        }
       },
     });
   };
@@ -156,15 +231,18 @@ const Repair = () => {
   };
 
   const handleSearch = () => {
-    console.log("Filter:", filters);
+    fetchData(1, pagination.pageSize);
   };
 
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      maChamCong: "",
-      tenChamCong: "",
+      voucherNo: "",
+      assetName: "",
+      assetType: "",
+      department: "",
     });
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   return (
@@ -180,7 +258,10 @@ const Repair = () => {
         <h1 style={{ margin: 0 }}>Đề xuất sửa chữa, thanh lý</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button
+              icon={<SearchOutlined />}
+              onClick={() => setShowFilters(!showFilters)}
+            />
           </Tooltip>
           <Tooltip title="Thêm">
             <Button onClick={handleAdd} icon={<PlusOutlined />} />
@@ -227,32 +308,38 @@ const Repair = () => {
               <label>Số chứng từ</label>
               <Input
                 placeholder="Số chứng từ"
-                value={filters.maChamCong}
-                onChange={(e) => handleFilterChange("maChamCong", e.target.value)}
+                value={filters.voucherNo}
+                onChange={(e) =>
+                  handleFilterChange("voucherNo", e.target.value)
+                }
               />
             </Col>
             <Col span={8}>
               <label>Nội dung đề xuất</label>
               <Input
                 placeholder="Nội dung đề xuất"
-                value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
+                value={filters.assetName}
+                onChange={(e) =>
+                  handleFilterChange("assetName", e.target.value)
+                }
               />
             </Col>
             <Col span={8}>
               <label>Bộ phận</label>
               <Input
                 placeholder="Bộ phận"
-                value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
+                value={filters.department}
+                onChange={(e) =>
+                  handleFilterChange("department", e.target.value)
+                }
               />
             </Col>
             <Col span={8}>
               <label>Loại đề xuất</label>
               <Select
                 placeholder="Chọn loại đề xuất"
-                value={filters.tenChamCong}
-                onChange={(value) => handleFilterChange("tenChamCong", value)}
+                value={filters.assetType}
+                onChange={(value) => handleFilterChange("assetType", value)}
                 style={{ width: "100%" }}
               >
                 <Option value="SC">Sửa chữa</Option>
@@ -261,7 +348,11 @@ const Repair = () => {
             </Col>
           </Row>
           <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Button type="primary" onClick={handleSearch} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              onClick={handleSearch}
+              style={{ marginRight: 8 }}
+            >
               Lọc
             </Button>
             <Button onClick={handleReset}>Hủy</Button>
@@ -274,7 +365,16 @@ const Repair = () => {
         rowSelection={rowSelection}
         columns={columns}
         dataSource={dataSource}
-        pagination={{ pageSize: 5 }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        onChange={(pagination) => {
+          fetchData(pagination.current, pagination.pageSize);
+        }}
         bordered
       />
 

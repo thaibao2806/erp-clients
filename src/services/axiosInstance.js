@@ -2,6 +2,7 @@ import axios from "axios";
 import { url } from "../config/config";
 import { store } from "../redux/store";
 import { isTokenValid } from "../utils/isTokenValid";
+import { logOut } from "../redux/authSlice";
 
 
 const axiosInstance  = axios.create({

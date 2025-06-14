@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 
 const { TextArea } = Input;
 
-const NoteSection = ({ refId, refType }) => {
+const NoteSection = ({ refId, refType, voucherNo }) => {
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
   const user = useSelector((state) => state.auth.login.currentUser);
@@ -43,7 +43,8 @@ const NoteSection = ({ refId, refType }) => {
         user.data?.userName || "unknown",
         now,
         user.data?.userName || "unknown",
-        now
+        now,
+        voucherNo
       );
       if (res && res.status === 200) {
         setNotes([

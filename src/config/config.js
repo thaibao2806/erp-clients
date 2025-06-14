@@ -80,3 +80,27 @@ export const getApprovalByUser = "/api/Approvals/my"
 export const getApprovalByRef = "/api/Approvals/by-ref"
 export const changeUserApproval = "/api/Approvals/change-user"
 export const filterApproval = "/api/Approvals/filter"
+
+//warehousePC
+export const getWareHouse = "/api/v1/WareHouse"
+export const addWareHouse = "/api/v1/WareHouse"
+export const getWareHouseByID = "/api/v1/WareHouse/"
+export const updateWareHouse = "/api/v1/WareHouse/"
+export const deleteWareHouse = "/api/v1/WareHouse/"
+export const filterWareHouse = "/api/v1/WareHouse/filter"
+
+//EquipmentInventory
+export const getEquipmentInventory = "/api/v1/EquipmentInventory"
+export const addEquipmentInventory = "/api/v1/EquipmentInventory"
+export const getEquipmentInventoryById = "/api/v1/EquipmentInventory/"
+export const updateEquipmentInventoryId = "/api/v1/EquipmentInventory/"
+export const deleteEquipmentInventory = "/api/v1/EquipmentInventory/"
+export const filterEquipmentInventory = "/api/v1/EquipmentInventory/filter"
+
+//repair
+export const getAssetRepair = "/api/v1/AssetRepair"
+export const addAssetRepair = "/api/v1/AssetRepair"
+export const getAssetRepairByID = "/api/v1/AssetRepair/"
+export const updateAssetRepair = "/api/v1/AssetRepair/"
+export const deleteAssetRepair = "/api/v1/AssetRepair/"
+export const filterAssetRepair = "/api/v1/AssetRepair/filter"

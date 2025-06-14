@@ -3,7 +3,7 @@ import { Row, Col, Button, Modal, Table, Tag, notification } from "antd";
 import { getAllUser } from "../services/apiAuth";
 import { addFollower, getFollower } from "../services/apiFollower";
 
-const SystemSection = ({ systemInfo, refId, refType }) => {
+const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [followers, setFollowers] = useState([]);
@@ -53,6 +53,7 @@ const SystemSection = ({ systemInfo, refId, refType }) => {
       let res = await addFollower(
         refId,
         refType,
+        voucherNo,
         newFollowers.map((u) => ({
           userId: u.apk,
           userName: u.userName,

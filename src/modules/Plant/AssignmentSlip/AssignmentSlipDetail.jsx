@@ -272,7 +272,11 @@ const AssignmentSlipDetail = () => {
         </Panel>
 
         <Panel header="Ghi chú" key="4">
-          <NoteSection refId={data ? data.id : ""} refType={"AssignmentSlip"} />
+          <NoteSection
+            refId={data ? data.id : ""}
+            refType={"AssignmentSlip"}
+            voucherNo={data ? data.documentNumber : ""}
+          />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
@@ -290,6 +294,7 @@ const AssignmentSlipDetail = () => {
               }}
               refId={data.id}
               refType={"AssignmentSlip"}
+              voucherNo={data.documentNumber}
             />
           )}
         </Panel>

@@ -65,32 +65,32 @@ export const moduleData = {
         icon: PMIcon,
         pages: [
           // { key: 'pm-dashboard', label: 'A. Dashboard', path: '/pm/dashboard' },
-          { key: 'pm-chamcong', label: 'A. Chấm công', path: '/pm/cham-cong' },
-          { key: 'pm-bien-ban', label: 'B. Biên bản', children: [
-            { key: 'pm-bien-ban-ban-giao', label: '1. Bàn giao, thu hồi TB-VT', path: '/pm/bien-ban/bien-ban-ban-giao-thu-hoi' },
-            // { key: 'pm-bien-ban-thu-hoi-vat-tu', label: '2. Thu hồi vật tư', path: '/pm/bien-ban/bien-ban-thu-hoi-vat-tu' },
-            { key: 'pm-bien-ban-khao-sat-thiet-bi', label: '2. Xác nhận tình trạng', path: '/pm/bien-ban/bien-ban-khao-sat-thiet-bi' },
-            { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '3. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
-            // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
-          ] },
-          { key: 'pm-bao-cao', label: 'C. Báo cáo', children: [
+          // { key: 'pm-chamcong', label: 'A. Chấm công', path: '/pm/cham-cong' },
+          // { key: 'pm-bien-ban', label: 'B. Biên bản', children: [
+          //   { key: 'pm-bien-ban-ban-giao', label: '1. Bàn giao, thu hồi TB-VT', path: '/pm/bien-ban/bien-ban-ban-giao-thu-hoi' },
+          //   // { key: 'pm-bien-ban-thu-hoi-vat-tu', label: '2. Thu hồi vật tư', path: '/pm/bien-ban/bien-ban-thu-hoi-vat-tu' },
+          //   { key: 'pm-bien-ban-khao-sat-thiet-bi', label: '2. Xác nhận tình trạng', path: '/pm/bien-ban/bien-ban-khao-sat-thiet-bi' },
+          //   { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '3. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
+          //   // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
+          // ] },
+          { key: 'pm-bao-cao', label: 'A. Báo cáo', children: [
             { key: 'pm-bao-cao-kiem-ke', label: '1. Kiểm kê thiết bị', path: '/pm/bao-cao/kiem-ke-thiet-bi' },
             // { key: 'pm-bao-cao-nhan-cong', label: '1. Nhân công các tổ', path: '/pm/bao-cao/bao-cao-nhan-cong' },
             // { key: 'pm-bao-cao-thanh-tich', label: '2. Thành tích', path: '/pm/bao-cao/bao-cao-thanh-tich' },
             // { key: 'pm-bao-cao-chap-hanh-noi-quy', label: '3. Chấp hành nội quy', path: '/pm/bao-cao/bao-cao-chap-hanh-noi-quy' },
           ] },
-          { key: 'pm-de-xuat', label: 'D. Đề xuất', children: [
+          { key: 'pm-de-xuat', label: 'B. Đề xuất', children: [
             { key: 'pm-de-xuat-sua-chua', label: '1. Sửa chữa, thanh lý', path: '/pm/de-xuat/de-xuat-sua-chua-thanh-ly' },
             // { key: 'pm-de-xuat-thanh-ly', label: '2. Thanh lý', path: '/pm/de-xuat/de-xuat-thanh-ly' },
             { key: 'pm-de-xuat-mua-vat-tu-ccdc', label: '2. Mua, cấp, sửa VT CCDC', path: '/pm/de-xuat/de-xuat-mua-cap-sua' },
           //   { key: 'pm-de-xuat-vat-tu-sua-chua', label: '4. Vật tư sửa chữa', path: '/pm/de-xuat/de-xuat-vat-tu-sua-chua' },
           //   { key: 'pm-de-xuat-cap-may-moc-thiet-bi', label: '5. Cấp máy móc, thiết bị', path: '/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi' },
           ] },
-          { key: 'pm-so-kho', label: 'E. Sổ kho', path: '/pm/so-kho' },
-          { key: 'pm-du-an', label: 'F. Dự án', path: '/pm/du-an' },
-          { key: 'pm-tien-do', label: 'G. Tiến độ dự án', path: '/pm/tien-do' },
+          { key: 'pm-so-kho', label: 'C. Sổ kho', path: '/pm/so-kho' },
+          { key: 'pm-du-an', label: 'D. Dự án', path: '/pm/du-an' },
+          { key: 'pm-tien-do', label: 'E. Tiến độ dự án', path: '/pm/tien-do' },
           // { key: 'pm-so-giao-nhan', label: 'H. Sổ giao nhận', path: '/pm/so-giao-nhan' },
-          { key: 'pm-task', label: 'H. Công việc', path: '/pm/cong-viec' },
+          { key: 'pm-task', label: 'F. Công việc', path: '/pm/cong-viec' },
         ],
       },
     // Thêm các module khác nếu cần

@@ -273,7 +273,11 @@ const PlantsDetail = () => {
         </Panel>
 
         <Panel header="Ghi chú" key="4">
-          <NoteSection refId={data ? data.id : ""} refType={"Plan"} />
+          <NoteSection
+            refId={data ? data.id : ""}
+            refType={"Plan"}
+            voucherNo={data ? data.documentNumber : ""}
+          />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
@@ -291,6 +295,7 @@ const PlantsDetail = () => {
               }}
               refId={data.id}
               refType={"Plan"}
+              voucherNo={data.documentNumber}
             />
           )}
         </Panel>

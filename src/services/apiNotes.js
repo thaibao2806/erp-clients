@@ -5,8 +5,10 @@ const getNotes = (refId, refType) => {
     return axiosInstance.get(getNote + `?refId=${refId}&refType=${refType}`)
 }
 
-const addNotes = (id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt) => {
-    return axiosInstance.post(addNote, {id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt})
+const addNotes = (id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt, voucherNo) => {
+    return axiosInstance.post(addNote, {id, refId, refType, content, createdBy, createdAt, updatedBy, updatedAt}, {
+        params:{voucherNo} 
+    })
 }
 
 const deleteNotes = (id) => {

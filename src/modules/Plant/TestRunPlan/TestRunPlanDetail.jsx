@@ -278,7 +278,11 @@ const TestRunPlanDetail = () => {
         </Panel>
 
         <Panel header="Ghi chú" key="4">
-          <NoteSection refId={data ? data.id : ""} refType={"TestRunPlan"} />
+          <NoteSection
+            refId={data ? data.id : ""}
+            refType={"TestRunPlan"}
+            voucherNo={data ? data.documentNumber : ""}
+          />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
@@ -296,6 +300,7 @@ const TestRunPlanDetail = () => {
               }}
               refId={data.id}
               refType={"TestRunPlan"}
+              voucherNo={data.documentNumber}
             />
           )}
         </Panel>

@@ -341,7 +341,6 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.details
           );
           if (res && res.status === 200) {
-            console.log(res);
             await handleAddApprovals(res.data.data, payload.documentNumber);
             onSubmit(); // callback từ cha để reload
             form.resetFields();
@@ -381,12 +380,10 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
           let res = await updateAssignmentSlip(
             initialValues.id,
-            payload.documentNumber,
-            payload.productName,
-            payload.documentDate,
-            payload.department,
-            payload.managementUnit,
-            payload.note,
+            payload.division,
+            payload.voucherNo,
+            payload.voucherDate,
+            payload.typeOfSupplies,
             payload.details
           );
           if (res && res.status === 200) {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   EditOutlined,
@@ -18,40 +18,24 @@ import {
   Tabs,
   Divider,
   Menu,
+  notification,
+  Badge,
 } from "antd";
 import ApprovalSettingModal from "./ApprovalSettingModal";
 import { useDispatch, useSelector } from "react-redux";
 import { logOutUser } from "../redux/apiRequest";
+import {
+  fetchUnreadNotifications,
+  getAllNotification,
+  markNotificationAsRead,
+} from "../services/notificationApi";
+import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
+import { jwtDecode } from "jwt-decode";
+import { url } from "../config/config";
+import dayjs from "dayjs";
 
 const { Text } = Typography;
 const { TabPane } = Tabs;
-
-const notifications = [
-  {
-    id: 1,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-    title: "Cập nhật hệ thống",
-    time: "13/06/2022 04:42",
-  },
-  {
-    id: 2,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-    title: "Cập nhật tính năng mới",
-    time: "14/06/2022 09:30",
-  },
-];
-
-const reminders = [
-  {
-    id: 1,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png",
-    title: "Nhắc bạn duyệt phiếu kho",
-    time: "15/06/2022 10:00",
-  },
-];
 
 // Hàm lấy chữ viết tắt tên (ví dụ: "Nguyễn Văn A" -> "NA")
 const getInitials = (name) => {
@@ -71,7 +55,6 @@ const getRandomColor = (seed) => {
     "#1890ff",
     "#87d068",
   ];
-  // Dựa trên seed để không random mỗi lần
   let index = seed
     ? seed.charCodeAt(0) % colors.length
     : Math.floor(Math.random() * colors.length);
@@ -81,40 +64,202 @@ const getRandomColor = (seed) => {
 const HeaderIcons = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [activeTab, setActiveTab] = useState("1"); // 1: Thông báo, 2: Nhắc nhở
+  const [activeTab, setActiveTab] = useState("1");
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
   const initials = getInitials(user.data.fullName);
   const color = getRandomColor(initials);
-  const handleItemClick = (type, id) => {
-    if (type === "notification") {
-      navigate(`/notifications/${id}`);
-    } else if (type === "reminder") {
-      navigate(`/reminders/${id}`);
+  const connectionRef = useRef(null);
+  const [userId, setUserId] = useState(null);
+  const [api, contextHolder] = notification.useNotification();
+
+  // Lấy userId từ token
+  useEffect(() => {
+    if (user && user.data.token) {
+      try {
+        const decode = jwtDecode(user.data.token);
+        setUserId(decode.nameid);
+        console.log("UserId extracted:", decode.nameid);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+  }, [user]);
+
+  // Kết nối SignalR và load notifications
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    let isComponentMounted = true;
+
+    const loadNotifications = async () => {
+      try {
+        const res = await getAllNotification();
+        if (isComponentMounted && res && res.data) {
+          setNotifications(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    };
+
+    const connectSignalR = async () => {
+      // Đóng connection cũ nếu có
+      if (connectionRef.current) {
+        try {
+          await connectionRef.current.stop();
+          console.log("Previous connection stopped");
+        } catch (error) {
+          console.log("Error stopping previous connection:", error);
+        }
+        connectionRef.current = null;
+      }
+
+      const connection = new HubConnectionBuilder()
+        .withUrl(`${url}/hubs/notification`, {
+          transport: HttpTransportType.LongPolling,
+          accessTokenFactory: () => {
+            return user?.data?.token || "";
+          },
+        })
+        .withAutomaticReconnect([0, 2000, 10000, 30000])
+        .build();
+
+      // Xử lý khi nhận thông báo
+      connection.on("ReceiveNotification", (notificationData) => {
+        if (!isComponentMounted) {
+          return;
+        }
+
+        // Thêm vào danh sách notifications
+        setNotifications((prev) => {
+          const newNotifications = [notificationData, ...prev];
+          return newNotifications;
+        });
+
+        // Hiển thị notification popup
+        api.info({
+          message: notificationData.title || "Thông báo mới",
+          description:
+            notificationData.message ||
+            notificationData.content ||
+            "Bạn có thông báo mới",
+          placement: "topRight",
+          duration: 5,
+          icon: <BellOutlined style={{ color: "#1890ff" }} />,
+        });
+      });
+
+      // Xử lý các sự kiện connection
+      connection.onclose((error) => {
+        console.log("SignalR connection closed:", error);
+      });
+
+      connection.onreconnecting((error) => {
+        console.log("SignalR reconnecting:", error);
+      });
+
+      connection.onreconnected((connectionId) => {
+        console.log("SignalR reconnected with ID:", connectionId);
+      });
+
+      try {
+        await connection.start();
+        connectionRef.current = connection;
+      } catch (err) {
+        console.error("❌ SignalR connection error:", err);
+
+        if (isComponentMounted) {
+          api.error({
+            message: "Lỗi kết nối",
+            description: "Không thể kết nối đến server thông báo",
+            placement: "topRight",
+            duration: 4,
+          });
+        }
+      }
+    };
+
+    // Load notifications và kết nối SignalR
+    loadNotifications();
+    connectSignalR();
+
+    // Cleanup function
+    return () => {
+      console.log("Cleaning up SignalR connection");
+      isComponentMounted = false;
+
+      if (connectionRef.current) {
+        connectionRef.current.stop().catch((error) => {
+          console.log("Error stopping connection on cleanup:", error);
+        });
+        connectionRef.current = null;
+      }
+    };
+  }, [userId, api]); // Chỉ phụ thuộc vào userId và api
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      if (notifications.length === 0) return;
+
+      await Promise.all(notifications.map((n) => markNotificationAsRead(n.id)));
+      setNotifications([]);
+
+      api.success({
+        message: "Thành công",
+        description: "Đã đánh dấu tất cả thông báo là đã đọc",
+        placement: "topRight",
+        duration: 2,
+      });
+    } catch (err) {
+      console.error("Error marking as read:", err);
+      api.error({
+        message: "Lỗi",
+        description: "Không thể đánh dấu thông báo đã đọc",
+        placement: "topRight",
+        duration: 3,
+      });
     }
   };
 
-  const renderItems = (items, type) =>
+  const handleNotificationClick = async (notification) => {
+    try {
+      console.log(notification);
+      await markNotificationAsRead(notification.id);
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      navigate(notification.link);
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
+
+  const renderItems = (items) =>
     items.map((item) => (
       <div
-        key={`${type}-${item.id}`}
+        key={item.id}
         style={{
           padding: "10px 16px",
           cursor: "pointer",
-          transition: "background 0.3s",
+          backgroundColor: item.isRead ? "transparent" : "#e6f7ff",
         }}
-        onClick={() => handleItemClick(type, item.id)}
+        onClick={() => handleNotificationClick(item)}
         onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.background = item.isRead
+            ? "transparent"
+            : "#e6f7ff")
+        }
       >
         <div style={{ display: "flex", alignItems: "center" }}>
-          <Avatar src={item.image} size={32} style={{ marginRight: 10 }} />
           <div>
-            <Text strong>{item.title}</Text>
+            <Text strong>{item.content}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {item.time}
+              {dayjs(item.createdAt).format("DD/MM/YYYY")}
             </Text>
           </div>
         </div>
@@ -123,6 +268,11 @@ const HeaderIcons = () => {
     ));
 
   const handleLogOut = () => {
+    // Đóng SignalR connection trước khi logout
+    if (connectionRef.current) {
+      connectionRef.current.stop().catch(console.log);
+      connectionRef.current = null;
+    }
     logOutUser(dispatch, navigate);
   };
 
@@ -150,7 +300,7 @@ const HeaderIcons = () => {
         </TabPane>
         <TabPane tab="Nhắc nhở" key="2">
           <div style={{ maxHeight: 250, overflowY: "auto" }}>
-            {renderItems(reminders, "reminder")}
+            {renderItems(notifications, "reminder")}
           </div>
         </TabPane>
       </Tabs>
@@ -167,7 +317,7 @@ const HeaderIcons = () => {
         <Button type="link" onClick={() => navigate("/notifications")}>
           Xem tất cả
         </Button>
-        <Button type="link" onClick={() => console.log("Đánh dấu đã đọc")}>
+        <Button type="link" onClick={handleMarkAllAsRead}>
           Đánh dấu đã đọc
         </Button>
       </div>
@@ -210,86 +360,94 @@ const HeaderIcons = () => {
   );
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "35px" }}>
-      <Tooltip title="Xét duyệt">
-        <EditOutlined
-          style={{ fontSize: "20px", cursor: "pointer" }}
-          onClick={() => navigate("/review")}
-        />
-      </Tooltip>
-
-      <Tooltip title="Lịch">
-        <CalendarOutlined
-          style={{ fontSize: "20px", cursor: "pointer" }}
-          onClick={() => navigate("/calendar")}
-        />
-      </Tooltip>
-
-      <Dropdown
-        overlay={notificationMenu}
-        trigger={["click"]}
-        placement="bottomRight"
-        onOpenChange={setShowNotifications}
-      >
-        <Tooltip>
-          <BellOutlined
-            style={{
-              fontSize: "20px",
-              cursor: "pointer",
-              color: showNotifications ? "#1890ff" : "inherit",
-            }}
+    <>
+      {contextHolder}
+      <div style={{ display: "flex", alignItems: "center", gap: "35px" }}>
+        <Tooltip title="Xét duyệt">
+          <EditOutlined
+            style={{ fontSize: "20px", cursor: "pointer" }}
+            onClick={() => navigate("/review")}
           />
         </Tooltip>
-      </Dropdown>
 
-      <Dropdown
-        overlay={accountMenu}
-        trigger={["click"]}
-        placement="bottomRight"
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            cursor: "pointer",
-            gap: "8px",
-          }}
+        <Tooltip title="Lịch">
+          <CalendarOutlined
+            style={{ fontSize: "20px", cursor: "pointer" }}
+            onClick={() => navigate("/calendar")}
+          />
+        </Tooltip>
+
+        <Dropdown
+          overlay={notificationMenu}
+          trigger={["click"]}
+          placement="bottomRight"
+          onOpenChange={setShowNotifications}
+        >
+          <Tooltip title="Thông báo">
+            <Badge
+              count={notifications.filter((n) => !n.isRead).length}
+              size="small"
+            >
+              <BellOutlined
+                style={{
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  color: showNotifications ? "#1890ff" : "inherit",
+                }}
+              />
+            </Badge>
+          </Tooltip>
+        </Dropdown>
+
+        <Dropdown
+          overlay={accountMenu}
+          trigger={["click"]}
+          placement="bottomRight"
         >
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              lineHeight: "1",
-              whiteSpace: "nowrap",
-              textAlign: "right",
+              alignItems: "center",
+              cursor: "pointer",
+              gap: "8px",
             }}
           >
-            <span style={{ fontWeight: 600, fontSize: "16px" }}>
-              {user.data.fullName}
-            </span>
-            <span
+            <div
               style={{
-                fontSize: "12px",
-                color: "#999",
-                fontWeight: 500,
-                paddingTop: "4px",
+                display: "flex",
+                flexDirection: "column",
+                lineHeight: "1",
+                whiteSpace: "nowrap",
+                textAlign: "right",
               }}
             >
-              {user.data.department}
-            </span>
+              <span style={{ fontWeight: 600, fontSize: "16px" }}>
+                {user.data.fullName}
+              </span>
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "#999",
+                  fontWeight: 500,
+                  paddingTop: "4px",
+                }}
+              >
+                {user.data.department}
+              </span>
+            </div>
+
+            <Avatar style={{ backgroundColor: color }}>
+              {initials.toUpperCase()}
+            </Avatar>
           </div>
+        </Dropdown>
 
-          <Avatar style={{ backgroundColor: color }}>
-            {initials.toUpperCase()}
-          </Avatar>
-        </div>
-      </Dropdown>
-
-      <ApprovalSettingModal
-        open={approvalModalOpen}
-        onClose={() => setApprovalModalOpen(false)}
-      />
-    </div>
+        <ApprovalSettingModal
+          open={approvalModalOpen}
+          onClose={() => setApprovalModalOpen(false)}
+        />
+      </div>
+    </>
   );
 };
 

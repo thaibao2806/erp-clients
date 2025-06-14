@@ -261,6 +261,7 @@ const ReceptionMinutesDetail = () => {
           <NoteSection
             refId={data ? data.id : ""}
             refType={"ReceivingReport"}
+            voucherNo={data ? data.documentNumber : ""}
           />
         </Panel>
 
@@ -279,6 +280,7 @@ const ReceptionMinutesDetail = () => {
               }}
               refId={data.id}
               refType={"ReceivingReport"}
+              voucherNo={data.documentNumber}
             />
           )}
         </Panel>
