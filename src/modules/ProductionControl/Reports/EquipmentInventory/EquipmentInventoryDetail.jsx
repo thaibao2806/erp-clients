@@ -168,20 +168,6 @@ const EquipmentInventoryDetail = () => {
     { title: "Ghi chú", dataIndex: "notes" },
   ];
 
-  const timekeepingData = [
-    {
-      key: "1",
-      stt: 1,
-      vattuthietbi: "Máy hàn",
-      ngaynhap: "12/04/2025",
-      slnhap: "5",
-      ngayxuat: "12/04/2025",
-      slxuat: "5",
-      slton: "0",
-      ghichu: "đã giao",
-    },
-  ];
-
   return (
     <div style={{ padding: 10 }}>
       <Row justify="space-between" align="middle">

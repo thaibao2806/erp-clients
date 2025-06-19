@@ -1,4 +1,4 @@
-import { addTestRunPlan, deleteTestRunPlan, filterTestRunPlan, getTestRunPlan, getTestRunPlanByID, updateTestRunPlan } from "../../config/config"
+import { addTestRunPlan, deleteTestRunPlan, exportExcelTestRunPlan, filterTestRunPlan, getTestRunPlan, getTestRunPlanByID, updateTestRunPlan } from "../../config/config"
 import axiosInstance from "../axiosInstance"
 
 const getAllTestRunPlan = () => {
@@ -25,11 +25,18 @@ const filterTestRunPlans = (documentNumber, managingDepartment, vehicleName, rec
     return axiosInstance.post(filterTestRunPlan, {documentNumber, managingDepartment, vehicleName, receivingLocation, runLocation, runSchedule, fromDate, toDate,currentUserName, page, pageSize})
 }
 
+const exportExcel = (id) => {
+    return axiosInstance.get(exportExcelTestRunPlan + `${id}`, {
+        responseType: "blob"
+    })
+}
+
 export {
     getAllTestRunPlan,
     createTestRunPlan,
     getTestRunPlans,
     updateTestRunPlans,
     deleteTestRunPlans,
-    filterTestRunPlans
+    filterTestRunPlans,
+    exportExcel
 }

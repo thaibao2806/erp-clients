@@ -137,7 +137,7 @@ const RepairDetail = () => {
             title: "Xóa thành công",
             content: `Đã xóa thành công phiếu`,
           });
-          navigator("/pm/de-xuat/de-xuat-sua-chua-thanh-ly");
+          navigator("/pm/de-xuat/de-xuat-mua-cap-sua");
         }
       } catch (error) {
         Modal.error({

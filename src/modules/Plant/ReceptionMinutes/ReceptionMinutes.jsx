@@ -21,9 +21,11 @@ import ReceptionMinutesModal from "./ReceptionMinutesModal";
 import { Link } from "react-router-dom";
 import {
   deleteReceivingReport,
+  exportExcel,
   filterReceivingReport,
 } from "../../../services/apiPlan/apiReceptionMinute";
 import dayjs from "dayjs";
+import { saveAs } from "file-saver";
 
 const { RangePicker } = DatePicker;
 
@@ -223,6 +225,41 @@ const ReceptionMinutes = () => {
     });
   };
 
+  const handleExportExcel = async () => {
+    if (selectedRowKeys.length === 0) {
+      Modal.warning({
+        title: "Chưa chọn dòng nào",
+        content: "Vui lòng chọn ít nhất một dòng để xóa.",
+      });
+      return;
+    }
+    try {
+      for (const id of selectedRowKeys) {
+        const matchedItem = dataSource.find((item) => item.id === id);
+        const fileName = matchedItem?.documentNumber
+          ? `BienBanTiepNhan_${matchedItem.documentNumber}.xlsx`
+          : `BienBanTiepNhan_${id}.xlsx`;
+        try {
+          let res = await exportExcel(id);
+          const blob = new Blob([res.data], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          saveAs(blob, fileName);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {
+      Modal.error({
+        title: "Lỗi xuất file",
+        content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
   };
@@ -270,11 +307,12 @@ const ReceptionMinutes = () => {
               disabled={selectedRowKeys.length === 0}
             />
           </Tooltip>
-          <Tooltip title="In">
-            <Button icon={<PrinterOutlined />} />
-          </Tooltip>
+
           <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
+            <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} />
+          </Tooltip>
+          <Tooltip title="In">
+            <Button icon={<PrinterOutlined />} disabled />
           </Tooltip>
         </Space>
       </div>

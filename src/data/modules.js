@@ -87,10 +87,10 @@ export const moduleData = {
           //   { key: 'pm-de-xuat-cap-may-moc-thiet-bi', label: '5. Cấp máy móc, thiết bị', path: '/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi' },
           ] },
           { key: 'pm-so-kho', label: 'C. Sổ kho', path: '/pm/so-kho' },
-          { key: 'pm-du-an', label: 'D. Dự án', path: '/pm/du-an' },
-          { key: 'pm-tien-do', label: 'E. Tiến độ dự án', path: '/pm/tien-do' },
+          // { key: 'pm-du-an', label: 'D. Dự án', path: '/pm/du-an' },
+          { key: 'pm-tien-do', label: 'D. Tiến độ sửa chữa', path: '/pm/tien-do' },
           // { key: 'pm-so-giao-nhan', label: 'H. Sổ giao nhận', path: '/pm/so-giao-nhan' },
-          { key: 'pm-task', label: 'F. Công việc', path: '/pm/cong-viec' },
+          { key: 'pm-task', label: 'E. Công việc', path: '/pm/cong-viec' },
         ],
       },
     // Thêm các module khác nếu cần

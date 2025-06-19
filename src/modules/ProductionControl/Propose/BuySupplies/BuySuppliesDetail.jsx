@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -21,6 +21,15 @@ import NoteSection from "../../../../components/NoteSection ";
 import AttachmentSection from "../../../../components/AttachmentSection ";
 import SystemSection from "../../../../components/SystemSection";
 import BuySuppliesModal from "./BuySuppliesModal";
+import { useSelector } from "react-redux";
+import { getApprovalSetting } from "../../../../services/apiApproveSetting";
+import { getApprovalsByRef } from "../../../../services/apiApprovals";
+import {
+  deleteBuySupplies,
+  getBuySuppliesByID,
+} from "../../../../services/apiProductControl/apiBuySupplies";
+import dayjs from "dayjs";
+import { addAttachments } from "../../../../services/apiAttachment";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -28,8 +37,58 @@ const { Panel } = Collapse;
 const BuySuppliesDetail = () => {
   const { id } = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingData, setEditingData] = useState(null);
+  const [editingData, setEditingData] = useState(null);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const type = queryParams.get("type");
+  const [data, setData] = useState();
+  const [approvals, setApproval] = useState();
+  const [approvalNumber, setApprovalNumber] = useState();
+  const [refreshFlag, setRefreshFlag] = useState(0);
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const navigator = useNavigate();
+  const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    getData();
+    getApprovals();
+    getApprovalByModulePage();
+  }, []);
+
+  const getApprovalByModulePage = async () => {
+    try {
+      let res = await getApprovalSetting("PM", "pm-de-xuat-mua-vat-tu-ccdc");
+      if (res && res.status === 200) {
+        setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getApprovals = async () => {
+    try {
+      let res = await getApprovalsByRef(id, "MCSVT");
+      if (res && res.status === 200) {
+        setApproval(res.data.data);
+      }
+    } catch (error) {}
+  };
+
+  const getData = async () => {
+    try {
+      let res = await getBuySuppliesByID(id);
+      if (res && res.status === 200) {
+        setData(res.data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const isEditDisabled = approvals?.some(
+    (a) => a.level === approvalNumber && a.status === "approved" && !type
+  );
 
   const items = [
     {
@@ -39,6 +98,7 @@ const BuySuppliesDetail = () => {
           <EditOutlined /> Sửa
         </span>
       ),
+      disabled: isEditDisabled,
     },
     {
       key: "attach",
@@ -55,50 +115,53 @@ const BuySuppliesDetail = () => {
           <DeleteOutlined /> Xóa
         </span>
       ),
+      disabled: isEditDisabled,
     },
   ];
 
-  const handleMenuClick = ({ key }) => {
+  const handleMenuClick = async ({ key }) => {
     if (key === "edit") {
-      // Giả sử dữ liệu đang xem là 1 đơn chấm công duy nhất
-      setEditingData({
-        unit: "Công ty ABC",
-        code: "CC2025-03",
-        name: "Tháng 3 - Phòng Nhân sự",
-        // Bạn có thể convert string -> dayjs nếu cần: dayjs("2025-03", "YYYY-MM")
-      });
+      if (type) {
+        setEditingData({
+          ...data,
+          type: type, // hoặc đơn giản: type
+        });
+      } else {
+        setEditingData(data);
+      }
       setIsModalOpen(true);
-    } else {
-      message.info(`Bạn đã chọn: ${key}`);
+    } else if (key === "attach") {
+      fileInputRef.current?.click(); // Mở hộp thoại chọn file
+    } else if (key === "delete") {
+      try {
+        let res = await deleteBuySupplies(data.id);
+        if ((res && res.status === 200) || res.status === 204) {
+          Modal.success({
+            title: "Xóa thành công",
+            content: `Đã xóa thành công phiếu`,
+          });
+          navigator("/pm/de-xuat/de-xuat-sua-chua-thanh-ly");
+        }
+      } catch (error) {
+        Modal.error({
+          title: "Xóa thất bại",
+          content: `Đã có lỗi xãy ra. Vui lòng thử lại sau`,
+        });
+      }
     }
   };
-  
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "vattuthietbi" },
-    { title: "Kí hiệu", dataIndex: "ngaynhap" },
-    { title: "Bộ phận", dataIndex: "bophan" },
-    { title: "ĐVT", dataIndex: "slnhap" },
-    { title: "Số lượng", dataIndex: "ngayxuat" },
-    { title: "Đơn giá", dataIndex: "dongia" },
-    { title: "Thành tiền", dataIndex: "thanhtien" },
-    { title: "Tình trạng", dataIndex: "slxuat" },
-    { title: "Ghi chú", dataIndex: "ghichu" },
-  ];
-
-  const timekeepingData = [
-    {
-      key: "1",
-      stt: 1,
-      vattuthietbi: "Máy hàn",
-      ngaynhap: "12/04/2025",
-      slnhap: "5",
-      ngayxuat: "12/04/2025",
-      slxuat: "5",
-      slton: "0",
-      ghichu: "đã giao",
-    },
+    { title: "Nội dung", dataIndex: "content" },
+    { title: "Kí hiệu", dataIndex: "code" },
+    { title: "Bộ phận", dataIndex: "department" },
+    { title: "ĐVT", dataIndex: "unit" },
+    { title: "Số lượng", dataIndex: "quantity" },
+    { title: "Đơn giá", dataIndex: "unitPrice" },
+    { title: "Thành tiền", dataIndex: "totalPrice" },
+    { title: "Tình trạng", dataIndex: "condition" },
+    { title: "Ghi chú", dataIndex: "notes" },
   ];
 
   return (
@@ -127,62 +190,117 @@ const BuySuppliesDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin sổ kho" key="1">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Space
-                direction="vertical"
-                size="small"
-                style={{ width: "100%" }}
-              >
-                <div>Đơn vị: Công ty ABC</div>
-                <div>Số chứng từ: CC2025-03</div>
-                <div>Ngày chứng từ: 03/2025</div>
-              </Space>
-            </Col>
-            <Col span={12}>
-              <Space
-                direction="vertical"
-                size="small"
-                style={{ width: "100%" }}
-              >
-                <div>Loại đề xuất: Cấp thiết bị</div>
-                <div>Nội dung mua: Tháng 3 - Phòng Nhân sự</div>
-              </Space>
-            </Col>
-          </Row>
+          {data && (
+            <Row gutter={16}>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Đơn vị: {data.divionID || ""}</div>
+                  <div>Số chứng từ: {data.voucherNo || ""}</div>
+                  <div>
+                    Ngày chứng từ:{" "}
+                    {data.voucherDate
+                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                      : "---"}
+                  </div>
+                </Space>
+              </Col>
+              <Col span={12}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: "100%" }}
+                >
+                  <div>Loại đề xuất: {data.proposalType || ""}</div>
+                  <div>Nội dung đề xuất: {data.proposalName || ""}</div>
+                </Space>
+              </Col>
+              {approvals?.length > 0 && (
+                <>
+                  {approvals.map((item, index) => (
+                    <Col span={12}>
+                      <Space
+                        direction="vertical"
+                        size="small"
+                        style={{ width: "100%", paddingTop: "10px" }}
+                        key={index}
+                      >
+                        <div>
+                          Người duyệt {index + 1}: {item.fullName}
+                        </div>
+                        <div>
+                          Trạng thái duyệt {index + 1}:{" "}
+                          {item.status === "rejected"
+                            ? "Từ chối"
+                            : item.status === "approved"
+                            ? "Đã duyệt"
+                            : "Chờ duyệt"}
+                        </div>
+                        <div>
+                          Ghi chú người duyệt {index + 1}: {item.note || ""}
+                        </div>
+                      </Space>
+                    </Col>
+                  ))}
+                </>
+              )}
+            </Row>
+          )}
         </Panel>
 
         <Panel header="Bảng vật tư, thiết bị" key="2">
-          <Table
-            columns={columns}
-            dataSource={timekeepingData}
-            scroll={{ x: "max-content" }}
-            size="small"
-            bordered
-            pagination={false}
-          />
+          {data && (
+            <Table
+              columns={columns}
+              dataSource={data.details?.map((item, index) => ({
+                ...item,
+                stt: index + 1,
+              }))}
+              scroll={{ x: "max-content" }}
+              size="small"
+              bordered
+              pagination={false}
+            />
+          )}
         </Panel>
 
         <Panel header="Đính kèm" key="3">
-          <AttachmentSection attachments={[]} />
+          <AttachmentSection
+            refId={data ? data.id : ""}
+            refType={"BuySupplies"}
+            refreshTrigger={refreshFlag}
+          />
         </Panel>
 
         <Panel header="Ghi chú" key="4">
-          <NoteSection />
+          <NoteSection
+            refId={data ? data.id : ""}
+            refType={"BuySupplies"}
+            voucherNo={data ? data.voucherNo : ""}
+          />
         </Panel>
 
         <Panel header="Hệ thống" key="5">
-          <SystemSection
-            systemInfo={{
-              createdBy: "ASOFTADMIN",
-              createdAt: "18/11/2024 18:31:58",
-              updatedBy: "ASOFTADMIN",
-              updatedAt: "18/11/2024 18:31:58",
-            }}
-            onAddFollower={() => {
-              console.log("Thêm người theo dõi");
-            }}
-          />
+          {data && (
+            <SystemSection
+              systemInfo={{
+                createdBy: `${data.createdBy}`,
+                createdAt: data.createdAt
+                  ? dayjs(data.createdAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+                updatedBy: `${data.updatedBy}`,
+                updatedAt: data.updatedAt
+                  ? dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm:ss")
+                  : "",
+              }}
+              refId={data.id}
+              refType={"BuySupplies"}
+              voucherNo={data.voucherNo}
+            />
+          )}
         </Panel>
       </Collapse>
 
@@ -190,10 +308,43 @@ const BuySuppliesDetail = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-          console.log("Đã cập nhật:", data);
+          getData();
+          getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}
+      />
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        multiple
+        onChange={async (e) => {
+          const files = e.target.files;
+          if (!files.length || !data?.id) return;
+
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("refId", data?.id); // id của AssignmentSlip
+            formData.append("refType", "BuySupplies");
+
+            try {
+              const res = await addAttachments(formData, user.data.token);
+
+              message.success(`Đã upload file: ${file.name}`);
+              // Có thể reload danh sách file nếu muốn
+            } catch (err) {
+              console.error(err);
+              message.error(`Upload thất bại: ${file.name}`);
+            }
+          }
+
+          // Reset lại input để có thể chọn cùng file lần nữa nếu muốn
+          e.target.value = "";
+          setRefreshFlag((prev) => prev + 1);
+        }}
       />
     </div>
   );

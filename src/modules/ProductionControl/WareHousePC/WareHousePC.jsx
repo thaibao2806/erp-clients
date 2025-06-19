@@ -264,12 +264,12 @@ const WareHousePC = () => {
               disabled={selectedRowKeys.length === 0}
             />
           </Tooltip>
-          <Tooltip title="In">
+          {/* <Tooltip title="In">
             <Button icon={<PrinterOutlined />} />
           </Tooltip>
           <Tooltip title="Xuất excel">
             <Button icon={<FileExcelOutlined />} />
-          </Tooltip>
+          </Tooltip> */}
         </Space>
       </div>
 

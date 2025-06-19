@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -20,41 +20,29 @@ import {
 } from "@ant-design/icons";
 import BuySuppliesModal from "./BuySuppliesModal";
 import { Link } from "react-router-dom";
+import {
+  deleteBuySupplies,
+  filterBuySupplies,
+} from "../../../../services/apiProductControl/apiBuySupplies";
 
 const { RangePicker } = DatePicker;
 
 const BuySupplies = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [dataSource, setDataSource] = useState([
-    {
-      key: "1",
-      stt: 1,
-      donVi: "Phòng A",
-      sochungtu: "CC001",
-      tenthietbi: "Chấm công T1",
-      ngaychungtu: "01/04/2025",
-      bophan: "Tổ đóng mới",
-      ghiChu: "Không có",
-      loaidexuat:"Sửa chữa thiết bị"
-    },
-    {
-      key: "2",
-      stt: 2,
-      donVi: "Phòng B",
-      sochungtu: "CC002",
-      tenthietbi: "Chấm công T2",
-      ngaychungtu: "01/05/2025",
-      bophan: "Tổ hệ trục",
-      ghiChu: "Nghỉ lễ 1 ngày",
-      loaidexuat:"Cấp thiết bị"
-    },
-  ]);
+  const [dataSource, setDataSource] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    maChamCong: "",
-    tenChamCong: "",
+    voucherNo: "",
+    proposalName: "",
+    proposalType: "",
   });
 
   const columns = [
@@ -65,32 +53,97 @@ const BuySupplies = () => {
     },
     {
       title: "Đơn vị",
-      dataIndex: "donVi",
+      dataIndex: "divionID",
     },
     {
       title: "Số chứng từ",
-      dataIndex: "sochungtu",
+      dataIndex: "voucherNo",
       render: (text, record) => (
-        <Link to={`/pm/de-xuat/mua-vat-tu-ccdc-chi-tiet/${record.key}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+        <Link to={`/pm/de-xuat/mua-vat-tu-ccdc-chi-tiet/${record.key}`}>
+          {text}
+        </Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
       title: "Ngày chứng từ",
-      dataIndex: "ngaychungtu",
+      dataIndex: "voucherDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Nội dung đề xuất",
-      dataIndex: "tenthietbi",
+      dataIndex: "proposalName",
     },
     {
       title: "Loại đề xuất",
-      dataIndex: "loaidexuat",
+      dataIndex: "proposalType",
     },
     {
       title: "Ghi chú",
-      dataIndex: "ghiChu",
+      dataIndex: "note",
+    },
+    {
+      title: "Trạng thái duyệt",
+      dataIndex: "approvalStatus",
+      render: (status) => {
+        if (status === "approved") return "Đã duyệt";
+        if (status === "rejected") return "Từ chối";
+        if (status === "pending") return "Chờ duyệt";
+      },
     },
   ];
+
+  useEffect(() => {
+    fetchData(pagination.current, pagination.pageSize);
+  }, []);
+
+  const fetchData = async (page = 1, pageSize = 10) => {
+    try {
+      setLoading(true);
+      const { voucherNo, proposalName, proposalType, dateRange } = filters;
+      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
+      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
+      console.log(
+        voucherNo,
+        proposalName,
+        proposalType,
+        "",
+        fromDate,
+        toDate,
+        "",
+        page,
+        pageSize
+      );
+      let res = await filterBuySupplies(
+        voucherNo,
+        proposalName,
+        proposalType,
+        "",
+        fromDate,
+        toDate,
+        "",
+        page,
+        pageSize
+      );
+      if (res && res.status === 200) {
+        let { items, totalCount } = res.data.data;
+
+        // Thêm STT và key
+        let dataWithStt = items.map((item, index) => ({
+          ...item,
+          key: item.id,
+          stt: (page - 1) * pageSize + index + 1,
+        }));
+
+        setDataSource(dataWithStt);
+        setPagination({ current: page, pageSize, total: totalCount });
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
@@ -110,8 +163,7 @@ const BuySupplies = () => {
       console.log("Cập nhật:", values);
       // Gọi API update ở đây
     } else {
-      console.log("Thêm mới:", values);
-      // Gọi API thêm mới ở đây
+      fetchData(pagination.current, pagination.pageSize);
     }
     setModalOpen(false);
   };
@@ -134,15 +186,52 @@ const BuySupplies = () => {
       return;
     }
 
+    const selectedRows = dataSource.filter((item) =>
+      selectedRowKeys.includes(item.key)
+    );
+
+    const approvedRows = selectedRows.filter(
+      (item) => item.approvalStatus === "approved"
+    );
+
+    if (approvedRows.length > 0) {
+      Modal.warning({
+        title: "Không thể xóa phiếu đã duyệt",
+        content: `Có ${approvedRows.length} phiếu đã được duyệt. Vui lòng bỏ chọn chúng trước khi xóa.`,
+      });
+      return;
+    }
+
     Modal.confirm({
       title: "Xác nhận xóa",
       content: `Bạn có chắc chắn muốn xóa ${selectedRowKeys.length} dòng này không?`,
-      onOk: () => {
-        const newData = dataSource.filter(
-          (item) => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newData);
-        setSelectedRowKeys([]);
+      onOk: async () => {
+        try {
+          setLoading(true); // bật loading cho Table
+
+          // Gọi API xóa từng ID
+          await Promise.all(selectedRowKeys.map((id) => deleteBuySupplies(id)));
+
+          // Sau khi xóa thành công, cập nhật lại danh sách
+          const remainingData = dataSource.filter(
+            (item) => !selectedRowKeys.includes(item.key)
+          );
+
+          setDataSource(remainingData);
+          setSelectedRowKeys([]);
+          Modal.success({
+            title: "Xóa thành công",
+            content: `${selectedRowKeys.length} dòng đã được xóa.`,
+          });
+        } catch (error) {
+          console.error("Lỗi khi xóa:", error);
+          Modal.error({
+            title: "Lỗi",
+            content: "Đã xảy ra lỗi khi xóa. Vui lòng thử lại.",
+          });
+        } finally {
+          setLoading(false);
+        }
       },
     });
   };
@@ -152,15 +241,17 @@ const BuySupplies = () => {
   };
 
   const handleSearch = () => {
-    console.log("Filter:", filters);
+    fetchData(1, pagination.pageSize);
   };
 
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      maChamCong: "",
-      tenChamCong: "",
+      voucherNo: "",
+      proposalName: "",
+      proposalType: "",
     });
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   return (
@@ -226,9 +317,9 @@ const BuySupplies = () => {
               <label>Số chứng từ</label>
               <Input
                 placeholder="Số chứng từ"
-                value={filters.maChamCong}
+                value={filters.voucherNo}
                 onChange={(e) =>
-                  handleFilterChange("maChamCong", e.target.value)
+                  handleFilterChange("voucherNo", e.target.value)
                 }
               />
             </Col>
@@ -236,9 +327,9 @@ const BuySupplies = () => {
               <label>Nội dung đề xuất</label>
               <Input
                 placeholder="Nội dung đề xuất"
-                value={filters.tenChamCong}
+                value={filters.proposalName}
                 onChange={(e) =>
-                  handleFilterChange("tenChamCong", e.target.value)
+                  handleFilterChange("proposalName", e.target.value)
                 }
               />
             </Col>
@@ -246,8 +337,8 @@ const BuySupplies = () => {
               <label>Loại đề xuất</label>
               <Select
                 placeholder="Chọn loại đề xuất"
-                value={filters.tenChamCong}
-                onChange={(value) => handleFilterChange("tenChamCong", value)}
+                value={filters.proposalType}
+                onChange={(value) => handleFilterChange("proposalType", value)}
                 style={{ width: "100%" }}
               >
                 <Option value="MV">Mua vật tư, ccdc</Option>
@@ -274,7 +365,16 @@ const BuySupplies = () => {
         rowSelection={rowSelection}
         columns={columns}
         dataSource={dataSource}
-        pagination={{ pageSize: 5 }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        onChange={(pagination) => {
+          fetchData(pagination.current, pagination.pageSize);
+        }}
         bordered
       />
 

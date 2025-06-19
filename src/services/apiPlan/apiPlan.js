@@ -1,4 +1,4 @@
-import { addPlan, deletePlan, filterPlan, getPlan, getPlanByID, updatePlan } from "../../config/config"
+import { addPlan, deletePlan, exportExcelPlan, filterPlan, getPlan, getPlanByID, updatePlan } from "../../config/config"
 import axiosInstance from "../axiosInstance"
 
 const getAllPlan = () => {
@@ -25,11 +25,18 @@ const filterPlans = (department, documentNumber, planContent, receiver, fromDate
     return axiosInstance.post(filterPlan, {department, documentNumber, planContent, receiver, fromDate, toDate,currentUserName, page, pageSize})
 }
 
+const exportExcel = (id) => {
+    return axiosInstance.get(exportExcelPlan + `${id}`, {
+        responseType: "blob"
+    })
+}
+
 export {
     getAllPlan,
     createPlan,
     getPlansByID,
     updatePlans,
     deletePlans,
-    filterPlans
+    filterPlans,
+    exportExcel
 }

@@ -19,7 +19,12 @@ import {
 } from "@ant-design/icons";
 import PlantsModal from "./PlantsModal";
 import { Link } from "react-router-dom";
-import { deletePlans, filterPlans } from "../../../services/apiPlan/apiPlan";
+import {
+  deletePlans,
+  exportExcel,
+  filterPlans,
+} from "../../../services/apiPlan/apiPlan";
+import { saveAs } from "file-saver";
 
 const { RangePicker } = DatePicker;
 
@@ -225,6 +230,41 @@ const Plants = () => {
     });
   };
 
+  const handleExportExcel = async () => {
+    if (selectedRowKeys.length === 0) {
+      Modal.warning({
+        title: "Chưa chọn dòng nào",
+        content: "Vui lòng chọn ít nhất một dòng để xóa.",
+      });
+      return;
+    }
+    try {
+      for (const id of selectedRowKeys) {
+        const matchedItem = dataSource.find((item) => item.id === id);
+        const fileName = matchedItem?.documentNumber
+          ? `KeHoach_${matchedItem.documentNumber}.xlsx`
+          : `KeHoach_${id}.xlsx`;
+        try {
+          let res = await exportExcel(id);
+          const blob = new Blob([res.data], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          saveAs(blob, fileName);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {
+      Modal.error({
+        title: "Lỗi xuất file",
+        content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
   };
@@ -274,11 +314,11 @@ const Plants = () => {
               disabled={selectedRowKeys.length === 0}
             />
           </Tooltip>
-          <Tooltip title="In">
-            <Button icon={<PrinterOutlined />} />
-          </Tooltip>
           <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
+            <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} />
+          </Tooltip>
+          <Tooltip title="In">
+            <Button icon={<PrinterOutlined />} disabled />
           </Tooltip>
         </Space>
       </div>

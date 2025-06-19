@@ -1,4 +1,4 @@
-import { addReceiving, deleteReceiving, filterReceiving, getReceivingByID, updateReceiving } from "../../config/config"
+import { addReceiving, deleteReceiving, exportExcelReceiving, filterReceiving, getReceivingByID, updateReceiving } from "../../config/config"
 import axiosInstance from "../axiosInstance"
 
 const createReceivingReport = (id, documentNumber, vehicleName, receivingDate, documentDate, companyRepresentative, companyRepresentativePosition, shipRepresentative1, shipRepresentative1Position, shipRepresentative2, shipRepresentative2Position, createdBy, createdAt, updatedBy, updatedAt) => {
@@ -21,10 +21,17 @@ const deleteReceivingReport = (id) => {
     return axiosInstance.delete(deleteReceiving + `${id}`)
 }
 
+const exportExcel = (id) => {
+    return axiosInstance.get(exportExcelReceiving + `${id}`, {
+        responseType: "blob"
+    })
+}
+
 export {
     createReceivingReport,
     getReceivingReportByID,
     updateReceivingReport,
     filterReceivingReport,
-    deleteReceivingReport
+    deleteReceivingReport,
+    exportExcel
 }
