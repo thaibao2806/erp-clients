@@ -230,7 +230,7 @@ const HeaderIcons = () => {
     try {
       console.log(notification);
       await markNotificationAsRead(notification.id);
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      //setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
       navigate(notification.link);
     } catch (err) {
       console.error("Error marking notification as read:", err);

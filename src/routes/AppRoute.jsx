@@ -51,6 +51,11 @@ import TestRunPlanDetail from "../modules/Plant/TestRunPlan/TestRunPlanDetail";
 import ReceptionMinutes from "../modules/Plant/ReceptionMinutes/ReceptionMinutes";
 import ReceptionMinutesDetail from "../modules/Plant/ReceptionMinutes/ReceptionMinutesDetail";
 import PrivateRoute from "./PrivateRoute";
+import KTVTCN from "../modules/Files/KT-VT-CN/KTVTCN";
+import TC from "../modules/Files/TC/TC";
+import DDSX from "../modules/Files/DDSX/DDSX";
+import CTHC from "../modules/Files/CT-HC/CTHC";
+import KHKD from "../modules/Files/KH-KD/KHKD";
 
 function AppRoute() {
   return (
@@ -201,6 +206,11 @@ function AppRoute() {
             element={<ReceptionMinutesDetail />}
           />
           <Route path="/pl/task" element={<KanbanBoard />} />
+          <Route path="/hs/kt-vt-cn" element={<KTVTCN />} />
+          <Route path="/hs/ddsx" element={<DDSX />} />
+          <Route path="/hs/tc" element={<TC />} />
+          <Route path="/hs/kh-kd" element={<KHKD />} />
+          <Route path="/hs/ct-hc" element={<CTHC />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

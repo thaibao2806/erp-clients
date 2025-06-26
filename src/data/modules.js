@@ -3,6 +3,7 @@ import FNIcon from '../assets/images/modules/tc.png';
 import PMIcon from '../assets/images/modules/dd_sx.png';
 import PLIcon from '../assets/images/modules/kh_kd.png';
 import KTIcon from '../assets/images/modules/kt_vt.png';
+import HSIcon from '../assets/images/modules/hc.jpg';
 
 export const moduleData = {
     TM: { // Sales Order
@@ -93,6 +94,18 @@ export const moduleData = {
           { key: 'pm-task', label: 'E. Công việc', path: '/pm/cong-viec' },
         ],
       },
+    HS: { // Customer Relationship Management
+      lable:'QTHS',
+      name: 'Quy trình hồ sơ',
+      icon: HSIcon,
+      pages: [
+        { key: 'hs-kt-vt-cn', label: 'A.Ban KT-VT-CN', path: '/hs/kt-vt-cn' },
+        { key: 'hs-kh-kd', label: 'B. Ban KH-KD', path: '/hs/kh-kd' },
+        { key: 'hs-tc', label: 'C. Ban Tài chính', path: '/hs/tc' },
+        { key: 'hs-hc-ct', label: 'D. Ban CT-HC', path: '/hs/ct-hc' },
+        { key: 'hs-ddsx', label: 'E. Điều độ sản xuất', path: '/hs/ddsx' },
+      ],
+    },
     // Thêm các module khác nếu cần
   };
   

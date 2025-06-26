@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -20,40 +20,82 @@ import {
 // import BuySuppliesModal from "./BuySuppliesModal";
 import { Link } from "react-router-dom";
 import AddNotificationModal from "../../components/AddNotification";
+import { useSelector } from "react-redux";
+import { jwtDecode } from "jwt-decode";
+import { filterNofifications } from "../../services/notificationApi";
 
 const { RangePicker } = DatePicker;
 
 const Notifications = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [dataSource, setDataSource] = useState([
-    {
-      key: "1",
-      stt: 1,
-      donVi: "Phòng A",
-      sochungtu: "CC001",
-      tenthietbi: "Chấm công T1",
-      ngaychungtu: "01/04/2025",
-      bophan: "Tổ đóng mới",
-      ghiChu: "Không có",
-    },
-    {
-      key: "2",
-      stt: 2,
-      donVi: "Phòng B",
-      sochungtu: "CC002",
-      tenthietbi: "Chấm công T2",
-      ngaychungtu: "01/05/2025",
-      bophan: "Tổ hệ trục",
-      ghiChu: "Nghỉ lễ 1 ngày",
-    },
-  ]);
-
+  const [dataSource, setDataSource] = useState([]);
   const [filters, setFilters] = useState({
     dateRange: null,
-    maChamCong: "",
-    tenChamCong: "",
+    keyword: "",
   });
+  const user = useSelector((state) => state.auth.login?.currentUser);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  useEffect(() => {
+    if (user && user.data.token) {
+      try {
+        const decode = jwtDecode(user.data.token);
+        setUserId(decode.nameid);
+        console.log("UserId extracted:", decode.nameid);
+        fetchData(pagination.current, pagination.pageSize, uid);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userId) fetchData(pagination.current, pagination.pageSize);
+  }, [userId]);
+
+  const fetchData = async (page = 1, pageSize = 10) => {
+    try {
+      setLoading(true);
+      const { keyword, dateRange } = filters;
+      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
+      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
+
+      let res = await filterNofifications(
+        userId,
+        keyword,
+        "",
+        fromDate,
+        toDate,
+        page,
+        pageSize
+      );
+      if (res && res.status === 200) {
+        let { items, totalCount } = res.data.data;
+        console.log(res.data.data);
+
+        // Thêm STT và key
+        let dataWithStt = items.map((item, index) => ({
+          ...item,
+          key: item.id,
+          stt: (page - 1) * pageSize + index + 1,
+        }));
+
+        setDataSource(dataWithStt);
+        setPagination({ current: page, pageSize, total: totalCount });
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
     {
@@ -62,35 +104,18 @@ const Notifications = () => {
       width: 60,
     },
     {
-      title: "Đơn vị",
-      dataIndex: "donVi",
-    },
-    {
-      title: "Số chứng từ",
-      dataIndex: "sochungtu",
-      render: (text, record) => (
-        <Link to={`/pm/de-xuat/mua-vat-tu-ccdc-chi-tiet/${record.key}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
-      ),
-    },
-    {
-      title: "Ngày gửi",
-      dataIndex: "ngaychungtu",
+      title: "Tiêu đề",
+      dataIndex: "title",
     },
     {
       title: "Nội dung",
-      dataIndex: "tenthietbi",
+      dataIndex: "content",
     },
     {
-        title: "Người gủi",
-        dataIndex: "tenthietbi",
-    },
-    {
-        title: "Loại thông báo",
-        dataIndex: "tenthietbi",
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "ghiChu",
+      title: "Ngày gửi",
+      dataIndex: "createdAt",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
   ];
 
@@ -112,7 +137,7 @@ const Notifications = () => {
       console.log("Cập nhật:", values);
       // Gọi API update ở đây
     } else {
-      console.log("Thêm mới:", values);
+      fetchData(pagination.current, pagination.pageSize);
       // Gọi API thêm mới ở đây
     }
     setModalOpen(false);
@@ -154,15 +179,15 @@ const Notifications = () => {
   };
 
   const handleSearch = () => {
-    console.log("Filter:", filters);
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      maChamCong: "",
-      tenChamCong: "",
+      keyword: "",
     });
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   return (
@@ -178,25 +203,14 @@ const Notifications = () => {
         <h1 style={{ margin: 0 }}>Thông báo, nhắc nhở</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button
+              icon={<SearchOutlined />}
+              onClick={() => setShowFilters(!showFilters)}
+            />
           </Tooltip>
           <Tooltip title="Thêm">
             <Button onClick={handleAdd} icon={<PlusOutlined />} />
           </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={handleDelete}
-              disabled={selectedRowKeys.length === 0}
-            />
-          </Tooltip>
-          {/* <Tooltip title="In">
-            <Button icon={<PrinterOutlined />} />
-          </Tooltip>
-          <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
-          </Tooltip> */}
         </Space>
       </div>
 
@@ -222,40 +236,20 @@ const Notifications = () => {
               />
             </Col>
             <Col span={8}>
-              <label>Số chứng từ</label>
-              <Input
-                placeholder="Số chứng từ"
-                value={filters.maChamCong}
-                onChange={(e) => handleFilterChange("maChamCong", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
               <label>Nội dung</label>
               <Input
                 placeholder="Nội dung"
-                value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>Ngày gửi</label>
-              <Input
-                placeholder="Ngày gử"
-                value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>Người gửi</label>
-              <Input
-                placeholder="Người gửi"
-                value={filters.tenChamCong}
-                onChange={(e) => handleFilterChange("tenChamCong", e.target.value)}
+                value={filters.keyword}
+                onChange={(e) => handleFilterChange("keyword", e.target.value)}
               />
             </Col>
           </Row>
           <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Button type="primary" onClick={handleSearch} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              onClick={handleSearch}
+              style={{ marginRight: 8 }}
+            >
               Lọc
             </Button>
             <Button onClick={handleReset}>Hủy</Button>
@@ -268,7 +262,7 @@ const Notifications = () => {
         rowSelection={rowSelection}
         columns={columns}
         dataSource={dataSource}
-        pagination={{ pageSize: 5 }}
+        pagination={{ pageSize: 10 }}
         bordered
       />
 

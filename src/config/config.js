@@ -125,3 +125,7 @@ export const getTaskProgressByID = "/api/v1/TaskProgress/"
 export const updateTaskProgress = "/api/v1/TaskProgress/"
 export const deleteTaskProgress = "/api/v1/TaskProgress/"
 export const filterTaskProgress = "/api/v1/TaskProgress/filter"
+
+//notification
+export const filterNotification = "/api/Notification/filter"
+export const sendAllUser = "/api/Notification/broadcast"
