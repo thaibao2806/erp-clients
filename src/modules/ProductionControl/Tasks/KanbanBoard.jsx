@@ -236,7 +236,7 @@ const KanbanBoard = () => {
           icon={<PlusOutlined />}
           onClick={() => setIsAddBoardModalOpen(true)}
         >
-          Thêm Board
+          Thêm cột
         </Button>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
@@ -260,44 +260,6 @@ const KanbanBoard = () => {
                 />
               );
             })}
-          {/* {data &&
-            data?.map((colId) => {
-              console.log(colId);
-              const column = colId?.name;
-              const tasks = colId?.card;
-              console.log(colId.name);
-
-              // return (
-              //   <KanbanColumn
-              //     key={colId}
-              //     column={column}
-              //     tasks={tasks}
-              //     onAddCard={() => {
-              //       setActiveColumnId(colId);
-              //       setIsModalOpen(true);
-              //     }}
-              //     onDeleteTask={(taskId) => deleteTask(taskId, colId)}
-              //     onDeleteBoard={() => deleteBoard(colId)}
-              //   />
-              // );
-            })} */}
-          {/* {data?.map((colId) => {
-            const column = data.columns[colId];
-            const tasks = column.taskIds.map((taskId) => data.tasks[taskId]);
-            return (
-              <KanbanColumn
-                key={colId}
-                column={column}
-                tasks={tasks}
-                onAddCard={() => {
-                  setActiveColumnId(colId);
-                  setIsModalOpen(true);
-                }}
-                onDeleteTask={(taskId) => deleteTask(taskId, colId)}
-                onDeleteBoard={() => deleteBoard(colId)}
-              />
-            );
-          })} */}
         </div>
       </DragDropContext>
       <TaskModal
@@ -309,7 +271,7 @@ const KanbanBoard = () => {
         }}
       />
       <Modal
-        title="Thêm Board mới"
+        title="Thêm cột mới"
         open={isAddBoardModalOpen}
         onCancel={() => {
           setNewBoardTitle("");
@@ -324,7 +286,7 @@ const KanbanBoard = () => {
         }}
       >
         <Input
-          placeholder="Nhập tên board"
+          placeholder="Nhập tên cột"
           value={newBoardTitle}
           onChange={(e) => setNewBoardTitle(e.target.value)}
         />

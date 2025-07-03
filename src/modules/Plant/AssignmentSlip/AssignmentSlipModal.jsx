@@ -380,10 +380,12 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
           let res = await updateAssignmentSlip(
             initialValues.id,
-            payload.division,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.typeOfSupplies,
+            payload.documentNumber,
+            payload.productName,
+            payload.documentDate,
+            payload.department,
+            payload.managementUnit,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {

@@ -228,7 +228,6 @@ const HeaderIcons = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      console.log(notification);
       await markNotificationAsRead(notification.id);
       //setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
       navigate(notification.link);

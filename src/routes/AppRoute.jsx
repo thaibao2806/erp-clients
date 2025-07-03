@@ -211,6 +211,9 @@ function AppRoute() {
           <Route path="/hs/tc" element={<TC />} />
           <Route path="/hs/kh-kd" element={<KHKD />} />
           <Route path="/hs/ct-hc" element={<CTHC />} />
+          <Route path="/tm/task" element={<KanbanBoard />} />
+          <Route path="/fn/task" element={<KanbanBoard />} />
+          <Route path="/pt/task" element={<KanbanBoard />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

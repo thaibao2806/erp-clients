@@ -8,6 +8,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [dataUser, setDataUser] = useState();
+  const [loadingAddFollower, setLoadingAddFollower] = useState(false); // ✅
 
   useEffect(() => {
     getFollowers();
@@ -28,7 +29,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
       if (res && res.status === 200) {
         const usersWithKey = res.data.data.map((user) => ({
           ...user,
-          key: user.apk || user.id, // chọn 1 trường duy nhất làm key
+          key: user.apk || user.id,
         }));
         setDataUser(usersWithKey);
       }
@@ -49,6 +50,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
       (u) => !followers.some((p) => p.key === u.key)
     );
 
+    setLoadingAddFollower(true); // ✅ Bắt đầu loading
     try {
       let res = await addFollower(
         refId,
@@ -76,6 +78,8 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
         description: "Đã có lỗi xảy ra. Vui lòng thử lại sau.",
         placement: "topRight",
       });
+    } finally {
+      setLoadingAddFollower(false); // ✅ Kết thúc loading
     }
   };
 
@@ -88,7 +92,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
     selectedRowKeys,
     onChange: setSelectedRowKeys,
     getCheckboxProps: (record) => ({
-      disabled: followers.some((user) => user.key === record.key), // Disable nếu đã chọn
+      disabled: followers.some((user) => user.key === record.key),
     }),
   };
 
@@ -153,6 +157,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
         okText="Thêm"
         cancelText="Hủy"
         width={600}
+        confirmLoading={loadingAddFollower} // ✅ Hiển thị loading
       >
         <Table
           rowSelection={rowSelection}

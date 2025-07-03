@@ -311,7 +311,7 @@ const MainLayout = () => {
         {/* ========== CONTENT ========== */}
         <Content
           style={{
-            margin: "16px 16px 0px 16px",
+            margin: "10px 10px 0px 16px",
             paddingRight: 16, // thêm chút padding phải cho đẹp
             height: "calc(100vh - 64px - 48px - 10px)", // 64px là Header, 48px là Footer
             overflowY: "auto", // Cho phép scroll dọc

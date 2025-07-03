@@ -11,10 +11,10 @@ export const moduleData = {
       name: 'Ban Kỹ thuật - Vật tư - Công nghệ',
       icon: KTIcon,
       pages: [
-        { key: 'so-orders', label: 'Đơn hàng bán', path: '/so/orders' },
-        { key: 'so-delivery', label: 'Tình trạng giao hàng', path: '/so/delivery-status' },
-        { key: 'so-pricelist', label: 'Bảng giá', path: '/so/price-list' },
-        { key: 'tm-task', label: 'Công việc', path: '/tm/task' },
+        // { key: 'so-orders', label: 'Đơn hàng bán', path: '/so/orders' },
+        // { key: 'so-delivery', label: 'Tình trạng giao hàng', path: '/so/delivery-status' },
+        // { key: 'so-pricelist', label: 'Bảng giá', path: '/so/price-list' },
+        { key: 'tm-task', label: 'A. Công việc', path: '/tm/task' },
       ],
     },
     PL: { // Purchase Order
@@ -45,9 +45,9 @@ export const moduleData = {
       name: 'Ban Tài Chính',
       icon: FNIcon,
       pages: [
-        { key: 'wm-inventory', label: 'Tồn kho', path: '/wm/inventory' },
-        { key: 'wm-transfer', label: 'Chuyển kho', path: '/wm/transfer' },
-        { key: 'fn-task', label: 'Công việc', path: '/fn/task' },
+        // { key: 'wm-inventory', label: 'Tồn kho', path: '/wm/inventory' },
+        // { key: 'wm-transfer', label: 'Chuyển kho', path: '/wm/transfer' },
+        { key: 'fn-task', label: 'A. Công việc', path: '/fn/task' },
       ],
     },
     PT: { // Customer Relationship Management
@@ -55,9 +55,9 @@ export const moduleData = {
       name: 'Ban chính trị - hành chính',
       icon: PTIcon,
       pages: [
-        { key: 'crm-customers', label: 'Danh sách khách hàng', path: '/crm/customers' },
-        { key: 'crm-opportunities', label: 'Cơ hội bán hàng', path: '/crm/opportunities' },
-        { key: 'pt-task', label: 'Công việc', path: '/pt/task' },
+        // { key: 'crm-customers', label: 'Danh sách khách hàng', path: '/crm/customers' },
+        // { key: 'crm-opportunities', label: 'Cơ hội bán hàng', path: '/crm/opportunities' },
+        { key: 'pt-task', label: 'A. Công việc', path: '/pt/task' },
       ],
     },
     PM: { // Customer Relationship Management

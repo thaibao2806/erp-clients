@@ -10,6 +10,7 @@ const { TextArea } = Input;
 const NoteSection = ({ refId, refType, voucherNo }) => {
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
+  const [sending, setSending] = useState(false); // ✅ Loading khi gửi
   const user = useSelector((state) => state.auth.login.currentUser);
 
   useEffect(() => {
@@ -22,8 +23,7 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
     try {
       let res = await getNotes(refId, refType);
       if (res && res.status === 200) {
-        console.log("get", res);
-        setNotes(res.data.data);
+        setNotes(res.data.data || []);
       }
     } catch (error) {
       console.log(error);
@@ -31,7 +31,9 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
   };
 
   const handleSend = async () => {
-    if (!note.trim()) return;
+    if (!note.trim() || sending) return;
+
+    setSending(true); // ✅ Bắt đầu loading
     const now = new Date().toISOString();
     let id = crypto.randomUUID();
     try {
@@ -50,18 +52,21 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
         setNotes([
           {
             content: note,
-            time: new Date().toLocaleString(),
+            createdAt: now,
+            createdBy: user.data?.userName || "unknown",
+            userName: user.data?.userName || "unknown",
           },
           ...notes,
         ]);
         setNote("");
-        message.success("Đã gửi ghi chú!");
       } else {
         message.error("Không thể gửi ghi chú!");
       }
     } catch (error) {
       console.error(error);
       message.error("Lỗi khi gửi ghi chú!");
+    } finally {
+      setSending(false); // ✅ Kết thúc loading
     }
   };
 
@@ -99,17 +104,23 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
           }}
         >
           <span style={{ fontStyle: "italic" }}>
-            Bấm <b>Shift + Enter</b> để đăng
+            {/* Bấm <b>Shift + Enter</b> để đăng */}
           </span>
           <Space>
             <Button shape="circle" icon={<SmileOutlined />} />
-            <Button onClick={() => setNote("")}>Xóa trắng</Button>
-            <Button type="primary" onClick={handleSend}>
+
+            <Button
+              type="primary"
+              onClick={handleSend}
+              loading={sending}
+              disabled={!note.trim()}
+            >
               Gửi
             </Button>
           </Space>
         </div>
       </div>
+
       {/* Ghi chú đã gửi */}
       <div style={{ marginTop: 16 }}>
         {notes.map((n, index) => (
