@@ -9,9 +9,17 @@ import {
   Typography,
   DatePicker,
   notification,
+  Upload,
+  Avatar,
 } from "antd";
 import { useSelector } from "react-redux";
-import { getAccount, updateAccount } from "../../services/apiAuth";
+import { UploadOutlined } from "@ant-design/icons";
+import {
+  getAccount,
+  updateAccount,
+  getAvatar,
+  uploadAvatar,
+} from "../../services/apiAuth";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 
@@ -21,14 +29,26 @@ const AccountInfo = () => {
   const [form] = Form.useForm();
   const user = useSelector((state) => state.auth.login?.currentUser);
   const [dataUser, setDataUser] = useState();
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   useEffect(() => {
     if (user && user.data.token) {
       const decode = jwtDecode(user.data.token);
       let id = decode.nameid;
       getUser(id);
+      loadAvatar(id);
     }
   }, []);
+
+  const loadAvatar = async (id) => {
+    try {
+      const res = await getAvatar(id);
+      const url = URL.createObjectURL(res.data);
+      setAvatarUrl(url);
+    } catch (error) {
+      // Không có avatar thì bỏ qua
+    }
+  };
 
   const getUser = async (id) => {
     try {
@@ -75,6 +95,42 @@ const AccountInfo = () => {
     // TODO: Gọi API cập nhật tài khoản ở đây
   };
 
+  const handleAvatarUpload = async (file) => {
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      notification.warning({
+        message: "Ảnh quá lớn",
+        description: "Vui lòng chọn ảnh có dung lượng dưới 2MB.",
+      });
+      return false;
+    }
+
+    if (!dataUser) return false;
+
+    const formData = new FormData();
+    formData.append("UserId", dataUser.apk);
+    formData.append("AvatarFile", file);
+
+    try {
+      const res = await uploadAvatar(formData);
+      if (res && res.status === 200) {
+        const url = URL.createObjectURL(file);
+        setAvatarUrl(url);
+        notification.success({
+          message: "Thành công",
+          description: "Cập nhật ảnh đại diện thành công",
+        });
+      }
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Cập nhật ảnh đại diện thất bại",
+      });
+    }
+
+    return false; // Ngăn upload auto
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
@@ -87,6 +143,20 @@ const AccountInfo = () => {
           </Button>
         </Col>
       </Row>
+
+      <Card style={{ marginBottom: 24 }}>
+        <div style={{ textAlign: "center" }}>
+          <Avatar size={120} src={avatarUrl} style={{ marginBottom: 12 }} />
+          <br />
+          <Upload
+            beforeUpload={handleAvatarUpload}
+            showUploadList={false}
+            accept="image/*"
+          >
+            <Button icon={<UploadOutlined />}>Thay đổi ảnh đại diện</Button>
+          </Upload>
+        </div>
+      </Card>
 
       <Card>
         <Form

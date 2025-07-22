@@ -324,6 +324,7 @@ const DDSX = () => {
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
+          setTreeFormData([]);
           setEditingKey(null);
         }}
         onOk={handleSave}
@@ -364,27 +365,32 @@ const DDSX = () => {
               setTreeFormData(addChild(treeFormData));
             }}
             onAddSibling={(targetKey) => {
-              const addSibling = (nodes) => {
-                const result = [];
-                for (let node of nodes) {
-                  result.push(node);
-                  if (node.key === targetKey) {
-                    result.push({
-                      key: generateKey(),
-                      name: "",
-                      creator: "",
-                      file: "",
-                      fileObject: null,
-                      children: [],
-                    });
-                  } else if (node.children) {
-                    result.push({
-                      ...node,
-                      children: addSibling(node.children),
-                    });
+              const addSibling = (nodes, parent = null) => {
+                return nodes.flatMap((node) => {
+                  if (node.key === targetKey && parent) {
+                    // Thêm sibling vào mảng children của parent
+                    return [
+                      node,
+                      {
+                        key: generateKey(),
+                        name: "",
+                        creator: "",
+                        file: "",
+                        fileObject: null,
+                        children: [],
+                      },
+                    ];
+                  } else if (node.children && node.children.length > 0) {
+                    return [
+                      {
+                        ...node,
+                        children: addSibling(node.children, node),
+                      },
+                    ];
+                  } else {
+                    return [node];
                   }
-                }
-                return result;
+                });
               };
               setTreeFormData(addSibling(treeFormData));
             }}

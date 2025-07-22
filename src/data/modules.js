@@ -14,7 +14,8 @@ export const moduleData = {
         // { key: 'so-orders', label: 'Đơn hàng bán', path: '/so/orders' },
         // { key: 'so-delivery', label: 'Tình trạng giao hàng', path: '/so/delivery-status' },
         // { key: 'so-pricelist', label: 'Bảng giá', path: '/so/price-list' },
-        { key: 'tm-task', label: 'A. Công việc', path: '/tm/task' },
+        { key: 'tm-yeu-cau-cong-viec', label: 'A. Yêu cầu công việc', path: '/tm/yeu-cau-cong-viec' },
+        { key: 'tm-task', label: 'B. Công việc', path: '/tm/task' },
       ],
     },
     PL: { // Purchase Order
@@ -22,8 +23,9 @@ export const moduleData = {
       name: 'Ban Kế hoạch - Kinh doanh',
       icon: PLIcon,
       pages: [
+        { key: 'pl-task', label: 'D. Công việc', path: '/pl/task' },
         { key: 'pl-phieu-giao-viec', label: 'A. Phiếu giao việc', path: '/pl/phieu-giao-viec' },
-        { key: 'pl-ke-hoach', label: 'B. Kế hoạch', children: [
+        { key: 'pl-ke-hoach-root', label: 'B. Kế hoạch', children: [
           { key: 'pl-ke-hoach', label: '1. Kế hoạch', path: '/pl/ke-hoach/ke-hoach' },
           { key: 'pl-ke-hoach-chay-thu', label: '2. Kế hoạch chạy thử', path: '/pl/ke-hoach/ke-hoach-chay-thu' },
           // { key: 'pm-bien-ban-khao-sat-thiet-bi', label: '3. Xác nhận tình trạng', path: '/pm/bien-ban/bien-ban-khao-sat-thiet-bi' },
@@ -37,7 +39,6 @@ export const moduleData = {
           // { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '4. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
           // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
         ] },
-        { key: 'pl-task', label: 'D. Công việc', path: '/pl/task' },
       ],
     },
     FN: { // Warehouse Management
@@ -47,7 +48,12 @@ export const moduleData = {
       pages: [
         // { key: 'wm-inventory', label: 'Tồn kho', path: '/wm/inventory' },
         // { key: 'wm-transfer', label: 'Chuyển kho', path: '/wm/transfer' },
+        
         { key: 'fn-task', label: 'A. Công việc', path: '/fn/task' },
+        { key: 'fn-nhan-su', label: 'B. Nhân sự', children: [
+          { key: 'fn-cham-cong', label: '1. Chấm công', path: '/fn/nhan-su/cham-cong' },
+          { key: 'fn-cham-com', label: '2. Báo cơm', path: '/fn/nhan-su/bao-com' },
+        ] },
       ],
     },
     PT: { // Customer Relationship Management
@@ -58,6 +64,12 @@ export const moduleData = {
         // { key: 'crm-customers', label: 'Danh sách khách hàng', path: '/crm/customers' },
         // { key: 'crm-opportunities', label: 'Cơ hội bán hàng', path: '/crm/opportunities' },
         { key: 'pt-task', label: 'A. Công việc', path: '/pt/task' },
+
+        { key: 'pt-nhan-su', label: 'B. Nhân sự', children: [
+          { key: 'pt-ho-so-nhan-vien', label: '1. Hồ sơ nhân viên', path: '/pt/nhan-su/ho-so-nhan-vien' },
+          // { key: 'pt-phong-ban', label: '2. Phòng ban', path: '/pt/nhan-su/phong-ban' },
+          { key: 'pt-nghi-phep', label: '2. Đơn xin nghỉ phép', path: '/pt/nhan-su/nghi-phep' },
+        ] },
       ],
     },
     PM: { // Customer Relationship Management
@@ -74,24 +86,25 @@ export const moduleData = {
           //   { key: 'pm-bien-ban-nghiem-thu-sau-sua-chua', label: '3. Kiểm tra sau sửa chữa', path: '/pm/bien-ban/bien-ban-nghiem-thu-sau-sua-chua' },
           //   // { key: 'pm-vi-pham-atld', label: '5. Vi phạm ATLD', path: '/pm/bien-ban/vi-pham-atld' },
           // ] },
-          { key: 'pm-bao-cao', label: 'A. Báo cáo', children: [
+          { key: 'pm-task', label: 'A. Công việc', path: '/pm/cong-viec' },
+
+          { key: 'pm-bao-cao', label: 'B. Báo cáo', children: [
             { key: 'pm-bao-cao-kiem-ke', label: '1. Kiểm kê thiết bị', path: '/pm/bao-cao/kiem-ke-thiet-bi' },
             // { key: 'pm-bao-cao-nhan-cong', label: '1. Nhân công các tổ', path: '/pm/bao-cao/bao-cao-nhan-cong' },
             // { key: 'pm-bao-cao-thanh-tich', label: '2. Thành tích', path: '/pm/bao-cao/bao-cao-thanh-tich' },
             // { key: 'pm-bao-cao-chap-hanh-noi-quy', label: '3. Chấp hành nội quy', path: '/pm/bao-cao/bao-cao-chap-hanh-noi-quy' },
           ] },
-          { key: 'pm-de-xuat', label: 'B. Đề xuất', children: [
+          { key: 'pm-de-xuat', label: 'C. Đề xuất', children: [
             { key: 'pm-de-xuat-sua-chua', label: '1. Sửa chữa, thanh lý', path: '/pm/de-xuat/de-xuat-sua-chua-thanh-ly' },
             // { key: 'pm-de-xuat-thanh-ly', label: '2. Thanh lý', path: '/pm/de-xuat/de-xuat-thanh-ly' },
             { key: 'pm-de-xuat-mua-vat-tu-ccdc', label: '2. Mua, cấp, sửa VT CCDC', path: '/pm/de-xuat/de-xuat-mua-cap-sua' },
           //   { key: 'pm-de-xuat-vat-tu-sua-chua', label: '4. Vật tư sửa chữa', path: '/pm/de-xuat/de-xuat-vat-tu-sua-chua' },
           //   { key: 'pm-de-xuat-cap-may-moc-thiet-bi', label: '5. Cấp máy móc, thiết bị', path: '/pm/de-xuat/de-xuat-cap-may-moc-thiet-bi' },
           ] },
-          { key: 'pm-so-kho', label: 'C. Sổ kho', path: '/pm/so-kho' },
+          { key: 'pm-so-kho', label: 'D. Sổ kho', path: '/pm/so-kho' },
           // { key: 'pm-du-an', label: 'D. Dự án', path: '/pm/du-an' },
-          { key: 'pm-tien-do', label: 'D. Tiến độ sửa chữa', path: '/pm/tien-do' },
+          { key: 'pm-tien-do', label: 'E. Tiến độ sửa chữa', path: '/pm/tien-do' },
           // { key: 'pm-so-giao-nhan', label: 'H. Sổ giao nhận', path: '/pm/so-giao-nhan' },
-          { key: 'pm-task', label: 'E. Công việc', path: '/pm/cong-viec' },
         ],
       },
     HS: { // Customer Relationship Management

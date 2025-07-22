@@ -1,16 +1,61 @@
-import React, { useState } from 'react';
-import '@fullcalendar/react/dist/vdom'
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import { Modal, Form, Input } from 'antd';
+import React, { useEffect, useState } from "react";
+import "@fullcalendar/react/dist/vdom";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import { Modal, Form, Input } from "antd";
+import { useSelector } from "react-redux";
+import { filterApprovals } from "../../services/apiApprovals";
 
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const [dataSource, setDataSource] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await filterApprovals(
+        "",
+        user.data.userName,
+        "",
+        "pending",
+        1,
+        100
+      );
+      if (res && res.status === 200) {
+        const { items } = res.data.data;
+        const calendarEvents = items.map((item) => {
+          const startDate = new Date(item.createdAt)
+            .toISOString()
+            .split("T")[0]; // 👉 chuyển đúng định dạng yyyy-MM-dd
+          return {
+            id: item.id,
+            title: item.voucherNo,
+            start: startDate,
+            allDay: true,
+            extendedProps: {
+              linkDetail: item.linkDetail,
+            },
+          };
+        });
+        setEvents(calendarEvents);
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDateClick = (arg) => {
     setSelectedDate(arg.dateStr);
@@ -27,6 +72,7 @@ const Calendar = () => {
           allDay: true,
         },
       ]);
+
       setModalVisible(false);
       form.resetFields();
     });
@@ -38,12 +84,18 @@ const Calendar = () => {
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay',
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
         events={events}
-        dateClick={handleDateClick}
+        //dateClick={handleDateClick}
+        eventClick={(info) => {
+          const link = info.event.extendedProps.linkDetail;
+          if (link) {
+            window.open(link, "_blank");
+          }
+        }}
         selectable={true}
         height="100vh"
       />
@@ -60,7 +112,7 @@ const Calendar = () => {
           <Form.Item
             label="Tên sự kiện"
             name="title"
-            rules={[{ required: true, message: 'Vui lòng nhập tên sự kiện' }]}
+            rules={[{ required: true, message: "Vui lòng nhập tên sự kiện" }]}
           >
             <Input placeholder="VD: Họp team, Deadline..." />
           </Form.Item>

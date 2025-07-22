@@ -134,6 +134,7 @@ const MainLayout = () => {
   // --- Xử lý khi người dùng chọn Module khác từ Select ---
   const handleModuleChange = (value) => {
     setSelectedModuleKey(value);
+    console.log(value);
     // Tự động điều hướng đến trang đầu tiên của module mới
     const firstPage = moduleData[value]?.pages[0];
     if (firstPage) {
@@ -142,6 +143,8 @@ const MainLayout = () => {
       setSelectedKeys([firstPage.key]);
     } else {
       // Module mới không có trang nào
+      console.log("hay vào đây");
+
       setMenuItems([]);
       setSelectedKeys([]);
       // Có thể điều hướng về trang chủ hoặc trang lỗi

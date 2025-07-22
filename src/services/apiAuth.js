@@ -27,11 +27,25 @@ const getAllUser = () => {
     return axiosInstance.get(getAllAccount)
 }
 
+const getAvatar = async (userId) => {
+  return await axiosInstance.get(`/api/v1/Auth/${userId}/avatar`, { responseType: "blob" });
+};
+
+const uploadAvatar = async (formData) => {
+  return await axiosInstance.post(`/api/v1/Auth/upload-avatar`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
 export {
     checkMailOTP,
     resetPasswords,
     changePasswords,
     getAccount,
     updateAccount,
-    getAllUser
+    getAllUser,
+    getAvatar,
+    uploadAvatar
 }

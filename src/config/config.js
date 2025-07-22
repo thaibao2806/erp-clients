@@ -129,3 +129,20 @@ export const filterTaskProgress = "/api/v1/TaskProgress/filter"
 //notification
 export const filterNotification = "/api/Notification/filter"
 export const sendAllUser = "/api/Notification/broadcast"
+
+//jobRequirement
+export const getAllJobRequirement = "/api/v1/JobRequirement"
+export const addJobRequirement = "/api/v1/JobRequirement"
+export const getJobRequirementByID = "/api/v1/JobRequirement/"
+export const updateJobRequirement = "/api/v1/JobRequirement/"
+export const deleteJobRequirement = "/api/v1/JobRequirement/"
+export const filterJobRequirement = "/api/v1/JobRequirement/filter"
+export const exportExcelJobRequirement = "/api/v1/JobRequirement/export-excel/"
+
+//employee
+export const getAllEmployee = "/api/v1/cthc/employee"
+export const addEmployee ="/api/v1/cthc/employee"
+export const getEmployeeById = "/api/v1/cthc/employee/"
+export const updateEmployee = "/api/v1/cthc/employee/"
+export const deleteEmployee = "/api/v1/cthc/employee/"
+export const filterEmployee = "/api/v1/cthc/employee/filter"

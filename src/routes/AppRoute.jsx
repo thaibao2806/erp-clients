@@ -8,13 +8,11 @@ import DashboardProductionControll from "../modules/ProductionControl/Dashboard"
 import WareHousePC from "../modules/ProductionControl/WareHousePC/WareHousePC";
 import Projects from "../modules/ProductionControl/Project/Projects";
 import ProgressProject from "../modules/ProductionControl/ProgressProject/ProgressProject";
-import Timekeeping from "../modules/ProductionControl/TimeKeeping/Timekeeping";
 import Delivery from "../modules/ProductionControl/Delivery/Delivery";
 import Login from "../modules/Auth/Login/Login";
 import ForgotPassword from "../modules/Auth/ForgotPassword/ForgotPassword";
 import CheckOTP from "../modules/Auth/ForgotPassword/CheckOTP";
 import ChangePassword from "../modules/Auth/ChangePassword/ChangePassword";
-import TimekeepingDetail from "../modules/ProductionControl/TimeKeeping/TimekeepingDetail";
 import WareHousePCDetail from "../modules/ProductionControl/WareHousePC/WareHousePCDetail";
 import ProjectsDetail from "../modules/ProductionControl/Project/ProjectsDetail";
 import ProgressProjectDetail from "../modules/ProductionControl/ProgressProject/ProgressProjectDetail";
@@ -56,6 +54,16 @@ import TC from "../modules/Files/TC/TC";
 import DDSX from "../modules/Files/DDSX/DDSX";
 import CTHC from "../modules/Files/CT-HC/CTHC";
 import KHKD from "../modules/Files/KH-KD/KHKD";
+import JobRequirements from "../modules/TechnicalMaterial/JobRequirements/JobRequirements";
+import JobRequirementsDetail from "../modules/TechnicalMaterial/JobRequirements/JobRequirementsDetail";
+import Employees from "../modules/Political/HRM/Employees/Employees";
+import EmployeeDetail from "../modules/Political/HRM/Employees/EmployeeDetail";
+import LeaveRequest from "../modules/Political/HRM/LeaveRequest/LeaveRequest";
+import LeaveRequestDetail from "../modules/Political/HRM/LeaveRequest/LeaveRequestDetail";
+import RiceReport from "../modules/Finaces/RiceReport/RiceReport";
+import RiceReportDetail from "../modules/Finaces/RiceReport/RiceReportDetail";
+import Timekeeping from "../modules/Finaces/Timekeeping/Timekeeping";
+import TimekeepingDetail from "../modules/Finaces/Timekeeping/TimekeepingDetail";
 
 function AppRoute() {
   return (
@@ -76,11 +84,6 @@ function AppRoute() {
           <Route path="/pm/so-kho" element={<WareHousePC />} />
           <Route path="/pm/du-an" element={<Projects />} />
           <Route path="/pm/tien-do" element={<ProgressProject />} />
-          <Route path="/pm/cham-cong" element={<Timekeeping />} />
-          <Route
-            path="/pm/cham-cong-chi-tiet/:id"
-            element={<TimekeepingDetail />}
-          />
           <Route
             path="/pm/so-kho-chi-tiet/:id"
             element={<WareHousePCDetail />}
@@ -214,6 +217,32 @@ function AppRoute() {
           <Route path="/tm/task" element={<KanbanBoard />} />
           <Route path="/fn/task" element={<KanbanBoard />} />
           <Route path="/pt/task" element={<KanbanBoard />} />
+          <Route path="/tm/yeu-cau-cong-viec" element={<JobRequirements />} />
+          <Route
+            path="/tm/yeu-cau-cong-viec-chi-tiet/:id"
+            element={<JobRequirementsDetail />}
+          />
+          <Route path="/pt/nhan-su/ho-so-nhan-vien" element={<Employees />} />
+          <Route
+            path="/pt/nhan-su/ho-so-nhan-vien-chi-tiet/:id"
+            element={<EmployeeDetail />}
+          />
+          <Route path="/pt/nhan-su/nghi-phep" element={<LeaveRequest />} />
+          <Route
+            path="/pt/nhan-su/nghi-phep-chi-tiet/:id"
+            element={<LeaveRequestDetail />}
+          />
+          <Route path="/fn/nhan-su/bao-com" element={<RiceReport />} />
+          <Route
+            path="/fn/nhan-su/bao-com-chi-tiet/:id"
+            element={<RiceReportDetail />}
+          />
+
+          <Route path="/fn/nhan-su/cham-cong" element={<Timekeeping />} />
+          <Route
+            path="/fn/nhan-su/cham-cong-chi-tiet/:id"
+            element={<TimekeepingDetail />}
+          />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

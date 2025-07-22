@@ -29,6 +29,7 @@ import {
   getAllNotification,
   markNotificationAsRead,
 } from "../services/notificationApi";
+import { getAvatar } from "../services/apiAuth";
 import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
 import { jwtDecode } from "jwt-decode";
 import { url } from "../config/config";
@@ -74,6 +75,7 @@ const HeaderIcons = () => {
   const connectionRef = useRef(null);
   const [userId, setUserId] = useState(null);
   const [api, contextHolder] = notification.useNotification();
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Lấy userId từ token
   useEffect(() => {
@@ -81,12 +83,22 @@ const HeaderIcons = () => {
       try {
         const decode = jwtDecode(user.data.token);
         setUserId(decode.nameid);
-        console.log("UserId extracted:", decode.nameid);
+        loadAvatar(decode.nameid);
       } catch (error) {
         console.error("Error decoding token:", error);
       }
     }
   }, [user]);
+
+  const loadAvatar = async (id) => {
+    try {
+      const res = await getAvatar(id);
+      const url = URL.createObjectURL(res.data);
+      setAvatarUrl(url);
+    } catch (error) {
+      // Không có avatar thì bỏ qua
+    }
+  };
 
   // Kết nối SignalR và load notifications
   useEffect(() => {
@@ -207,7 +219,7 @@ const HeaderIcons = () => {
       if (notifications.length === 0) return;
 
       await Promise.all(notifications.map((n) => markNotificationAsRead(n.id)));
-      setNotifications([]);
+      //setNotifications([]);
 
       api.success({
         message: "Thành công",
@@ -297,11 +309,11 @@ const HeaderIcons = () => {
             {renderItems(notifications, "notification")}
           </div>
         </TabPane>
-        <TabPane tab="Nhắc nhở" key="2">
+        {/* <TabPane tab="Nhắc nhở" key="2">
           <div style={{ maxHeight: 250, overflowY: "auto" }}>
             {renderItems(notifications, "reminder")}
           </div>
-        </TabPane>
+        </TabPane> */}
       </Tabs>
 
       <div
@@ -434,10 +446,17 @@ const HeaderIcons = () => {
                 {user.data.department}
               </span>
             </div>
-
-            <Avatar style={{ backgroundColor: color }}>
-              {initials.toUpperCase()}
-            </Avatar>
+            {avatarUrl ? (
+              <>
+                <Avatar src={avatarUrl} />
+              </>
+            ) : (
+              <>
+                <Avatar style={{ backgroundColor: color }}>
+                  {initials.toUpperCase()}
+                </Avatar>
+              </>
+            )}
           </div>
         </Dropdown>
 
