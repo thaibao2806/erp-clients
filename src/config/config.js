@@ -1,4 +1,4 @@
-export const url = "http://localhost:5251"
+export const url = "https://ca90497025d1.ngrok-free.app"
 
 //auth
 export const login = "/api/v1/Auth/login"

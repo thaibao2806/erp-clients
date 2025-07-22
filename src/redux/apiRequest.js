@@ -7,7 +7,9 @@ import {  login, url } from "../config/config";
 export const loginUser  = async(user, dispatch, navigate) => {
     dispatch(loginStart())
     try {
-    const res = await axios.post( url + login, user);
+    const res = await axios.post( url + login, user, {
+        headers: {"ngrok-skip-browser-warning": "69420"}
+    });
     console.log(res)
     // navigate("/admin/dashboard");
     if(res && res.status === 200) {

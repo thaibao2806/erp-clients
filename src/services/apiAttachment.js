@@ -6,6 +6,7 @@ const addAttachments = (formData,token) => {
         headers:{
             "Content-Type": "multipart/form-data",
             "Authorization": `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "69420"
         }
     })
 }
@@ -13,7 +14,7 @@ const addAttachments = (formData,token) => {
 export const getAttachments = (refId, refType, token) => {
   return axios.get(url + "/api/v1/khkd/attachments", {
     params: { refId, refType },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning": "69420" },
   });
 };
 
@@ -21,7 +22,7 @@ export const downloadAttachments = (id, fileName, token) => {
   return axios
     .get(url + `/api/v1/khkd/attachments/download/${id}`, {
       responseType: "blob",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning": "69420" },
     })
     .then((res) => {
       const url = window.URL.createObjectURL(new Blob([res.data]));

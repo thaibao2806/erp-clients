@@ -137,6 +137,9 @@ const HeaderIcons = () => {
           accessTokenFactory: () => {
             return user?.data?.token || "";
           },
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
         })
         .withAutomaticReconnect([0, 2000, 10000, 30000])
         .build();
