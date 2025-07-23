@@ -22,6 +22,10 @@ import {
   createJobRequirements,
   updateJobRequirements,
 } from "../../../services/apiTechnicalMaterial/apiJobRequirement";
+import {
+  createRiceReport,
+  updateRiceReportByID,
+} from "../../../services/apiFinaces/apiRiceReport";
 dayjs.extend(customParseFormat);
 
 const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
@@ -35,7 +39,7 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const slCT = Form.useWatch("slCT", form) || 0;
   const slTC = Form.useWatch("slTC", form) || 0;
   const slKH = Form.useWatch("slKH", form) || 0;
-  const tongSL = (slKT || 0) + (slCT || 0) + (slTC || 0) + (slKH || 0);
+  const totalSL = (slKT || 0) + (slCT || 0) + (slTC || 0) + (slKH || 0);
 
   useEffect(() => {
     if (open) {
@@ -54,7 +58,7 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
       let res = await getAllUser();
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
-          value: user.userName, // hoặc user.id nếu cần
+          value: user.apk, // hoặc user.id nếu cần
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
@@ -89,23 +93,17 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
           const payload = {
             ...values,
             voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
           };
 
-          let res = await createJobRequirements(
+          let res = await createRiceReport(
             payload.voucherNo,
             payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
-            payload.details
+            payload.slKT,
+            payload.slCT,
+            payload.slTC,
+            payload.slKH,
+            totalSL,
+            payload.chefId
           );
           if (res && res.status === 200) {
             onSubmit(); // callback từ cha để reload
@@ -134,26 +132,20 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
           const payload = {
             ...values,
             voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
           };
 
-          let res = await updateJobRequirements(
+          let res = await updateRiceReportByID(
             initialValues.id,
             payload.voucherNo,
             payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
-            payload.details
+            payload.slKT,
+            payload.slCT,
+            payload.slTC,
+            payload.slKH,
+            payload.totalSL,
+            payload.chefId
           );
-          if (res && res.status === 200) {
+          if (res && res.status === 204) {
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -233,17 +225,12 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item label="Tổng số lượng">
-              <InputNumber value={tongSL} style={{ width: "100%" }} readOnly />
+              <InputNumber value={totalSL} style={{ width: "100%" }} readOnly />
             </Form.Item>
           </Col>
-          <Col span={24}>
-            <Form.Item name="note" label="Ghi chú">
-              <Input.TextArea rows={2} />
-            </Form.Item>
-          </Col>
-          <Col span={24}>
+          <Col span={12}>
             <Form.Item
-              name="kitchenNotice"
+              name="chefId"
               label="Thông báo đến bếp"
               rules={[{ required: true }]}
             >

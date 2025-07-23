@@ -20,6 +20,10 @@ import {
 import { Link } from "react-router-dom";
 import { saveAs } from "file-saver";
 import LeaveRequestModal from "./LeaveRequestModal";
+import {
+  deleteLeaveRequestByID,
+  filterLeaveRequests,
+} from "../../../../services/apiPolitical/apiLeaveRequest";
 
 const { RangePicker } = DatePicker;
 
@@ -41,25 +45,21 @@ const LeaveRequest = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-        repairOrderCode,
-      } = filters;
-      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
-      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
+      const { fullName, department, position } = filters;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
-        fromDate,
-        toDate,
+      let res = await filterLeaveRequests(
+        fullName || "",
+        department || "",
+        position || "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
         "",
         page,
         pageSize
@@ -85,12 +85,9 @@ const LeaveRequest = () => {
   };
 
   const [filters, setFilters] = useState({
-    dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
+    fullName: "",
     department: "",
-    repairOrderCode: "",
+    position: "",
   });
 
   const columns = [
@@ -101,32 +98,34 @@ const LeaveRequest = () => {
     },
     {
       title: "Họ và tên",
-      dataIndex: "voucherNo",
+      dataIndex: "fullName",
       render: (text, record) => (
         <Link to={`/pt/nhan-su/nghi-phep-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
       title: "Chức vụ",
-      dataIndex: "voucherDate",
+      dataIndex: "position",
+    },
+    {
+      title: "Phòng ban",
+      dataIndex: "department",
+    },
+    {
+      title: "Ngày bắt đầu nghỉ",
+      dataIndex: "startDate",
       render: (date) =>
         date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
-      title: "Phòng ban",
-      dataIndex: "productName",
-    },
-    {
-      title: "Ngày bắt đầu nghỉ",
-      dataIndex: "managementUnit",
-    },
-    {
       title: "Ngày kết thúc nghỉ",
-      dataIndex: "department",
+      dataIndex: "endDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Loại phép",
-      dataIndex: "repairOrderCode",
+      dataIndex: "leaveType",
     },
     {
       title: "Trạng thái duyệt",
@@ -207,7 +206,7 @@ const LeaveRequest = () => {
 
           // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteJobRequirements(id))
+            selectedRowKeys.map((id) => deleteLeaveRequestByID(id))
           );
 
           // Sau khi xóa thành công, cập nhật lại danh sách
@@ -279,11 +278,9 @@ const LeaveRequest = () => {
 
   const handleReset = () => {
     setFilters({
-      dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
+      fullName: "",
       department: "",
+      position: "",
     });
     fetchData(pagination.current, pagination.pageSize);
   };
@@ -332,42 +329,29 @@ const LeaveRequest = () => {
           }}
         >
           <Row gutter={16}>
-            {/* <Col span={8}>
-              <label>Thời gian</label>
-              <RangePicker
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={filters.dateRange}
-                onChange={(value) => handleFilterChange("dateRange", value)}
-              />
-            </Col> */}
             <Col span={8}>
               <label>Họ và tên</label>
               <Input
-                placeholder="Số chứng từ"
-                value={filters.voucherNo}
-                onChange={(e) =>
-                  handleFilterChange("voucherNo", e.target.value)
-                }
+                placeholder="Họ tên"
+                value={filters.fullName}
+                onChange={(e) => handleFilterChange("fullName", e.target.value)}
               />
             </Col>
             <Col span={8}>
               <label>Chức vụ</label>
               <Input
-                placeholder="Tên sản phẩm"
-                value={filters.productName}
-                onChange={(e) =>
-                  handleFilterChange("productName", e.target.value)
-                }
+                placeholder="Chức vụ"
+                value={filters.position}
+                onChange={(e) => handleFilterChange("position", e.target.value)}
               />
             </Col>
             <Col span={8}>
               <label>Phòng ban</label>
               <Input
-                placeholder="Đơn vị quản lý"
-                value={filters.managementUnit}
+                placeholder="Phòng ban"
+                value={filters.department}
                 onChange={(e) =>
-                  handleFilterChange("managementUnit", e.target.value)
+                  handleFilterChange("department", e.target.value)
                 }
               />
             </Col>

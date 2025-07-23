@@ -27,6 +27,10 @@ import { useSelector } from "react-redux";
 import { getApprovalsByRef } from "../../../../services/apiApprovals";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import LeaveRequestModal from "./LeaveRequestModal";
+import {
+  deleteLeaveRequestByID,
+  getLeaveRequestById,
+} from "../../../../services/apiPolitical/apiLeaveRequest";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -54,7 +58,7 @@ const LeaveRequestDetail = () => {
 
   const getApprovalByModulePage = async () => {
     try {
-      let res = await getApprovalSetting("TM", "tm-yeu-cau-cong-viec");
+      let res = await getApprovalSetting("PT", "pt-nghi-phep");
       if (res && res.status === 200) {
         setApprovalNumber(res.data.data.approvalNumber);
       }
@@ -65,7 +69,7 @@ const LeaveRequestDetail = () => {
 
   const getApprovals = async () => {
     try {
-      let res = await getApprovalsByRef(id, "YCCV");
+      let res = await getApprovalsByRef(id, "DXNP");
       if (res && res.status === 200) {
         setApproval(res.data.data);
       }
@@ -74,7 +78,7 @@ const LeaveRequestDetail = () => {
 
   const getData = async () => {
     try {
-      let res = await getByIDJobRequirement(id);
+      let res = await getLeaveRequestById(id);
       if (res && res.status === 200) {
         setData(res.data.data);
       }
@@ -131,13 +135,13 @@ const LeaveRequestDetail = () => {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else if (key === "delete") {
       try {
-        let res = await deleteJobRequirements(data.id);
+        let res = await deleteLeaveRequestByID(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
             content: `Đã xóa thành công phiếu`,
           });
-          navigator("/tm/yeu-cau-cong-viec");
+          navigator("/pt/nhan-su/nghi-phep");
         }
       } catch (error) {
         Modal.error({
@@ -147,15 +151,6 @@ const LeaveRequestDetail = () => {
       }
     }
   };
-
-  const columns = [
-    { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "content" },
-    { title: "ĐVT", dataIndex: "unit" },
-    { title: "SL", dataIndex: "quantity" },
-    { title: "Thời gian hoàn thành", dataIndex: "workDay" },
-    { title: "Ghi chú", dataIndex: "note" },
-  ];
 
   return (
     <div style={{ padding: 10 }}>
@@ -189,12 +184,20 @@ const LeaveRequestDetail = () => {
                   size="small"
                   style={{ width: "100%" }}
                 >
-                  <div>Họ và tên: {data.voucherNo || ""}</div>
-                  <div>Chức vụ: {data.productName || ""}</div>
+                  <div>Họ và tên: {data.fullName || ""}</div>
+                  <div>Chức vụ: {data.position || ""}</div>
+                  <div>Phòng ban: {data.department || ""}</div>
+                  <div>Loại phép: {data.leaveType || ""}</div>
                   <div>
-                    Phòng ban:{" "}
-                    {data.voucherDate
-                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                    Ngày bắt đầu nghỉ:{" "}
+                    {data.startDate
+                      ? new Date(data.startDate).toLocaleDateString("vi-VN")
+                      : "---"}
+                  </div>
+                  <div>
+                    Ngày kết thúc nghỉ:{" "}
+                    {data.endDate
+                      ? new Date(data.endDate).toLocaleDateString("vi-VN")
                       : "---"}
                   </div>
                 </Space>
@@ -205,9 +208,12 @@ const LeaveRequestDetail = () => {
                   size="small"
                   style={{ width: "100%" }}
                 >
-                  <div>Ngày bắt đầu nghỉ: {data.managementUnit || ""}</div>
-                  <div>Ngày kết thúc nghỉ: {data.department || ""}</div>
-                  <div>Loại phép: {data.repairOrderCode || ""}</div>
+                  <div>Tổng ngày nghỉ: {data.totalDate || ""}</div>
+                  <div>Lý do: {data.reason || ""}</div>
+                  <div>
+                    Số điện thoại/email liên hệ: {data.emailOrPhone || ""}
+                  </div>
+                  <div>Nơi nghỉ phép: {data.address || ""}</div>
                 </Space>
               </Col>
               {approvals?.length > 0 && (

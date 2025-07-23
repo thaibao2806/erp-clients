@@ -172,7 +172,7 @@ const EmployeeDetail = () => {
                   <div>
                     Ngày sinh:{" "}
                     {data.dateOfBirth
-                      ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                      ? new Date(data.dateOfBirth).toLocaleDateString("vi-VN")
                       : "---"}
                   </div>
                   <div>Số điện thoại: {data.phoneNumber || ""}</div>

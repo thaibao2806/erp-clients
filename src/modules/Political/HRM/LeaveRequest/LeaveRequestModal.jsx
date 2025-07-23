@@ -17,7 +17,6 @@ import {
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { getDocumentNumber } from "../../../../services/apiAutoNumbering";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import { getAllUser } from "../../../../services/apiAuth";
 import {
@@ -25,6 +24,12 @@ import {
   getApprovalsByRef,
   updateStatusApprovals,
 } from "../../../../services/apiApprovals";
+import {
+  createLeaveRequest,
+  updateLeaveRequestByID,
+} from "../../../../services/apiPolitical/apiLeaveRequest";
+import { useSelector } from "react-redux";
+import { jwtDecode } from "jwt-decode";
 dayjs.extend(customParseFormat);
 
 const approvalStatusOptions = [
@@ -34,6 +39,8 @@ const approvalStatusOptions = [
 ];
 
 const calculateWorkingHours = (start, end) => {
+  if (!dayjs.isDayjs(start)) start = dayjs(start);
+  if (!dayjs.isDayjs(end)) end = dayjs(end);
   let totalMinutes = 0;
   let current = dayjs(start);
 
@@ -80,52 +87,56 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [totalDays, setTotalDays] = useState(0);
+  const user = useSelector((state) => state.auth.login?.currentUser);
+  const [userID, setUserID] = useState("");
+  useEffect(() => {
+    if (user && user.data.token) {
+      const decode = jwtDecode(user.data.token);
+      setUserID(decode.nameid);
+    }
+  }, []);
 
   useEffect(() => {
-    if (startDate && endDate && dayjs(endDate).isAfter(startDate)) {
+    if (
+      dayjs.isDayjs(startDate) &&
+      dayjs.isDayjs(endDate) &&
+      endDate.isAfter(startDate)
+    ) {
       const workingHours = calculateWorkingHours(startDate, endDate);
       const total = workingHours / 8;
       const totalFormatted = Number(total.toFixed(2));
       setTotalDays(totalFormatted);
-      form.setFieldsValue({ totalLeaveDays: totalFormatted });
+      form.setFieldsValue({ totalDate: totalFormatted });
     } else {
       setTotalDays(0);
-      form.setFieldsValue({ totalLeaveDays: 0 });
+      form.setFieldsValue({ totalDate: 0 });
     }
   }, [startDate, endDate, form]);
 
   useEffect(() => {
     if (open) {
-      form.setFieldsValue(initialValues || {});
-      setIsEditApproval(!!initialValues?.type);
-      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
-      if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
-        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+      if (initialValues) {
+        const patchedValues = {
+          ...initialValues,
+          startDate: initialValues.startDate
+            ? dayjs(initialValues.startDate)
+            : null,
+          endDate: initialValues.endDate ? dayjs(initialValues.endDate) : null,
+        };
 
-        const formattedDetails = initialValues.details.map((item, index) => ({
-          key: `${Date.now()}_${index}`,
-          stt: index + 1,
-          content: item.content || "",
-          unit: item.unit || "",
-          quantity: item.quantity || "",
-          workDay: item.workDay || "",
-          note: item.note || "",
-          ...columns.reduce((acc, day) => {
-            acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
-            return acc;
-          }, {}),
-        }));
-
-        setTableData(formattedDetails);
+        form.setFieldsValue(patchedValues);
+        setStartDate(patchedValues.startDate);
+        setEndDate(patchedValues.endDate);
+        setIsEditApproval(!!initialValues?.type);
+        getApprovals(initialValues.id);
       } else {
-        setTableData([]);
+        form.resetFields();
+        setStartDate(null);
+        setEndDate(null);
       }
+
       getApprovalByModulePage();
       getUser();
-      if (initialValues) {
-        getApprovals(initialValues.id);
-      }
     }
   }, [open, initialValues, form]);
 
@@ -177,126 +188,12 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-  const handleMonthChange = (date) => {
-    setMonthYear(date);
-    if (!date) return;
-
-    const daysInMonth = date.daysInMonth();
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  };
-
-  const handleAddRow = () => {
-    const daysInMonth = monthYear?.daysInMonth() || 0;
-    const newKey = `${Date.now()}`;
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const newRow = {
-      key: newKey,
-      stt: tableData.length + 1,
-      ...columns.reduce((acc, day) => {
-        acc[`d${day}`] = "";
-        return acc;
-      }, {}),
-    };
-    setTableData((prev) => [...prev, newRow]);
-  };
-
-  const handleDeleteRow = (key) => {
-    setTableData((prev) => prev.filter((item) => item.key !== key));
-  };
-
   const handleInputChange = (key, field, value) => {
     setTableData((prev) =>
       prev.map((item) =>
         item.key === key ? { ...item, [field]: value } : item
       )
     );
-  };
-
-  const generateColumns = () => {
-    const baseColumns = [
-      {
-        title: "",
-        dataIndex: "action",
-        width: 40,
-        render: (_, record) => (
-          <Tooltip title="Xóa dòng">
-            <Button
-              icon={<DeleteOutlined />}
-              size="small"
-              danger
-              onClick={() => handleDeleteRow(record.key)}
-            />
-          </Tooltip>
-        ),
-      },
-      {
-        title: "STT",
-        dataIndex: "stt",
-        width: 50,
-      },
-      {
-        title: "Nội dung",
-        dataIndex: "content",
-        render: (_, record) => (
-          <Input
-            value={record.content}
-            onChange={(e) =>
-              handleInputChange(record.key, "content", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "ĐVT",
-        dataIndex: "unit",
-        render: (_, record) => (
-          <Input
-            value={record.unit}
-            onChange={(e) =>
-              handleInputChange(record.key, "unit", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Số lượng",
-        dataIndex: "quantity",
-        render: (_, record) => (
-          <Input
-            value={record.quantity}
-            onChange={(e) =>
-              handleInputChange(record.key, "quantity", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "T/G hoàn thành",
-        dataIndex: "workDay",
-        render: (_, record) => (
-          <Input
-            value={record.workDay}
-            onChange={(e) =>
-              handleInputChange(record.key, "workDay", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Ghi chú",
-        dataIndex: "note",
-        render: (_, record) => (
-          <Input
-            value={record.note}
-            onChange={(e) =>
-              handleInputChange(record.key, "note", e.target.value)
-            }
-          />
-        ),
-      },
-    ];
-
-    return baseColumns;
   };
 
   const handleAddApprovals = async (refId, documentNumber) => {
@@ -314,10 +211,10 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
       const res = await createApprovals(
         refId,
-        "YCCV",
+        "DXNP",
         formattedApprovers,
         documentNumber,
-        `/tm/yeu-cau-cong-viec-chi-tiet/${refId}?type=PGV`
+        `/pt/nhan-su/nghi-phep-chi-tiet/${refId}?type=DXNP`
       );
       if (res && res.status === 200) {
         console.log("Tạo danh sách duyệt thành công");
@@ -354,24 +251,26 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
         try {
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
+            startDate: values.startDate
+              ? dayjs(values.startDate).format("YYYY-MM-DD HH:mm:ss")
+              : null,
+            endDate: values.endDate
+              ? dayjs(values.endDate).format("YYYY-MM-DD HH:mm:ss")
+              : null,
           };
 
-          let res = await createJobRequirements(
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
-            payload.details
+          let res = await createLeaveRequest(
+            payload.fullName || "",
+            payload.department || "",
+            payload.position || "",
+            payload.leaveType || "",
+            userID,
+            payload.startDate || "",
+            payload.endDate || "",
+            payload.totalDate || "",
+            payload.reason || "",
+            payload.address || "",
+            payload.emailOrPhone || ""
           );
           if (res && res.status === 200) {
             await handleAddApprovals(res.data.data, payload.documentNumber);
@@ -400,27 +299,29 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
         try {
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
+            startDate: values.startDate
+              ? dayjs(values.startDate).format("YYYY-MM-DD HH:mm:ss")
+              : null,
+            endDate: values.endDate
+              ? dayjs(values.endDate).format("YYYY-MM-DD HH:mm:ss")
+              : null,
           };
 
-          let res = await updateJobRequirements(
+          let res = await updateLeaveRequestByID(
             initialValues.id,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
+            payload.fullName,
             payload.department,
-            payload.managementUnit,
-            payload.details
+            payload.position,
+            payload.leaveType,
+            userID,
+            payload.startDate,
+            payload.endDate,
+            payload.totalDate,
+            payload.reason,
+            payload.address,
+            payload.emailOrPhone
           );
-          if (res && res.status === 200) {
+          if (res && res.status === 204) {
             if (isEditApproval) {
               await handleUpdateApprovals();
             }
@@ -451,9 +352,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
     <Modal
       title={
         <span style={{ fontSize: 25, fontWeight: 600 }}>
-          {initialValues
-            ? "Cập nhật đơn xin nghỉ phép"
-            : "Thêm đơn xin nghỉ phép"}
+          {initialValues ? "Cập nhật đơn xin nghỉ phép" : "Đơn xin nghỉ phép"}
         </span>
       }
       open={open}
@@ -469,14 +368,9 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
-          {/* <Col span={12}>
-            <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col> */}
           <Col span={12}>
             <Form.Item
-              name="voucherNo"
+              name="fullName"
               label="Họ và tên"
               rules={[{ required: true }]}
             >
@@ -485,7 +379,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="productName"
+              name="department"
               label="Phòng ban"
               rules={[{ required: true }]}
             >
@@ -494,7 +388,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="productName"
+              name="position"
               label="Chức vụ"
               rules={[{ required: false }]}
             >
@@ -503,7 +397,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="productName"
+              name="leaveType"
               label="Loại phép"
               rules={[{ required: false }]}
             >
@@ -512,7 +406,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="startLeaveDate"
+              name="startDate"
               label="Ngày bắt đầu nghỉ"
               rules={[
                 { required: true, message: "Vui lòng chọn ngày bắt đầu" },
@@ -529,7 +423,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
           <Col span={12}>
             <Form.Item
-              name="endLeaveDate"
+              name="endDate"
               label="Ngày kết thúc nghỉ"
               rules={[
                 { required: true, message: "Vui lòng chọn ngày kết thúc" },
@@ -545,7 +439,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
 
           <Col span={12}>
-            <Form.Item name="totalLeaveDays" label="Tổng số ngày nghỉ">
+            <Form.Item name="totalDate" label="Tổng số ngày nghỉ">
               <InputNumber
                 style={{ width: "100%" }}
                 value={totalDays}
@@ -556,7 +450,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
           <Col span={12}>
             <Form.Item
-              name="productName"
+              name="reason"
               label="Lý do nghỉ"
               rules={[{ required: true }]}
             >
@@ -565,7 +459,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="managementUnit"
+              name="emailOrPhone"
               label="Số điện thoại/email liên hệ"
               rules={[{ required: false }]}
             >
@@ -574,7 +468,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              name="managementUnit"
+              name="address"
               label="Nơi nghỉ"
               rules={[{ required: false }]}
             >

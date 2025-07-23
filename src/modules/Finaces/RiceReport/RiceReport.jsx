@@ -25,6 +25,10 @@ import {
   filterJobRequirements,
 } from "../../../services/apiTechnicalMaterial/apiJobRequirement";
 import RiceReportModal from "./RiceReportModal";
+import {
+  deleteRiceReportByID,
+  filterRiceReports,
+} from "../../../services/apiFinaces/apiRiceReport";
 
 const { RangePicker } = DatePicker;
 
@@ -46,23 +50,18 @@ const RiceReport = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-        repairOrderCode,
-      } = filters;
+      const { voucherNo, dateRange } = filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
+      let res = await filterRiceReports(
+        voucherNo || "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
         fromDate,
         toDate,
         "",
@@ -91,11 +90,7 @@ const RiceReport = () => {
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
-    department: "",
-    repairOrderCode: "",
+    voucherNo: "",
   });
 
   const columns = [
@@ -119,11 +114,7 @@ const RiceReport = () => {
     },
     {
       title: "Số lượng cơm",
-      dataIndex: "productName",
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "managementUnit",
+      dataIndex: "totalSL",
     },
   ];
 
@@ -195,7 +186,7 @@ const RiceReport = () => {
 
           // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteJobRequirements(id))
+            selectedRowKeys.map((id) => deleteRiceReportByID(id))
           );
 
           // Sau khi xóa thành công, cập nhật lại danh sách
@@ -233,10 +224,7 @@ const RiceReport = () => {
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+      voucherNo: "",
     });
     fetchData(pagination.current, pagination.pageSize);
   };

@@ -1,4 +1,4 @@
-export const url = "https://ca90497025d1.ngrok-free.app"
+export const url = "http://localhost:5251"
 
 //auth
 export const login = "/api/v1/Auth/login"
@@ -146,3 +146,27 @@ export const getEmployeeById = "/api/v1/cthc/employee/"
 export const updateEmployee = "/api/v1/cthc/employee/"
 export const deleteEmployee = "/api/v1/cthc/employee/"
 export const filterEmployee = "/api/v1/cthc/employee/filter"
+
+//leaveRequest
+export const getAllLeaveRequest = "/api/v1/cthc/leaverequest"
+export const addLeaveRequest = "/api/v1/cthc/leaverequest"
+export const getLeaveRequestByID = "/api/v1/cthc/leaverequest/"
+export const updateLeaveRequest = "/api/v1/cthc/leaverequest/"
+export const deleteLeaveRequest = "/api/v1/cthc/leaverequest/"
+export const filterLeaveRequest = "/api/v1/cthc/leaverequest/filter"
+
+// ricereport
+export const getAllRiceReport = "/api/v1/ct/ricereport"
+export const addRiceReport = "/api/v1/ct/ricereport"
+export const getRiceReportByID ="/api/v1/ct/ricereport/"
+export const updateRiceReport = "/api/v1/ct/ricereport/"
+export const deleteRiceReport = "/api/v1/ct/ricereport/"
+export const filterRiceReport = "/api/v1/ct/ricereport/filter"
+
+// timekeeping
+export const getAllTimeKeeping = "/api/v1/TimeKeeping"
+export const addTimeKeeping = "/api/v1/TimeKeeping"
+export const getTimeKeepingByID = "/api/v1/TimeKeeping/"
+export const updateTimeKeeping = "/api/v1/TimeKeeping/"
+export const deleteTimeKeeping = "/api/v1/TimeKeeping/"
+export const filterTimeKeeping = "/api/v1/TimeKeeping/filter"
