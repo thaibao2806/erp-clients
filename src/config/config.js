@@ -170,3 +170,13 @@ export const getTimeKeepingByID = "/api/v1/TimeKeeping/"
 export const updateTimeKeeping = "/api/v1/TimeKeeping/"
 export const deleteTimeKeeping = "/api/v1/TimeKeeping/"
 export const filterTimeKeeping = "/api/v1/TimeKeeping/filter"
+
+//kanban
+export const getAllKB = "/api/Kanban/boards"
+export const addKBB = "/api/Kanban/board"
+export const deleteKBB = "/api/Kanban/board/"
+export const getTaskKB = "/api/Kanban/tasks"
+export const getTaskID = "/api/Kanban/task/"
+export const deleteTaskKB = "/api/Kanban/task/"
+export const addTask = "/api/Kanban/task"
+export const updateStatusTask ="/api/Kanban/task/"

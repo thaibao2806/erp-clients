@@ -15,6 +15,11 @@ import {
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { getDocumentNumber } from "../../../services/apiAutoNumbering";
+import {
+  createTimeKeeping,
+  updateTimeKeepingByID,
+} from "../../../services/apiFinaces/apiTimeKeeping";
 
 dayjs.extend(customParseFormat);
 
@@ -25,6 +30,9 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   useEffect(() => {
     if (open) {
+      if (!initialValues) {
+        getVoucherNo();
+      }
       if (initialValues) {
         form.setFieldsValue(initialValues);
         setMonthYear(dayjs(initialValues.month));
@@ -53,6 +61,17 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
       }
     }
   }, [open, initialValues]);
+
+  const getVoucherNo = async () => {
+    try {
+      let res = await getDocumentNumber("CC");
+      if (res && res.status === 200) {
+        form.setFieldsValue({ voucherNo: res.data.data.code });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleMonthChange = (date) => {
     setMonthYear(date);
@@ -172,60 +191,144 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      try {
-        const daysInMonth = monthYear.daysInMonth();
-        const dayFields = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    if (!initialValues) {
+      form.validateFields().then(async (values) => {
+        try {
+          const daysInMonth = monthYear.daysInMonth();
+          const dayFields = Array.from(
+            { length: daysInMonth },
+            (_, i) => i + 1
+          );
 
-        const details = tableData.map((item) => {
-          const dayData = dayFields.reduce((acc, day) => {
-            acc[`d${day}`] = item[`d${day}`] || "";
-            return acc;
-          }, {});
+          const details = tableData.map((item) => {
+            const dayData = dayFields.reduce((acc, day) => {
+              acc[`d${day}`] = item[`d${day}`] || "";
+              return acc;
+            }, {});
 
-          const totalWork = dayFields.reduce((sum, day) => {
-            const val = (item[`d${day}`] || "").trim().toUpperCase();
-            switch (val) {
-              case "X":
-              case "CT":
-                return sum + 1;
-              case "X/2":
-                return sum + 0.5;
-              default:
-                return sum;
-            }
-          }, 0);
+            const totalWork = dayFields.reduce((sum, day) => {
+              const val = (item[`d${day}`] || "").trim().toUpperCase();
+              switch (val) {
+                case "X":
+                case "CT":
+                  return sum + 1;
+                case "X/2":
+                  return sum + 0.5;
+                default:
+                  return sum;
+              }
+            }, 0);
 
-          return {
-            fullName: item.fullName,
-            position: item.position,
-            ...dayData,
-            totalWork,
+            return {
+              fullName: item.fullName,
+              position: item.position,
+              ...dayData,
+              totalWork,
+            };
+          });
+
+          const payload = {
+            ...values,
+            voucherDate: monthYear.toISOString(),
+            month: monthYear.toISOString(),
+            details,
           };
-        });
 
-        const payload = {
-          ...values,
-          month: monthYear.toISOString(),
-          details,
-        };
+          console.log(payload.detail);
+          let res = await createTimeKeeping(
+            payload.voucherNo,
+            payload.voucherDate,
+            payload.month,
+            payload.note,
+            details
+          );
+          if (res && res.status === 200) {
+            onSubmit(payload);
+            form.resetFields();
+            setTableData([]);
+            setMonthYear(dayjs());
+            notification.success({
+              message: "Thành công",
+              description: "Lưu bảng chấm công thành công.",
+            });
+          }
+        } catch (error) {
+          notification.error({
+            message: "Lỗi",
+            description: "Đã có lỗi xảy ra khi lưu.",
+          });
+        }
+      });
+    } else {
+      form.validateFields().then(async (values) => {
+        try {
+          const daysInMonth = monthYear.daysInMonth();
+          const dayFields = Array.from(
+            { length: daysInMonth },
+            (_, i) => i + 1
+          );
 
-        onSubmit(payload);
-        form.resetFields();
-        setTableData([]);
-        setMonthYear(dayjs());
+          const details = tableData.map((item) => {
+            const dayData = dayFields.reduce((acc, day) => {
+              acc[`d${day}`] = item[`d${day}`] || "";
+              return acc;
+            }, {});
 
-        notification.success({
-          message: "Thành công",
-          description: "Lưu bảng chấm công thành công.",
-        });
-      } catch (error) {
-        notification.error({
-          message: "Lỗi",
-          description: "Đã có lỗi xảy ra khi lưu.",
-        });
-      }
-    });
+            const totalWork = dayFields.reduce((sum, day) => {
+              const val = (item[`d${day}`] || "").trim().toUpperCase();
+              switch (val) {
+                case "X":
+                case "CT":
+                  return sum + 1;
+                case "X/2":
+                  return sum + 0.5;
+                default:
+                  return sum;
+              }
+            }, 0);
+
+            return {
+              fullName: item.fullName,
+              position: item.position,
+              ...dayData,
+              totalWork,
+            };
+          });
+
+          const payload = {
+            ...values,
+            voucherDate: monthYear.toISOString(),
+            month: monthYear.toISOString(),
+            details,
+          };
+
+          console.log(payload.detail);
+          let res = await updateTimeKeepingByID(
+            initialValues.id,
+            payload.voucherNo,
+            payload.voucherDate,
+            payload.month,
+            payload.note,
+            details
+          );
+          if ((res && res.status === 200) || res.status === 204) {
+            onSubmit(payload);
+            form.resetFields();
+            setTableData([]);
+            setMonthYear(dayjs());
+            notification.success({
+              message: "Thành công",
+              description: "Lưu bảng chấm công thành công.",
+            });
+          }
+        } catch (error) {
+          notification.error({
+            message: "Lỗi",
+            description: "Đã có lỗi xảy ra khi lưu.",
+          });
+        }
+      });
+    }
   };
 
   return (

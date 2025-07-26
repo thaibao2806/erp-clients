@@ -25,6 +25,11 @@ import {
   filterJobRequirements,
 } from "../../../services/apiTechnicalMaterial/apiJobRequirement";
 import TimekeepingModal from "./TimekeepingModal";
+import {
+  deleteTimeKeepingByID,
+  filterTimeKeepings,
+} from "../../../services/apiFinaces/apiTimeKeeping";
+import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
 
@@ -46,23 +51,15 @@ const Timekeeping = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-        repairOrderCode,
-      } = filters;
+      const { voucherNo, dateRange } = filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
+      let res = await filterTimeKeepings(
+        voucherNo || "",
+        "",
+        "",
+        "",
         fromDate,
         toDate,
         "",
@@ -108,7 +105,7 @@ const Timekeeping = () => {
       title: "Số chứng từ",
       dataIndex: "voucherNo",
       render: (text, record) => (
-        <Link to={`/tm/yeu-cau-cong-viec-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+        <Link to={`/fn/nhan-su/cham-cong-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
@@ -119,11 +116,12 @@ const Timekeeping = () => {
     },
     {
       title: "Chấm công tháng",
-      dataIndex: "productName",
+      dataIndex: "month",
+      render: (date) => (date ? dayjs(date).format("MM/YYYY") : "---"),
     },
     {
-      title: "ghi chú",
-      dataIndex: "managementUnit",
+      title: "Ghi chú",
+      dataIndex: "note",
     },
   ];
 
@@ -195,7 +193,7 @@ const Timekeeping = () => {
 
           // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteJobRequirements(id))
+            selectedRowKeys.map((id) => deleteTimeKeepingByID(id))
           );
 
           // Sau khi xóa thành công, cập nhật lại danh sách
@@ -222,40 +220,40 @@ const Timekeeping = () => {
     });
   };
 
-  const handleExportExcel = async () => {
-    if (selectedRowKeys.length === 0) {
-      Modal.warning({
-        title: "Chưa chọn dòng nào",
-        content: "Vui lòng chọn ít nhất một dòng để xóa.",
-      });
-      return;
-    }
-    try {
-      for (const id of selectedRowKeys) {
-        const matchedItem = dataSource.find((item) => item.id === id);
-        const fileName = matchedItem?.voucherNo
-          ? `PhieuGiaoViec_${matchedItem.voucherNo}.xlsx`
-          : `PhieuGiaoViec_${id}.xlsx`;
-        try {
-          let res = await exportExcelJR(id);
-          const blob = new Blob([res.data], {
-            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          });
+  // const handleExportExcel = async () => {
+  //   if (selectedRowKeys.length === 0) {
+  //     Modal.warning({
+  //       title: "Chưa chọn dòng nào",
+  //       content: "Vui lòng chọn ít nhất một dòng để xóa.",
+  //     });
+  //     return;
+  //   }
+  //   try {
+  //     for (const id of selectedRowKeys) {
+  //       const matchedItem = dataSource.find((item) => item.id === id);
+  //       const fileName = matchedItem?.voucherNo
+  //         ? `PhieuGiaoViec_${matchedItem.voucherNo}.xlsx`
+  //         : `PhieuGiaoViec_${id}.xlsx`;
+  //       try {
+  //         let res = await exportExcelJR(id);
+  //         const blob = new Blob([res.data], {
+  //           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //         });
 
-          saveAs(blob, fileName);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    } catch (error) {
-      Modal.error({
-        title: "Lỗi xuất file",
-        content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  //         saveAs(blob, fileName);
+  //       } catch (error) {
+  //         console.log(error);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     Modal.error({
+  //       title: "Lỗi xuất file",
+  //       content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
@@ -268,10 +266,7 @@ const Timekeeping = () => {
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+      voucherNo: "",
     });
     fetchData(pagination.current, pagination.pageSize);
   };
@@ -305,9 +300,9 @@ const Timekeeping = () => {
               disabled={selectedRowKeys.length === 0}
             />
           </Tooltip>
-          <Tooltip title="Xuất excel">
+          {/* <Tooltip title="Xuất excel">
             <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} />
-          </Tooltip>
+          </Tooltip> */}
         </Space>
       </div>
 
@@ -339,16 +334,6 @@ const Timekeeping = () => {
                 value={filters.voucherNo}
                 onChange={(e) =>
                   handleFilterChange("voucherNo", e.target.value)
-                }
-              />
-            </Col>
-            <Col span={8}>
-              <label>Chấm công tháng</label>
-              <Input
-                placeholder="Chấm công tháng"
-                value={filters.productName}
-                onChange={(e) =>
-                  handleFilterChange("productName", e.target.value)
                 }
               />
             </Col>

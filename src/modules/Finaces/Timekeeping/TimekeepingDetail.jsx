@@ -31,6 +31,10 @@ import {
   getByIDJobRequirement,
 } from "../../../services/apiTechnicalMaterial/apiJobRequirement";
 import TimekeepingModal from "./TimekeepingModal";
+import {
+  deleteTimeKeepingByID,
+  getTimeKeepingById,
+} from "../../../services/apiFinaces/apiTimeKeeping";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -52,33 +56,11 @@ const TimekeepingDetail = () => {
 
   useEffect(() => {
     getData();
-    getApprovals();
-    getApprovalByModulePage();
   }, []);
-
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("TM", "tm-yeu-cau-cong-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getApprovals = async () => {
-    try {
-      let res = await getApprovalsByRef(id, "YCCV");
-      if (res && res.status === 200) {
-        setApproval(res.data.data);
-      }
-    } catch (error) {}
-  };
 
   const getData = async () => {
     try {
-      let res = await getByIDJobRequirement(id);
+      let res = await getTimeKeepingById(id);
       if (res && res.status === 200) {
         setData(res.data.data);
       }
@@ -135,13 +117,13 @@ const TimekeepingDetail = () => {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else if (key === "delete") {
       try {
-        let res = await deleteJobRequirements(data.id);
+        let res = await deleteTimeKeepingByID(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
             content: `Đã xóa thành công phiếu`,
           });
-          navigator("/tm/yeu-cau-cong-viec");
+          navigator("/fn/nhan-su/cham-cong");
         }
       } catch (error) {
         Modal.error({
@@ -154,18 +136,23 @@ const TimekeepingDetail = () => {
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "content" },
-    { title: "ĐVT", dataIndex: "unit" },
-    { title: "SL", dataIndex: "quantity" },
+    { title: "Họ và tên", dataIndex: "fullName" },
+    { title: "Chức vụ", dataIndex: "position" },
+    ...Array.from({ length: 31 }, (_, i) => ({
+      title: `Ngày ${i + 1}`,
+      dataIndex: `d${i + 1}`,
+      width: 80,
+      align: "center",
+    })),
     { title: "Thời gian hoàn thành", dataIndex: "workDay" },
-    { title: "Ghi chú", dataIndex: "note" },
+    { title: "Tổng công", dataIndex: "totalWork" },
   ];
 
   return (
     <div style={{ padding: 10 }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Title level={3}>Xem chi tiết phiếu yêu cầu công việc</Title>
+          <Title level={3}>Xem chi tiết phiếu chấm công</Title>
         </Col>
         <Col>
           <Dropdown
@@ -184,7 +171,7 @@ const TimekeepingDetail = () => {
         style={{ marginTop: 16 }}
         expandIconPosition="end"
       >
-        <Panel header="Thông tin phiếu yêu cầu công việc" key="1">
+        <Panel header="Thông tin phiếu chấm công" key="1">
           {data && (
             <Row gutter={16}>
               <Col span={12}>
@@ -194,7 +181,6 @@ const TimekeepingDetail = () => {
                   style={{ width: "100%" }}
                 >
                   <div>Số chứng từ: {data.voucherNo || ""}</div>
-                  <div>Tên sản phẩm: {data.productName || ""}</div>
                   <div>
                     Ngày chứng từ:{" "}
                     {data.voucherDate
@@ -209,45 +195,18 @@ const TimekeepingDetail = () => {
                   size="small"
                   style={{ width: "100%" }}
                 >
-                  <div>Đơn bị quản lý: {data.managementUnit || ""}</div>
-                  <div>Bộ phận: {data.department || ""}</div>
-                  <div>Lệnh sửa chữa: {data.repairOrderCode || ""}</div>
+                  <div>
+                    Chấm công tháng:{" "}
+                    {data.month ? dayjs(data.month).format("MM/YYYY") : "---"}
+                  </div>
+                  <div>Ghi chú: {data.note || ""}</div>
                 </Space>
               </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
             </Row>
           )}
         </Panel>
 
-        <Panel header="Nội dung phiếu yêu cầu công việc" key="2">
+        <Panel header="Nội dung phiếu chấm công" key="2">
           {data && (
             <Table
               columns={columns}
@@ -266,7 +225,7 @@ const TimekeepingDetail = () => {
         <Panel header="Đính kèm" key="3">
           <AttachmentSection
             refId={data ? data.id : ""}
-            refType={"JobRequirement"}
+            refType={"TimeKeeping"}
             refreshTrigger={refreshFlag}
           />
         </Panel>
@@ -274,7 +233,7 @@ const TimekeepingDetail = () => {
         <Panel header="Ghi chú" key="4">
           <NoteSection
             refId={data ? data.id : ""}
-            refType={"JobRequirement"}
+            refType={"TimeKeeping"}
             voucherNo={data ? data.voucherNo : ""}
           />
         </Panel>
@@ -293,7 +252,7 @@ const TimekeepingDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"JobRequirement"}
+              refType={"TimeKeeping"}
               voucherNo={data.voucherNo}
             />
           )}
@@ -305,7 +264,6 @@ const TimekeepingDetail = () => {
         onCancel={() => setIsModalOpen(false)}
         onSubmit={() => {
           getData();
-          getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}
@@ -324,7 +282,7 @@ const TimekeepingDetail = () => {
             const formData = new FormData();
             formData.append("file", file);
             formData.append("refId", data.id); // id của AssignmentSlip
-            formData.append("refType", "JobRequirement");
+            formData.append("refType", "TimeKeeping");
 
             try {
               const res = await addAttachments(formData, user.data.token);

@@ -12,7 +12,21 @@ const KanbanColumn = ({
 }) => {
   return (
     <Card
-      title={column.name}
+      title={
+        <div>
+          <div style={{ fontWeight: 600 }}>{column.name}</div>
+          {column.assignee && (
+            <div
+              style={{ display: "flex", alignItems: "center", marginTop: 4 }}
+            >
+              <Avatar size={24} icon={<UserOutlined />} />
+              <span style={{ marginLeft: 8, fontSize: 13 }}>
+                {column.assignee.name}
+              </span>
+            </div>
+          )}
+        </div>
+      }
       style={{ width: 360, marginRight: 16 }} // 👈 tăng chiều ngang
       extra={
         <div style={{ display: "flex", gap: 8 }}>

@@ -142,7 +142,7 @@ const RiceReportModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.slCT,
             payload.slTC,
             payload.slKH,
-            payload.totalSL,
+            totalSL,
             payload.chefId
           );
           if (res && res.status === 204) {
