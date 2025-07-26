@@ -221,8 +221,26 @@ const HeaderIcons = () => {
     try {
       if (notifications.length === 0) return;
 
-      await Promise.all(notifications.map((n) => markNotificationAsRead(n.id)));
-      //setNotifications([]);
+      // Lấy danh sách những thông báo chưa đọc
+      const unreadNotifications = notifications.filter((n) => !n.isRead);
+
+      if (unreadNotifications.length === 0) {
+        api.info({
+          message: "Thông tin",
+          description: "Tất cả thông báo đã được đọc",
+          placement: "topRight",
+          duration: 2,
+        });
+        return;
+      }
+
+      // Gọi API đánh dấu đã đọc cho tất cả thông báo chưa đọc
+      await Promise.all(
+        unreadNotifications.map((n) => markNotificationAsRead(n.id))
+      );
+
+      // Cập nhật state ngay lập tức
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 
       api.success({
         message: "Thành công",
@@ -244,7 +262,12 @@ const HeaderIcons = () => {
   const handleNotificationClick = async (notification) => {
     try {
       await markNotificationAsRead(notification.id);
-      //setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+
+      // Thay thế dòng comment cũ bằng cập nhật trạng thái isRead
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+      );
+
       navigate(notification.link);
     } catch (err) {
       console.error("Error marking notification as read:", err);
