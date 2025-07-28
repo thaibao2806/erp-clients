@@ -902,7 +902,7 @@ const KanbanBoard = () => {
         const userData = res.data?.data || res.data || [];
         const usersWithKey = userData.map((user) => ({
           ...user,
-          key: user.apk || user.id,
+          key: user.apk?.toString() || user.id?.toString(),
         }));
         console.log("Processed users:", usersWithKey);
         setUsers(usersWithKey);
@@ -973,9 +973,9 @@ const KanbanBoard = () => {
         if (board.assignees && Array.isArray(board.assignees)) {
           assignees = board.assignees.map((a) => {
             if (typeof a === "object" && a.userId) {
-              return parseInt(a.userId) || a.userId;
+              return a.userId.toString();
             }
-            return parseInt(a) || a;
+            return a.toString();
           });
         }
 
@@ -1014,7 +1014,7 @@ const KanbanBoard = () => {
         id:
           task.id && !task.id.startsWith("task-")
             ? task.id
-            : "00000000-0000-0000-0000-000000000000",
+            : crypto.randomUUID(),
         title: task.title,
         description: task.description || "",
         priority: task.priority || "medium",
@@ -1182,7 +1182,7 @@ const KanbanBoard = () => {
         id:
           columnData.id && !columnData.id.startsWith("column-")
             ? columnData.id
-            : "00000000-0000-0000-0000-000000000000",
+            : crypto.randomUUID(),
         name: columnData.name,
         assignees: columnData.assignees.map((userId) => {
           const user = users.find((u) => (u.id || u.apk) === userId);
