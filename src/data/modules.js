@@ -58,7 +58,7 @@ export const moduleData = {
     },
     PT: { // Customer Relationship Management
       lable:'CT-HC',
-      name: 'Ban chính trị - hành chính',
+      name: 'Ban chính trị - hậu cần',
       icon: PTIcon,
       pages: [
         // { key: 'crm-customers', label: 'Danh sách khách hàng', path: '/crm/customers' },

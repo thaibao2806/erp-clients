@@ -11,6 +11,7 @@ import {
   Modal,
   Upload,
   Card,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -146,6 +147,7 @@ const DDSX = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [treeFormData, setTreeFormData] = useState([]);
   const [editingKey, setEditingKey] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
     const res = await processApi.getByModule("DDSX");
@@ -195,6 +197,7 @@ const DDSX = () => {
   };
 
   const handleSave = async () => {
+    setLoading(true);
     const stepDtos = await Promise.all(treeFormData.map(convertNodeToDto));
     const payload = {
       id: editingKey,
@@ -212,22 +215,31 @@ const DDSX = () => {
     } catch (err) {
       console.error("Lỗi lưu quy trình:", err);
       alert("Lỗi khi lưu. Vui lòng kiểm tra dữ liệu và thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEdit = (record) => {
-    const assignKey = (node) => ({
-      ...node,
-      key: node.id,
-      file: node.fileName, // 🛠️ gán lại tên file để hiển thị
-      fileObject: null,
-      children: node.children?.map(assignKey) || [],
-    });
+    setLoading(true);
+    try {
+      const assignKey = (node) => ({
+        ...node,
+        key: node.id,
+        file: node.fileName, // 🛠️ gán lại tên file để hiển thị
+        fileObject: null,
+        children: node.children?.map(assignKey) || [],
+      });
 
-    const tree = assignKey(record);
-    setTreeFormData([tree]);
-    setEditingKey(record.processId);
-    setIsModalOpen(true);
+      const tree = assignKey(record);
+      setTreeFormData([tree]);
+      setEditingKey(record.processId);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddRoot = () => {
@@ -332,23 +344,48 @@ const DDSX = () => {
         onOk={handleSave}
         width={900}
       >
-        {treeFormData.map((node) => (
-          <TreeNodeForm
-            key={node.key}
-            node={node}
-            onChange={(updated) => {
-              setTreeFormData(
-                treeFormData.map((n) => (n.key === updated.key ? updated : n))
-              );
-            }}
-            onAddChild={(parentKey) => {
-              const addChild = (nodes) =>
-                nodes.map((node) => {
-                  if (node.key === parentKey) {
-                    return {
-                      ...node,
-                      children: [
-                        ...(node.children || []),
+        <Spin spinning={loading}>
+          {treeFormData.map((node) => (
+            <TreeNodeForm
+              key={node.key}
+              node={node}
+              onChange={(updated) => {
+                setTreeFormData(
+                  treeFormData.map((n) => (n.key === updated.key ? updated : n))
+                );
+              }}
+              onAddChild={(parentKey) => {
+                const addChild = (nodes) =>
+                  nodes.map((node) => {
+                    if (node.key === parentKey) {
+                      return {
+                        ...node,
+                        children: [
+                          ...(node.children || []),
+                          {
+                            key: generateKey(),
+                            name: "",
+                            creator: "",
+                            file: "",
+                            fileObject: null,
+                            children: [],
+                          },
+                        ],
+                      };
+                    } else if (node.children) {
+                      return { ...node, children: addChild(node.children) };
+                    }
+                    return node;
+                  });
+                setTreeFormData(addChild(treeFormData));
+              }}
+              onAddSibling={(targetKey) => {
+                const addSibling = (nodes, parent = null) => {
+                  return nodes.flatMap((node) => {
+                    if (node.key === targetKey && parent) {
+                      // Thêm sibling vào mảng children của parent
+                      return [
+                        node,
                         {
                           key: generateKey(),
                           name: "",
@@ -357,64 +394,41 @@ const DDSX = () => {
                           fileObject: null,
                           children: [],
                         },
-                      ],
-                    };
-                  } else if (node.children) {
-                    return { ...node, children: addChild(node.children) };
-                  }
-                  return node;
-                });
-              setTreeFormData(addChild(treeFormData));
-            }}
-            onAddSibling={(targetKey) => {
-              const addSibling = (nodes, parent = null) => {
-                return nodes.flatMap((node) => {
-                  if (node.key === targetKey && parent) {
-                    // Thêm sibling vào mảng children của parent
-                    return [
-                      node,
-                      {
-                        key: generateKey(),
-                        name: "",
-                        creator: "",
-                        file: "",
-                        fileObject: null,
-                        children: [],
-                      },
-                    ];
-                  } else if (node.children && node.children.length > 0) {
-                    return [
-                      {
-                        ...node,
-                        children: addSibling(node.children, node),
-                      },
-                    ];
-                  } else {
-                    return [node];
-                  }
-                });
-              };
-              setTreeFormData(addSibling(treeFormData));
-            }}
-            onRemove={(keyToRemove) => {
-              const removeNode = (nodes) =>
-                nodes
-                  .filter(Boolean)
-                  .map((node) => {
-                    if (node.key === keyToRemove) return null;
-                    if (node.children) {
-                      return {
-                        ...node,
-                        children: removeNode(node.children).filter(Boolean),
-                      };
+                      ];
+                    } else if (node.children && node.children.length > 0) {
+                      return [
+                        {
+                          ...node,
+                          children: addSibling(node.children, node),
+                        },
+                      ];
+                    } else {
+                      return [node];
                     }
-                    return node;
-                  })
-                  .filter(Boolean);
-              setTreeFormData(removeNode(treeFormData));
-            }}
-          />
-        ))}
+                  });
+                };
+                setTreeFormData(addSibling(treeFormData));
+              }}
+              onRemove={(keyToRemove) => {
+                const removeNode = (nodes) =>
+                  nodes
+                    .filter(Boolean)
+                    .map((node) => {
+                      if (node.key === keyToRemove) return null;
+                      if (node.children) {
+                        return {
+                          ...node,
+                          children: removeNode(node.children).filter(Boolean),
+                        };
+                      }
+                      return node;
+                    })
+                    .filter(Boolean);
+                setTreeFormData(removeNode(treeFormData));
+              }}
+            />
+          ))}
+        </Spin>
         <Button
           onClick={() => handleAddRoot()}
           icon={<PlusOutlined />}
