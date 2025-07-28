@@ -30,7 +30,11 @@ const createTask = (dto) => {
 }
 
 const updateStatusKB = (id, status) => {
-    return axiosInstance.patch(updateStatusTask + `${id}/status`, { status })
+    return axiosInstance.patch(updateStatusTask + `${id}/status`, { status },{
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
 }
 
 export {

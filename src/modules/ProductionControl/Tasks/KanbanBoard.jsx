@@ -1100,8 +1100,6 @@ const KanbanBoard = () => {
             boardId: currentTask.boardId,
             labels: currentTask.labels || [],
           };
-
-          console.log("Task update payload:", taskUpdateData);
           await createTask(taskUpdateData);
         }
 
