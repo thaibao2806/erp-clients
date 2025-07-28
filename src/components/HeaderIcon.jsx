@@ -163,7 +163,7 @@ const HeaderIcons = () => {
             notificationData.message ||
             notificationData.content ||
             "Bạn có thông báo mới",
-          placement: "topRight",
+          placement: "bottomRight",
           duration: 5,
           icon: <BellOutlined style={{ color: "#1890ff" }} />,
         });
@@ -192,7 +192,7 @@ const HeaderIcons = () => {
           api.error({
             message: "Lỗi kết nối",
             description: "Không thể kết nối đến server thông báo",
-            placement: "topRight",
+            placement: "bottomRight",
             duration: 4,
           });
         }
@@ -228,7 +228,7 @@ const HeaderIcons = () => {
         api.info({
           message: "Thông tin",
           description: "Tất cả thông báo đã được đọc",
-          placement: "topRight",
+          placement: "bottomRight",
           duration: 2,
         });
         return;
@@ -245,7 +245,7 @@ const HeaderIcons = () => {
       api.success({
         message: "Thành công",
         description: "Đã đánh dấu tất cả thông báo là đã đọc",
-        placement: "topRight",
+        placement: "bottomRight",
         duration: 2,
       });
     } catch (err) {
@@ -253,7 +253,7 @@ const HeaderIcons = () => {
       api.error({
         message: "Lỗi",
         description: "Không thể đánh dấu thông báo đã đọc",
-        placement: "topRight",
+        placement: "bottomRight",
         duration: 3,
       });
     }

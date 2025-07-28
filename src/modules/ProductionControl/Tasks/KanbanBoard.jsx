@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Input,
@@ -19,6 +19,8 @@ import {
   Spin,
   Skeleton,
   Progress,
+  Drawer,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -33,6 +35,8 @@ import {
   SettingOutlined,
   LoadingOutlined,
   SyncOutlined,
+  CommentOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -48,6 +52,9 @@ import {
 import { getAllUser } from "../../../services/apiAuth";
 import { useSelector } from "react-redux";
 import { jwtDecode } from "jwt-decode";
+import NoteSection from "../../../components/NoteSection ";
+import AttachmentSection from "../../../components/AttachmentSection ";
+import { addAttachments } from "../../../services/apiAttachment";
 
 const statusOptions = [
   { value: "pending", label: "🕓 Chưa thực hiện", color: "default" },
@@ -133,6 +140,7 @@ const EnhancedKanbanCard = ({
   task,
   onDelete,
   onEdit,
+  onComment,
   onStatusChange,
   users,
   isUpdating = false,
@@ -153,6 +161,12 @@ const EnhancedKanbanCard = ({
       disabled: isUpdating || isDeleting,
     },
     {
+      key: "comment",
+      label: "Nhận xét, đính kèm",
+      icon: <CommentOutlined />,
+      disabled: isUpdating || isDeleting,
+    },
+    {
       key: "delete",
       label: "Xóa",
       icon: isDeleting ? <LoadingOutlined /> : <DeleteOutlined />,
@@ -164,6 +178,8 @@ const EnhancedKanbanCard = ({
   const handleMenuClick = ({ key }) => {
     if (key === "edit" && !isUpdating && !isDeleting) {
       onEdit && onEdit(task);
+    } else if (key === "comment" && !isUpdating && !isDeleting) {
+      onComment && onComment(task);
     } else if (key === "delete" && !isUpdating && !isDeleting) {
       onDelete && onDelete(task.id);
     }
@@ -384,6 +400,7 @@ const EnhancedKanbanColumn = ({
   users,
   loadingStates = {},
   isDeleting = false,
+  onComment,
 }) => {
   const tasks = column.tasks || [];
   const overdueCount = tasks.filter(
@@ -535,6 +552,7 @@ const EnhancedKanbanColumn = ({
                 task: currentTask,
               });
             }}
+            onComment={onComment}
           />
         ))}
       </div>
@@ -867,6 +885,11 @@ const KanbanBoard = () => {
   const [activeColumnId, setActiveColumnId] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const [editingColumn, setEditingColumn] = useState(null);
+  const [openCommentDrawer, setOpenCommentDrawer] = useState(false);
+  const [commentTask, setCommentTask] = useState(null);
+  const [refreshFlag, setRefreshFlag] = useState(Date.now());
+  const fileInputRef = useRef(null);
+  const user = useSelector((state) => state.auth.login.currentUser);
 
   // Loading states for various operations
   const [loadingStates, setLoadingStates] = useState({
@@ -1438,6 +1461,11 @@ const KanbanBoard = () => {
                   setEditingColumn(column);
                   setIsColumnModalOpen(true);
                 }}
+                onComment={(task) => {
+                  setCommentTask(task);
+                  setOpenCommentDrawer(true);
+                  setRefreshFlag(Date.now());
+                }}
               />
             ))}
         </div>
@@ -1479,6 +1507,69 @@ const KanbanBoard = () => {
         users={users}
         isSubmitting={loadingStates.submittingColumn}
       />
+      <Drawer
+        title={`Nhận xét & Đính kèm - ${commentTask?.title || ""}`}
+        open={openCommentDrawer}
+        onClose={() => {
+          setOpenCommentDrawer(false);
+          setCommentTask(null);
+        }}
+        width={720}
+      >
+        {/* Nút đính kèm */}
+        <div style={{ marginBottom: 16 }}>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Đính kèm file
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            multiple
+            onChange={async (e) => {
+              const files = e.target.files;
+              if (!files.length || !commentTask?.id) return;
+
+              for (const file of files) {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("refId", commentTask.id);
+                formData.append("refType", "Task");
+
+                try {
+                  const res = await addAttachments(formData, user?.data?.token);
+                  message.success(`Đã upload file: ${file.name}`);
+                } catch (err) {
+                  console.error(err);
+                  message.error(`Upload thất bại: ${file.name}`);
+                }
+              }
+
+              e.target.value = "";
+              setRefreshFlag((prev) => prev + 1);
+            }}
+          />
+        </div>
+
+        {/* Phần hiển thị danh sách file */}
+        <div style={{ marginBottom: 24 }}>
+          <AttachmentSection
+            refId={commentTask?.id || ""}
+            refType="Task"
+            refreshTrigger={refreshFlag}
+          />
+        </div>
+
+        {/* Ghi chú */}
+        <NoteSection
+          refId={commentTask?.id || ""}
+          refType="Task"
+          voucherNo={commentTask?.title || ""}
+        />
+      </Drawer>
     </div>
   );
 };

@@ -90,7 +90,7 @@ export const moduleData = {
 
           { key: 'pm-bao-cao', label: 'B. Báo cáo', children: [
             { key: 'pm-bao-cao-kiem-ke', label: '1. Kiểm kê thiết bị', path: '/pm/bao-cao/kiem-ke-thiet-bi' },
-            // { key: 'pm-bao-cao-nhan-cong', label: '1. Nhân công các tổ', path: '/pm/bao-cao/bao-cao-nhan-cong' },
+            { key: 'pm-quan-ly-thiet-bi', label: '2. QL thiết bị bằng QR', path: '/pm/bao-cao/quan-ly-thiet-bi' },
             // { key: 'pm-bao-cao-thanh-tich', label: '2. Thành tích', path: '/pm/bao-cao/bao-cao-thanh-tich' },
             // { key: 'pm-bao-cao-chap-hanh-noi-quy', label: '3. Chấp hành nội quy', path: '/pm/bao-cao/bao-cao-chap-hanh-noi-quy' },
           ] },
