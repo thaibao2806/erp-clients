@@ -1,3 +1,4 @@
+// ✅ FULL FRONTEND CODE HOÀN CHỈNH — TC.jsx
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -95,7 +96,7 @@ const TreeNodeForm = ({
             <Button icon={<UploadOutlined />}>Chọn file</Button>
           </Upload>
           <div style={{ fontSize: 12 }}>
-            {node.file || node.fileObject?.name}
+            {node.fileObject?.name || node.file}
           </div>
         </Col>
         <Col>
@@ -218,7 +219,8 @@ const TC = () => {
     const assignKey = (node) => ({
       ...node,
       key: node.id,
-      fileObject: null, // 🛠️ reset fileObject nếu có
+      file: node.fileName, // 🛠️ gán lại tên file để hiển thị
+      fileObject: null,
       children: node.children?.map(assignKey) || [],
     });
 
