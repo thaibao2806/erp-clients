@@ -27,6 +27,12 @@ export const loginUser  = async(user, dispatch, navigate) => {
                 navigate("/pm/cong-viec");
             }else if (res.data.data.department === "KHKD"){
                 navigate("/pl/task");
+            }else if (res.data.data.department === "KTVTCN"){
+                navigate("/tm/task");
+            }else if (res.data.data.department === "TC"){
+                navigate("/fn/task");
+            }else if (res.data.data.department === "CTHC"){
+                navigate("/pt/task");
             } else {
                 navigate("/calendar");
             }
