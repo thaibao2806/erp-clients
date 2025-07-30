@@ -64,6 +64,8 @@ import RiceReport from "../modules/Finaces/RiceReport/RiceReport";
 import RiceReportDetail from "../modules/Finaces/RiceReport/RiceReportDetail";
 import Timekeeping from "../modules/Finaces/Timekeeping/Timekeeping";
 import TimekeepingDetail from "../modules/Finaces/Timekeeping/TimekeepingDetail";
+import DeviceManagementDetail from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagementDetail";
+import DeviceManagement from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagement";
 
 function AppRoute() {
   return (
@@ -242,6 +244,14 @@ function AppRoute() {
           <Route
             path="/fn/nhan-su/cham-cong-chi-tiet/:id"
             element={<TimekeepingDetail />}
+          />
+          <Route
+            path="/pm/bao-cao/quan-ly-thiet-bi"
+            element={<DeviceManagement />}
+          />
+          <Route
+            path="/pm/bao-cao/quan-ly-thiet-bi-chi-tiet/:id"
+            element={<DeviceManagementDetail />}
           />
         </Route>
       </Route>
