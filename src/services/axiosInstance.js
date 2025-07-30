@@ -7,7 +7,7 @@ import { logOut } from "../redux/authSlice";
 
 const axiosInstance  = axios.create({
     baseURL: url,
-    timeout: 60000,
+    timeout: 1000000,
 })
 
 export const handleLogout = () => {
