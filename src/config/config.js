@@ -1,4 +1,4 @@
-export const url = "https://44a5b09b897a.ngrok-free.app"
+export const url = "http://localhost:5251"
 
 //auth
 export const login = "/api/v1/Auth/login"
@@ -129,6 +129,7 @@ export const filterTaskProgress = "/api/v1/TaskProgress/filter"
 //notification
 export const filterNotification = "/api/Notification/filter"
 export const sendAllUser = "/api/Notification/broadcast"
+export const getByIDNotification = "/api/Notification/"
 
 //jobRequirement
 export const getAllJobRequirement = "/api/v1/JobRequirement"

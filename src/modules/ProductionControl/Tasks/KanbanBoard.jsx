@@ -966,9 +966,6 @@ const KanbanBoard = () => {
 
       setLoadingProgress(75);
 
-      console.log("Boards response:", boardsResponse);
-      console.log("Tasks response:", tasksResponse);
-
       // Handle different response structures
       const boards = Array.isArray(boardsResponse?.data)
         ? boardsResponse.data

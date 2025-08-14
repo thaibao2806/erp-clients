@@ -76,7 +76,6 @@ const HeaderIcons = () => {
   const [userId, setUserId] = useState(null);
   const [api, contextHolder] = notification.useNotification();
   const [avatarUrl, setAvatarUrl] = useState(null);
-
   // Lấy userId từ token
   useEffect(() => {
     if (user && user.data.token) {
@@ -377,13 +376,20 @@ const HeaderIcons = () => {
       >
         Đổi mật khẩu
       </Menu.Item>
-      <Menu.Item
-        key="setting-review"
-        icon={<CheckCircleOutlined />}
-        onClick={() => setApprovalModalOpen(true)}
-      >
-        Thiết lập xét duyệt
-      </Menu.Item>
+      {user.data.userName === "ADMIN" ? (
+        <>
+          <Menu.Item
+            key="setting-review"
+            icon={<CheckCircleOutlined />}
+            onClick={() => setApprovalModalOpen(true)}
+          >
+            Thiết lập xét duyệt
+          </Menu.Item>
+        </>
+      ) : (
+        <></>
+      )}
+
       <Menu.Divider />
       <Menu.Item
         key="logout"

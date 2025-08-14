@@ -66,6 +66,7 @@ import Timekeeping from "../modules/Finaces/Timekeeping/Timekeeping";
 import TimekeepingDetail from "../modules/Finaces/Timekeeping/TimekeepingDetail";
 import DeviceManagementDetail from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagementDetail";
 import DeviceManagement from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagement";
+import NotificationDetail from "../modules/Common/NotificationDetail";
 
 function AppRoute() {
   return (
@@ -183,6 +184,10 @@ function AppRoute() {
           />
           <Route path="/profile" element={<AccountInfo />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route
+            path="/notification-detail/:id"
+            element={<NotificationDetail />}
+          />
           {/* kh-kd */}
           <Route path="/pl/phieu-giao-viec" element={<AssignmentSlip />} />
           <Route

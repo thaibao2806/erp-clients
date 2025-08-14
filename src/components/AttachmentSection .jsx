@@ -58,12 +58,12 @@ const AttachmentSection = ({ refId, refType, refreshTrigger }) => {
     },
     {
       title: "Người tạo",
-      dataIndex: "createdBy",
+      dataIndex: "createdName",
     },
     {
       title: "Ngày tạo",
       dataIndex: "createdAt",
-      render: (text) => (text ? dayjs(text).format("DD/MM/YYYY HH:mm") : "--"),
+      render: (text) => (text ? dayjs(text).format("DD/MM/YYYY") : "--"),
     },
   ];
 

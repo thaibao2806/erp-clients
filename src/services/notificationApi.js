@@ -1,4 +1,4 @@
-import { filterNotification, sendAllUser, url } from "../config/config";
+import { filterNotification, getByIDNotification, sendAllUser, url } from "../config/config";
 import axiosInstance from "./axiosInstance";
 
 export const fetchUnreadNotifications = async (userId) => {
@@ -20,6 +20,10 @@ export const filterNofifications = (userId, keyword, isRead, fromDate, toDate, p
   })
 }
 
-export const sendAllUserNotification = (title, content, link,userId, toEmail) => {
-  return axiosInstance.post(sendAllUser, {title, content, link,userId, toEmail})
+export const sendAllUserNotification = (title, content, link, receivers) => {
+  return axiosInstance.post(sendAllUser, {title, content, link, receivers})
+}
+
+export const getNotificationByID = (id) => {
+  return axiosInstance.get(getByIDNotification + `${id}`)
 }

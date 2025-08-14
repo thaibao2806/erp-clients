@@ -43,6 +43,7 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
         refType,
         note,
         user.data?.userName || "unknown",
+        user.data?.fullName || "unknown",
         now,
         user.data?.userName || "unknown",
         now,
@@ -54,6 +55,7 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
             content: note,
             createdAt: now,
             createdBy: user.data?.userName || "unknown",
+            createdName: user.data?.fullName || "unknown",
             userName: user.data?.userName || "unknown",
           },
           ...notes,
@@ -158,11 +160,11 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
             {/* Nội dung ghi chú */}
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 500 }}>
-                {n.createdBy || "Người dùng"}
+                {n.createdName || n.createdBy}
               </div>
               <div style={{ whiteSpace: "pre-line" }}>{n.content}</div>
               <div style={{ fontSize: 12, color: "#999", textAlign: "right" }}>
-                {dayjs(n.createdAt).format("DD/MM/YYYY HH:mm:ss")}
+                {dayjs(n.createdAt).format("DD/MM/YYYY")}
               </div>
             </div>
           </div>

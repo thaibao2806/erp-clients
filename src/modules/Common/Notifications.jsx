@@ -106,6 +106,9 @@ const Notifications = () => {
     {
       title: "Tiêu đề",
       dataIndex: "title",
+      render: (text, record) => (
+        <Link to={`/notification-detail/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+      ),
     },
     {
       title: "Nội dung",
@@ -200,7 +203,7 @@ const Notifications = () => {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Thông báo, nhắc nhở</h1>
+        <h1 style={{ margin: 0 }}>Thông báo</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
             <Button
