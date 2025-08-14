@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 export const url = "http://localhost:5251"
+=======
+export const url = "https://88292de9f372.ngrok-free.app"
+>>>>>>> 5965f1871e399bca40482905a76f69ba5bc907e2
 
 //auth
 export const login = "/api/v1/Auth/login"
