@@ -97,7 +97,8 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
   };
 
   const columns = [
-    { title: "Tên người dùng", dataIndex: "userName", key: "userName" },
+    { title: "Mã người dùng", dataIndex: "userName", key: "userName" },
+    { title: "Tên người dùng", dataIndex: "fullName", key: "fullName" },
     { title: "Bộ phận", dataIndex: "department", key: "department" },
   ];
 
@@ -142,11 +143,34 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
           </Button>
         </div>
 
-        <div style={{ marginBottom: 8 }}>
+        <div
+          style={{
+            marginBottom: 8,
+            maxHeight: 100, // ✅ Giới hạn chiều cao
+            overflowY: 'auto', // ✅ Thanh cuộn dọc
+          }}
+        >
           {followers.map((user) => (
-            <Tag key={user.key}>{user.userName}</Tag>
+            <Tag
+              key={user.key}
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: 12,
+                padding: '2px 6px',
+                height: 24,
+                lineHeight: '20px',
+                width: 200,          // ✅ Chiều rộng cố định (px)
+                whiteSpace: 'nowrap', // ✅ Không xuống dòng
+                overflow: 'hidden',   // ✅ Ẩn chữ dư
+                textOverflow: 'ellipsis' // ✅ Hiện "..." nếu quá dài
+              }}
+            >
+              {user.userName}-{user.fullName}
+            </Tag>
           ))}
         </div>
+
       </Col>
 
       <Modal
