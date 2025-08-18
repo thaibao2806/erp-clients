@@ -11,11 +11,13 @@ export const moduleData = {
       name: 'Ban Kỹ thuật - Vật tư - Công nghệ',
       icon: KTIcon,
       pages: [
-        // { key: 'so-orders', label: 'Đơn hàng bán', path: '/so/orders' },
-        // { key: 'so-delivery', label: 'Tình trạng giao hàng', path: '/so/delivery-status' },
-        // { key: 'so-pricelist', label: 'Bảng giá', path: '/so/price-list' },
         { key: 'tm-yeu-cau-cong-viec', label: 'A. Yêu cầu công việc', path: '/tm/yeu-cau-cong-viec' },
         { key: 'tm-task', label: 'B. Công việc', path: '/tm/task' },
+        { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
+          { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },
+          { key: 'tm-phieu-xuat', label: '2. Phiếu xuất', path: '/tm/vat-tu/phieu-xuat' },
+          { key: 'tm-bien-ban-kiem-tra', label: '3. Biên bản kiểm tra VT', path: '/tm/vat-tu/bien-ban-kiem-tra-vt' },
+        ] }, 
       ],
     },
     PL: { // Purchase Order

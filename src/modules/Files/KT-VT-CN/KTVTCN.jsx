@@ -20,6 +20,7 @@ import {
   MinusCircleOutlined,
 } from "@ant-design/icons";
 import processApi from "../../../services/processApi";
+import { useSelector } from "react-redux";
 
 const { Title } = Typography;
 const generateKey = () => `temp-${Date.now()}-${Math.random()}`;
@@ -148,6 +149,7 @@ const KTVTCN = () => {
   const [treeFormData, setTreeFormData] = useState([]);
   const [editingKey, setEditingKey] = useState(null);
   const [loading, setLoading] = useState(false);
+  const user = useSelector((state) => state.auth.login?.currentUser);
 
   const fetchData = async () => {
     const res = await processApi.getByModule("KTVTCN");
@@ -159,6 +161,7 @@ const KTVTCN = () => {
         key: step.id,
         processId: p.id,
         processTitle: p.title,
+        isRoot: true,
         fileObject: null, // 🛠️ reset fileObject để không gây lỗi
       }))
     );
@@ -166,7 +169,9 @@ const KTVTCN = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    if(user.data?.department === "KTVTCN" || user.data?.department === "ADMIN" || user.data?.department === "BGD") {
+      fetchData();
+    }
   }, []);
 
   const convertNodeToDto = async (node) => {
@@ -220,7 +225,7 @@ const KTVTCN = () => {
     }
   };
 
-  const handleEdit = (record) => {
+  const handleEdit = (record,isRoot = false) => {
     setLoading(true);
     try {
       const assignKey = (node) => ({
@@ -228,6 +233,7 @@ const KTVTCN = () => {
         key: node.id,
         file: node.fileName, // 🛠️ gán lại tên file để hiển thị
         fileObject: null,
+        isRoot,
         children: node.children?.map(assignKey) || [],
       });
 
@@ -259,9 +265,12 @@ const KTVTCN = () => {
       title: "Tên bước",
       dataIndex: "name",
       key: "name",
-      render: (text, record) => (
-        <a onClick={() => handleEdit(record)}>{text}</a>
-      ),
+      render: (text, record) =>
+        record.isRoot ? (
+          <a onClick={() => handleEdit(record)}>{text}</a>
+        ) : (
+          <span>{text}</span>
+        ),
     },
     {
       title: "File",
