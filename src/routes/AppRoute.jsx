@@ -67,6 +67,12 @@ import TimekeepingDetail from "../modules/Finaces/Timekeeping/TimekeepingDetail"
 import DeviceManagementDetail from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagementDetail";
 import DeviceManagement from "../modules/ProductionControl/Reports/DeviceManagement/DeviceManagement";
 import NotificationDetail from "../modules/Common/NotificationDetail";
+import ImportWareHouse from "../modules/TechnicalMaterial/Supplies/ImportWareHouse/ImportWareHouse";
+import ImportWareHouseDetail from "../modules/TechnicalMaterial/Supplies/ImportWareHouse/ImportWareHouseDetail";
+import ExportWareHouse from "../modules/TechnicalMaterial/Supplies/ExportWareHouse/ExportWareHouse";
+import ExportWareHouseDetail from "../modules/TechnicalMaterial/Supplies/ExportWareHouse/ExportWareHouseDetail";
+import MaterialInspection from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspection";
+import MaterialInspectionDetail from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspectionDetail";
 
 function AppRoute() {
   return (
@@ -257,6 +263,30 @@ function AppRoute() {
           <Route
             path="/pm/bao-cao/quan-ly-thiet-bi-chi-tiet/:id"
             element={<DeviceManagementDetail />}
+          />
+          <Route
+            path="/tm/vat-tu/phieu-nhap"
+            element={<ImportWareHouse />}
+          />
+          <Route
+            path="/tm/vat-tu/phieu-nhap-chi-tiet/:id"
+            element={<ImportWareHouseDetail />}
+          />
+          <Route
+            path="/tm/vat-tu/phieu-xuat"
+            element={<ExportWareHouse />}
+          />
+          <Route
+            path="/tm/vat-tu/phieu-xuat-chi-tiet/:id"
+            element={<ExportWareHouseDetail />}
+          />
+          <Route
+            path="/tm/vat-tu/bien-ban-kiem-tra-vt"
+            element={<MaterialInspection />}
+          />
+          <Route
+            path="/tm/vat-tu/bien-ban-kiem-tra-vt-chi-tiet/:id"
+            element={<MaterialInspectionDetail />}
           />
         </Route>
       </Route>
