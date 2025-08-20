@@ -1,4 +1,4 @@
-export const url = "https://df44fca6b507.ngrok-free.app"
+export const url = "https://d2044133b8d7.ngrok-free.app"
 
 //auth
 export const login = "/api/v1/Auth/login"
