@@ -160,6 +160,7 @@ const ChangePassword = () => {
         )}
 
         {/* Bên phải: Form đăng nhập */}
+        {/* Bên phải: Form đổi mật khẩu */}
         <div
           style={{
             flex: 1,
@@ -170,103 +171,98 @@ const ChangePassword = () => {
             backgroundColor: "#FFFFFF",
           }}
         >
-          {/* Dropdown chọn ngôn ngữ */}
-          {/* <div style={{ textAlign: "right", marginBottom: "0px" }}>
-            <Select defaultValue="vi" onChange={handleLanguageChange} style={{ width: 120 }}>
-              <Select.Option value="vi">Tiếng Việt</Select.Option>
-              <Select.Option value="en">English</Select.Option>
-            </Select>
-          </div> */}
-
-          <h2
-            style={{
-              textAlign: "center",
-              color: "#1E3A8A",
-              fontSize: "36px",
-              fontWeight: "bold",
-              marginBottom: "30px",
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
             }}
           >
-            {/* {t("login")} */}
-            Đổi mật khẩu
-          </h2>
+            <h2
+              style={{
+                textAlign: "center",
+                color: "#1E3A8A",
+                fontSize: "36px",
+                fontWeight: "bold",
+                marginBottom: "30px",
+              }}
+            >
+              Đổi mật khẩu
+            </h2>
 
-          {/* Ô nhập mật khẩu */}
-          <Input.Password
-            value={currnetPassword}
-            onChange={(e) => setCurrnetPassword(e.target.value)}
-            placeholder={"Mật khẩu hiện tại"}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
-            }}
-          />
-          {errors.currnetPassword && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.currnetPassword}
-            </div>
-          )}
+            {/* Mật khẩu hiện tại */}
+            <Input.Password
+              value={currnetPassword}
+              onChange={(e) => setCurrnetPassword(e.target.value)}
+              placeholder="Mật khẩu hiện tại"
+              iconRender={(visible) =>
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+              }
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+                borderColor: errors.currnetPassword ? "red" : "",
+              }}
+            />
+            {errors.currnetPassword && (
+              <div style={{ color: "red", fontSize: "12px" }}>
+                {errors.currnetPassword}
+              </div>
+            )}
 
-          <Input.Password
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder={"Mật khẩu mới"}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
-            }}
-          />
-          {errors.newPassword && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.newPassword}
-            </div>
-          )}
+            {/* Mật khẩu mới */}
+            <Input.Password
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mật khẩu mới"
+              iconRender={(visible) =>
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+              }
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+                borderColor: errors.newPassword ? "red" : "",
+              }}
+            />
+            {errors.newPassword && (
+              <div style={{ color: "red", fontSize: "12px" }}>
+                {errors.newPassword}
+              </div>
+            )}
 
-          <Input.Password
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder={"Nhập lại mật khẩu"}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.newPassword ? "red" : "",
-            }}
-          />
-          {errors.newPassword && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.newPassword}
-            </div>
-          )}
+            {/* Xác nhận mật khẩu mới */}
+            <Input.Password
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Xác nhận mật khẩu mới"
+              iconRender={(visible) =>
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+              }
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+              }}
+            />
 
-          {/* Nút Đăng nhập */}
-          <Button
-            type="primary"
-            block
-            style={{
-              height: "50px",
-              fontSize: "18px",
-            }}
-            loading={loading} // Hiệu ứng loading
-            disabled={loading}
-            onClick={handleSubmit}
-          >
-            Đổi mật khẩu
-          </Button>
+            {/* Nút Đổi mật khẩu */}
+            <Button
+              type="primary"
+              block
+              htmlType="submit"   // 👈 để Enter submit form
+              style={{
+                height: "50px",
+                fontSize: "18px",
+              }}
+              loading={loading}
+              disabled={loading}
+            >
+              Đổi mật khẩu
+            </Button>
+          </form>
         </div>
+
       </div>
     </div>
   );

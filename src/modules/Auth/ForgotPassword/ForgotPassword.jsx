@@ -169,110 +169,119 @@ const ForgotPassword = () => {
 
         {/* Bên phải: Form đăng nhập */}
         <div
-          style={{
-            flex: 1,
-            padding: "30px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            backgroundColor: "#FFFFFF",
-          }}
-        >
-          <h2
-            style={{
-              textAlign: "center",
-              color: "#1E3A8A",
-              fontSize: "36px",
-              fontWeight: "bold",
-              marginBottom: "30px",
-            }}
-          >
-            Quên mật khẩu
-          </h2>
-
-          {/* Ô nhập tài khoản */}
-          <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={"Email"}
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.email ? "red" : "",
-            }}
-          />
-          {errors.email && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.email}</div>
-          )}
-
-          <Input
-            value={otp}
-            onChange={(e) => setOTP(e.target.value)}
-            placeholder={"Mã OTP"}
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-            }}
-          />
-
-          {/* Ô nhập mật khẩu */}
-          <Input.Password
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t("password")}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
-            }}
-          />
-          {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.password}
-            </div>
-          )}
-
-          <Input.Password
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder={"Nhập lại mật khẩu"}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.confirmPassword ? "red" : "",
-            }}
-          />
-          {errors.confirmPassword && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.confirmPassword}
-            </div>
-          )}
-
-          {/* Nút Đăng nhập */}
-          <Button
-            type="primary"
-            block
-            style={{
-              height: "50px",
-              fontSize: "18px",
-            }}
-            loading={loading} // Hiệu ứng loading
-            disabled={loading}
-            onClick={handleSubmit}
-          >
-            Đổi mật khẩu
-          </Button>
-        </div>
+                  style={{
+                    flex: 1,
+                    padding: "30px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    backgroundColor: "#FFFFFF",
+                  }}
+                >
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSubmit();
+                    }}
+                  >
+                    <h2
+                      style={{
+                        textAlign: "center",
+                        color: "#1E3A8A",
+                        fontSize: "36px",
+                        fontWeight: "bold",
+                        marginBottom: "30px",
+                      }}
+                    >
+                      Quên mật khẩu
+                    </h2>
+        
+                    {/* Ô nhập email */}
+                    <Input
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={"Email"}
+                      style={{
+                        marginBottom: "20px",
+                        height: "50px",
+                        fontSize: "16px",
+                        borderColor: errors.email ? "red" : "",
+                      }}
+                    />
+                    {errors.email && (
+                      <div style={{ color: "red", fontSize: "12px" }}>{errors.email}</div>
+                    )}
+        
+                    {/* Mã OTP */}
+                    <Input
+                      value={otp}
+                      onChange={(e) => setOTP(e.target.value)}
+                      placeholder={"Mã OTP"}
+                      style={{
+                        marginBottom: "20px",
+                        height: "50px",
+                        fontSize: "16px",
+                      }}
+                    />
+        
+                    {/* Mật khẩu */}
+                    <Input.Password
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t("password")}
+                      iconRender={(visible) =>
+                        visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                      }
+                      style={{
+                        marginBottom: "20px",
+                        height: "50px",
+                        fontSize: "16px",
+                        borderColor: errors.password ? "red" : "",
+                      }}
+                    />
+                    {errors.password && (
+                      <div style={{ color: "red", fontSize: "12px" }}>
+                        {errors.password}
+                      </div>
+                    )}
+        
+                    {/* Nhập lại mật khẩu */}
+                    <Input.Password
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder={"Nhập lại mật khẩu"}
+                      iconRender={(visible) =>
+                        visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                      }
+                      style={{
+                        marginBottom: "20px",
+                        height: "50px",
+                        fontSize: "16px",
+                        borderColor: errors.confirmPassword ? "red" : "",
+                      }}
+                    />
+                    {errors.confirmPassword && (
+                      <div style={{ color: "red", fontSize: "12px" }}>
+                        {errors.confirmPassword}
+                      </div>
+                    )}
+        
+                    {/* Nút Đổi mật khẩu */}
+                    <Button
+                      type="primary"
+                      block
+                      htmlType="submit"   // 👈 thêm dòng này
+                      style={{
+                        height: "50px",
+                        fontSize: "18px",
+                      }}
+                      loading={loading}
+                      disabled={loading}
+                    >
+                      Đổi mật khẩu
+                    </Button>
+                  </form>
+                </div>
       </div>
     </div>
   );

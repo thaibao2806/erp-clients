@@ -146,61 +146,59 @@ const CheckOTP = () => {
             backgroundColor: "#FFFFFF",
           }}
         >
-          {/* Dropdown chọn ngôn ngữ */}
-          {/* <div style={{ textAlign: "right", marginBottom: "0px" }}>
-            <Select defaultValue="vi" onChange={handleLanguageChange} style={{ width: 120 }}>
-              <Select.Option value="vi">Tiếng Việt</Select.Option>
-              <Select.Option value="en">English</Select.Option>
-            </Select>
-          </div> */}
-
-          <h2
-            style={{
-              textAlign: "center",
-              color: "#1E3A8A",
-              fontSize: "36px",
-              fontWeight: "bold",
-              marginBottom: "30px",
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // ngăn reload trang
+              handleSubmit();
             }}
           >
-            {/* {t("login")} */}
-            Quên mật khẩu
-          </h2>
-
-          {/* Ô nhập tài khoản */}
-          <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={"Nhập email"}
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.email ? "red" : "",
-            }}
-          />
-          {errors.email && (
-            <div
-              style={{ color: "red", fontSize: "12px", marginBottom: "10px" }}
+            <h2
+              style={{
+                textAlign: "center",
+                color: "#1E3A8A",
+                fontSize: "36px",
+                fontWeight: "bold",
+                marginBottom: "30px",
+              }}
             >
-              {errors.email}
-            </div>
-          )}
+              Quên mật khẩu
+            </h2>
 
-          {/* Nút Đăng nhập */}
-          <Button
-            type="primary"
-            block
-            style={{
-              height: "50px",
-              fontSize: "18px",
-            }}
-            loading={loading} // Hiệu ứng loading
-            disabled={loading}
-            onClick={handleSubmit}
-          >
-            Gửi mã
-          </Button>
+            {/* Ô nhập email */}
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={"Nhập email"}
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+                borderColor: errors.email ? "red" : "",
+              }}
+            />
+            {errors.email && (
+              <div
+                style={{ color: "red", fontSize: "12px", marginBottom: "10px" }}
+              >
+                {errors.email}
+              </div>
+            )}
+
+            {/* Nút gửi mã */}
+            <Button
+              type="primary"
+              block
+              htmlType="submit"   // 👈 thêm dòng này
+              style={{
+                height: "50px",
+                fontSize: "18px",
+              }}
+              loading={loading}
+              disabled={loading}
+            >
+              Gửi mã
+            </Button>
+          </form>
         </div>
       </div>
     </div>

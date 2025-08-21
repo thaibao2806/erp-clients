@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Checkbox, message, Select } from "antd";
+import { Button, Input, Checkbox } from "antd";
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
-import { useTranslation } from "react-i18next"; // Import hook useTranslation
+import { useTranslation } from "react-i18next";
 import loginBg from "../../../assets/images/login/login.jpg";
 import Bg from "../../../assets/images/login/bg.jpg";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { loginUser } from "../../../redux/apiRequest";
 
 const Login = () => {
   const dispatch = useDispatch();
-  const { t, i18n } = useTranslation(); // Hàm `t` để lấy giá trị dịch, `i18n` để thay đổi ngôn ngữ
+  const { t, i18n } = useTranslation();
   const [rememberMe, setRememberMe] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [username, setUsername] = useState("");
@@ -22,15 +22,19 @@ const Login = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setIsMobile(true); // Nếu màn hình nhỏ hơn hoặc bằng 768px
-      } else {
-        setIsMobile(false);
-      }
+      setIsMobile(window.innerWidth <= 768);
     };
-
     window.addEventListener("resize", handleResize);
-    handleResize(); // Gọi hàm ngay lập tức để xác định kích thước ban đầu
+    handleResize();
+
+    // 👇 Load username đã lưu
+    const savedUsername = localStorage.getItem("rememberedUsername");
+    const passwordUsername = localStorage.getItem("rememberedPassword");
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setPassword(passwordUsername);
+      setRememberMe(true);
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -47,10 +51,7 @@ const Login = () => {
   // Hàm xử lý submit
   const handleSubmit = async () => {
     setErrorLogin("");
-    const user = {
-      username,
-      password,
-    };
+    const user = { username, password };
     setErrors({ username: "", password: "" });
 
     if (!username) {
@@ -80,7 +81,17 @@ const Login = () => {
     let res = await loginUser(user, dispatch, navigate);
     if (res) {
       setErrorLogin(res);
+    } else {
+      // ✅ Lưu username nếu chọn nhớ mật khẩu
+      if (rememberMe) {
+        localStorage.setItem("rememberedUsername", username);
+        localStorage.setItem("rememberedPassword", password);
+      } else {
+        localStorage.removeItem("rememberedUsername");
+        localStorage.removeItem("rememberedPassword");
+      }
     }
+
     setLoading(false);
   };
 
@@ -114,10 +125,10 @@ const Login = () => {
           overflow: "hidden",
           boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           flexDirection: "row",
-          flexWrap: "wrap", // Cho phép các phần tử bọc khi màn hình nhỏ
+          flexWrap: "wrap",
         }}
       >
-        {/* Bên trái: Hình ảnh, chỉ hiển thị nếu không phải là mobile */}
+        {/* Bên trái: Hình ảnh */}
         {!isMobile && (
           <div
             style={{
@@ -145,108 +156,107 @@ const Login = () => {
             backgroundColor: "#FFFFFF",
           }}
         >
-          {/* Dropdown chọn ngôn ngữ */}
-          {/* <div style={{ textAlign: "right", marginBottom: "0px" }}>
-            <Select defaultValue="vi" onChange={handleLanguageChange} style={{ width: 120 }}>
-              <Select.Option value="vi">Tiếng Việt</Select.Option>
-              <Select.Option value="en">English</Select.Option>
-            </Select>
-          </div> */}
-
-          <h2
-            style={{
-              textAlign: "center",
-              color: "#1E3A8A",
-              fontSize: "36px",
-              fontWeight: "bold",
-              marginBottom: "30px",
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
             }}
           >
-            {t("login")}
-          </h2>
-          <h5
-            style={{
-              color: "red",
-              fontSize: "16px",
-              marginBottom: "10px",
-            }}
-          >
-            {errorLogin}
-          </h5>
-
-          {/* Ô nhập tài khoản */}
-          <Input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder={t("username")}
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.username ? "red" : "",
-            }}
-          />
-          {errors.username && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.username}
-            </div>
-          )}
-
-          {/* Ô nhập mật khẩu */}
-          <Input.Password
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t("password")}
-            iconRender={(visible) =>
-              visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-            }
-            style={{
-              marginBottom: "20px",
-              height: "50px",
-              fontSize: "16px",
-              borderColor: errors.password ? "red" : "",
-            }}
-          />
-          {errors.password && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.password}
-            </div>
-          )}
-
-          {/* Nhớ mật khẩu + Quên mật khẩu */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <Checkbox
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
+            <h2
+              style={{
+                textAlign: "center",
+                color: "#1E3A8A",
+                fontSize: "36px",
+                fontWeight: "bold",
+                marginBottom: "30px",
+              }}
             >
-              {t("rememberMe")}
-            </Checkbox>
-            <a href="/check-otp" style={{ color: "#1E3A8A" }}>
-              {t("forgotPassword")}
-            </a>
-          </div>
+              {t("login")}
+            </h2>
+            <h5
+              style={{
+                color: "red",
+                fontSize: "16px",
+                marginBottom: "10px",
+              }}
+            >
+              {errorLogin}
+            </h5>
 
-          {/* Nút Đăng nhập */}
-          <Button
-            type="primary"
-            block
-            style={{
-              height: "50px",
-              fontSize: "18px",
-            }}
-            loading={loading} // Hiệu ứng loading
-            disabled={loading} // Không nhấn được khi loading
-            onClick={handleSubmit}
-          >
-            {t("submit")}
-          </Button>
+            {/* Ô nhập tài khoản */}
+            <Input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t("username")}
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+                borderColor: errors.username ? "red" : "",
+              }}
+            />
+            {errors.username && (
+              <div style={{ color: "red", fontSize: "12px" }}>
+                {errors.username}
+              </div>
+            )}
+
+            {/* Ô nhập mật khẩu */}
+            <Input.Password
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t("password")}
+              iconRender={(visible) =>
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+              }
+              style={{
+                marginBottom: "20px",
+                height: "50px",
+                fontSize: "16px",
+                borderColor: errors.password ? "red" : "",
+              }}
+            />
+            {errors.password && (
+              <div style={{ color: "red", fontSize: "12px" }}>
+                {errors.password}
+              </div>
+            )}
+
+            {/* Nhớ mật khẩu + Quên mật khẩu */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <Checkbox
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              >
+                {t("rememberMe")}
+              </Checkbox>
+              <a href="/check-otp" style={{ color: "#1E3A8A" }}>
+                {t("forgotPassword")}
+              </a>
+            </div>
+
+            {/* Nút Đăng nhập */}
+            <Button
+              type="primary"
+              block
+              htmlType="submit"
+              style={{
+                height: "50px",
+                fontSize: "18px",
+              }}
+              loading={loading}
+              disabled={loading}
+            >
+              {t("submit")}
+            </Button>
+          </form>
         </div>
       </div>
     </div>
