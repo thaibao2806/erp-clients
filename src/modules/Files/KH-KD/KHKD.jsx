@@ -83,7 +83,7 @@ const TreeNodeForm = ({
           <Input
             placeholder="Người tạo"
             value={node.creator}
-            onChange={(e) => handleFieldChange("creator", e.target.value)}
+            disabled
           />
         </Col>
         <Col span={6}>
@@ -252,7 +252,7 @@ const KHKD = () => {
     const newRoot = {
       key: generateKey(),
       name: "",
-      creator: "",
+      creator: user?.data?.fullName || "",
       file: "",
       fileObject: null,
       children: [],
@@ -374,7 +374,7 @@ const KHKD = () => {
                           {
                             key: generateKey(),
                             name: "",
-                            creator: "",
+                            creator: user?.data?.fullName || "",
                             file: "",
                             fileObject: null,
                             children: [],
@@ -398,7 +398,7 @@ const KHKD = () => {
                         {
                           key: generateKey(),
                           name: "",
-                          creator: "",
+                          creator: user?.data?.fullName || "",
                           file: "",
                           fileObject: null,
                           children: [],
