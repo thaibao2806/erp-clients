@@ -32,6 +32,8 @@ import {
   createJobRequirements,
   updateJobRequirements,
 } from "../../../services/apiTechnicalMaterial/apiJobRequirement";
+import { useSelector } from "react-redux";
+import { addFollower } from "../../../services/apiFollower";
 dayjs.extend(customParseFormat);
 
 const approvalStatusOptions = [
@@ -48,6 +50,8 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [approvers, setApprovers] = useState([]);
   const [dataUser, setDataUser] = useState([]);
   const [isEditApproval, setIsEditApproval] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const user = useSelector((state) => state.auth.login?.currentUser);
 
   useEffect(() => {
     if (open) {
@@ -115,6 +119,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       let res = await getAllUser();
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
+          id: user.apk,
           value: user.userName, // hoặc user.id nếu cần
           label: user.fullName || user.userName,
         }));
@@ -322,6 +327,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
     if (!initialValues) {
       form.validateFields().then(async (values) => {
         try {
+          setLoading(true);
           const payload = {
             ...values,
             voucherDate: monthYear.toISOString(), // ISO định dạng
@@ -345,6 +351,18 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
           );
           if (res && res.status === 200) {
             await handleAddApprovals(res.data.data, payload.documentNumber);
+            const newFollowers = dataUser.find(u => u.value === user.data.userName);
+            await addFollower(
+              res.data.data,
+              "JobRequirement",
+               payload.documentNumber,
+               [
+                {
+                  userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
+                  userName: newFollowers.value, // chính là userName
+                }
+              ]
+            )
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -363,11 +381,14 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               placement: "topRight",
             });
           }
+        } finally{
+          setLoading(false);
         }
       });
     } else {
       form.validateFields().then(async (values) => {
         try {
+          setLoading(true);
           const payload = {
             ...values,
             voucherDate: monthYear.toISOString(), // ISO định dạng
@@ -412,6 +433,8 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               placement: "topRight",
             });
           }
+        } finally{
+          setLoading(false);
         }
       });
     }
@@ -434,6 +457,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       onOk={handleOk}
       okText={initialValues ? "Cập nhật" : "Thêm"}
       width={1000}
+      confirmLoading={loading}
     >
       <Form form={form} layout="vertical">
         <Row gutter={16}>
@@ -534,7 +558,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
                           <Select
                             options={approvalStatusOptions}
                             placeholder="Chọn trạng thái"
-                            disabled={!isEditApproval}
+                            disabled={!isEditApproval || item.username !== user.data.userName}
                           />
                         </Form.Item>
                       </Col>
@@ -547,6 +571,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
                             <Input.TextArea
                               rows={1}
                               placeholder="Ghi chú duyệt"
+                              disabled={!isEditApproval || item.username !== user.data.userName}
                             />
                           </Form.Item>
                         </Col>
