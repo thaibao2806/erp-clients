@@ -266,7 +266,7 @@ const HeaderIcons = () => {
       setNotifications((prev) =>
         prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
       );
-console.log(notification.link)
+
       navigate(notification.link);
     } catch (err) {
       console.error("Error marking notification as read:", err);
@@ -376,7 +376,7 @@ console.log(notification.link)
       >
         Đổi mật khẩu
       </Menu.Item>
-      {user.data.userName === "ADMIN" ? (
+      {user.data.userName === "Admin" ? (
         <>
           <Menu.Item
             key="setting-review"
