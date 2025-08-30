@@ -376,7 +376,7 @@ const HeaderIcons = () => {
       >
         Đổi mật khẩu
       </Menu.Item>
-      {user.data.userName === "Admin" ? (
+      {user.data.department === "ADMIN" ? (
         <>
           <Menu.Item
             key="setting-review"
