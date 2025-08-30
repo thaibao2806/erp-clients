@@ -332,7 +332,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.documentNumber,
             payload.planContent,
             payload.documentDate,
-            payload.receiver,
+            "",
             payload.note,
             payload.details
           );
@@ -395,7 +395,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.documentNumber,
             payload.planContent,
             payload.documentDate,
-            payload.receiver,
+            "",
             payload.note,
             payload.details
           );
@@ -487,7 +487,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          {/* <Col span={12}>
             <Form.Item
               name="receiver"
               label="Nơi nhận"
@@ -495,7 +495,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             >
               <Input />
             </Form.Item>
-          </Col>
+          </Col> */}
           <Col span={12}>
             <Form.Item name="note" label="Ghi chú">
               <Input.TextArea rows={1} />

@@ -382,7 +382,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.managingDepartment,
             payload.vehicleName,
             payload.documentDate,
-            payload.receivingLocation,
+            "",
             payload.runLocation,
             payload.runSchedule,
             payload.runTime,
