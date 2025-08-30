@@ -18,9 +18,7 @@ const updateEquipmentInventory = (id, divisionID, voucherNo, voucherDate, depart
 }
 
 const deleteEquipmentInventoryID = (id) => {
-    return axiosInstance.delete(url + deleteEquipmentInventory , {
-        params: {id}
-    })
+    return axiosInstance.delete(url + deleteEquipmentInventory + `${id}`)
 }
 
 const filterEquipmentInventories = (divisionID, voucherNo,  department, fromDate, toDate, currentUserName, page, pageSize) => {
