@@ -398,7 +398,7 @@ const BuySuppliesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             await addFollower(
               res.data.data,
               "BuySupplies",
-               payload.documentNumber,
+               payload.voucherNo,
                [
                 {
                   userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser

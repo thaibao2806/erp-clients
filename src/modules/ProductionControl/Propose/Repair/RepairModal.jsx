@@ -356,7 +356,7 @@ const RepairModal = ({ open, onCancel, onSubmit, initialValues }) => {
             await addFollower(
               res.data.data,
               "Repair",
-               payload.documentNumber,
+               payload.voucherNo,
                [
                 {
                   userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
