@@ -59,6 +59,7 @@ const SystemSection = ({ systemInfo, refId, refType, voucherNo }) => {
         newFollowers.map((u) => ({
           userId: u.apk,
           userName: u.userName,
+          fullName: u.fullName,
         }))
       );
 
