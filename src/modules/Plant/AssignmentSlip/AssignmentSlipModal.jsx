@@ -357,6 +357,7 @@ const AssignmentSlipModal = ({ open, onCancel, onSubmit, initialValues }) => {
                 {
                   userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
                   userName: newFollowers.value, // chính là userName
+                  fullName: user.data.fullName,
                 }
               ]
             )

@@ -350,16 +350,17 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.details
           );
           if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.documentNumber);
+            await handleAddApprovals(res.data.data, payload.voucherNo);
             const newFollowers = dataUser.find(u => u.value === user.data.userName);
             await addFollower(
               res.data.data,
               "JobRequirement",
-               payload.documentNumber,
+               payload.voucherNo,
                [
                 {
                   userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
                   userName: newFollowers.value, // chính là userName
+                  fullName: user.data.fullName,
                 }
               ]
             )
