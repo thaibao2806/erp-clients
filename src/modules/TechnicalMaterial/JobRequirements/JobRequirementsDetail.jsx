@@ -158,7 +158,13 @@ const JobRequirementsDetail = () => {
 
   const columns = [
     { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "content" },
+    { title: "Nội dung", dataIndex: "content",onCell: () => ({
+      style: { 
+        whiteSpace: "normal", 
+        wordWrap: "break-word", 
+        maxWidth: 500 // bạn có thể chỉnh kích thước mong muốn
+      },
+    }), },
     { title: "ĐVT", dataIndex: "unit" },
     { title: "SL", dataIndex: "quantity" },
     { title: "Thời gian hoàn thành", dataIndex: "workDay" },
