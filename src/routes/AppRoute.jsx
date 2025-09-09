@@ -73,6 +73,8 @@ import ExportWareHouse from "../modules/TechnicalMaterial/Supplies/ExportWareHou
 import ExportWareHouseDetail from "../modules/TechnicalMaterial/Supplies/ExportWareHouse/ExportWareHouseDetail";
 import MaterialInspection from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspection";
 import MaterialInspectionDetail from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspectionDetail";
+import MaterialEstimate from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimate";
+import MaterialEstimateDetail from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimateDetail";
 
 function AppRoute() {
   return (
@@ -287,6 +289,14 @@ function AppRoute() {
           <Route
             path="/tm/vat-tu/bien-ban-kiem-tra-vt-chi-tiet/:id"
             element={<MaterialInspectionDetail />}
+          />
+          <Route
+            path="/tm/du-tru-vat-tu"
+            element={<MaterialEstimate />}
+          />
+          <Route
+            path="/tm/du-tru-vat-tu-chi-tiet/:id"
+            element={<MaterialEstimateDetail />}
           />
         </Route>
       </Route>

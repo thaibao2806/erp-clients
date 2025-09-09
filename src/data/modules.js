@@ -12,6 +12,7 @@ export const moduleData = {
       icon: KTIcon,
       pages: [
         { key: 'tm-yeu-cau-cong-viec', label: 'A. Yêu cầu công việc', path: '/tm/yeu-cau-cong-viec' },
+        { key: 'tm-du-tru-vat-tu', label: 'B. Dự trù vật tư', path: '/tm/du-tru-vat-tu' },
         { key: 'tm-task', label: 'B. Công việc', path: '/tm/task' },
         // { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
         //   { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },

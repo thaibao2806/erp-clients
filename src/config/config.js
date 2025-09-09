@@ -1,4 +1,4 @@
-export const url = "https://c8c4fd074da5.ngrok-free.app"
+export const url = "http://localhost:5251"
 
 //auth
 export const login = "/api/v1/Auth/login"
@@ -181,3 +181,12 @@ export const getTaskID = "/api/Kanban/task/"
 export const deleteTaskKB = "/api/Kanban/task/"
 export const addTask = "/api/Kanban/task"
 export const updateStatusTask ="/api/Kanban/task/"
+
+//jobRequirement
+export const getAllMaterialEstimate = "/api/v1/MaterialEstimate"
+export const addMaterialEstimate = "/api/v1/MaterialEstimate"
+export const getMaterialEstimateByID = "/api/v1/MaterialEstimate/"
+export const updateMaterialEstimate = "/api/v1/MaterialEstimate/"
+export const deleteMaterialEstimate = "/api/v1/MaterialEstimate/"
+export const filterMaterialEstimate = "/api/v1/MaterialEstimate/filter"
+export const exportExcelMaterialEstimate = "/api/v1/MaterialEstimate/export-excel/"
