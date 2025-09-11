@@ -4,7 +4,7 @@ import { SmileOutlined } from "@ant-design/icons";
 import { addNotes, getNotes } from "../services/apiNotes";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
-
+import { v4 as uuidv4 } from "uuid";
 const { TextArea } = Input;
 
 const NoteSection = ({ refId, refType, voucherNo }) => {
@@ -35,7 +35,7 @@ const NoteSection = ({ refId, refType, voucherNo }) => {
 
     setSending(true); // ✅ Bắt đầu loading
     const now = new Date().toISOString();
-    let id = crypto.randomUUID();
+    let id = uuidv4();
     try {
       const res = await addNotes(
         id,

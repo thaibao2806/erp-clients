@@ -39,7 +39,7 @@ const QuoteMarquee = () => {
         }}
       >
         <div>
-         “{quotes[currentQuoteIndex].content}” — <span style={{ fontStyle: 'italic', color: 'gray' }}>{quotes[currentQuoteIndex].author}</span>
+         “{quotes[currentQuoteIndex].content}” — <span style={{ fontStyle: 'italic', color: 'white' }}>{quotes[currentQuoteIndex].author}</span>
          </div>
       </div>
 

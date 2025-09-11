@@ -31,6 +31,7 @@ import {
 } from "../../../services/apiApprovals";
 import { addFollower } from "../../../services/apiFollower";
 dayjs.extend(customParseFormat);
+import { v4 as uuidv4 } from "uuid";
 
 const approvalStatusOptions = [
   { value: "pending", label: "Chờ duyệt" },
@@ -209,7 +210,7 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             receivingDate: receivingDate.toISOString(),
           };
 
-          let id = crypto.randomUUID();
+          let id = uuidv4();
 
           let res = await createReceivingReport(
             id,

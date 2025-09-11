@@ -167,10 +167,10 @@ const Projects = () => {
         <h1 style={{ margin: 0 }}>Dự án</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} />
+            <Button onClick={handleAdd} icon={<PlusOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xóa">
             <Button
@@ -181,10 +181,10 @@ const Projects = () => {
             />
           </Tooltip>
           <Tooltip title="In">
-            <Button icon={<PrinterOutlined />} />
+            <Button icon={<PrinterOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
+            <Button icon={<FileExcelOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
         </Space>
       </div>

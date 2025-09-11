@@ -246,10 +246,11 @@ const EquipmentInventory = () => {
             <Button
               icon={<SearchOutlined />}
               onClick={() => setShowFilters(!showFilters)}
+              style={{ background:"#e6f4fb", color:"#0700ad" }}
             />
           </Tooltip>
           <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} />
+            <Button onClick={handleAdd} icon={<PlusOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xóa">
             <Button
@@ -339,6 +340,20 @@ const EquipmentInventory = () => {
           fetchData(pagination.current, pagination.pageSize);
         }}
         bordered
+        components={{
+                header: {
+                  cell: (props) => (
+                    <th
+                      {...props}
+                      style={{
+                        backgroundColor: "#e6f4fb",
+                        color: "#0700ad",
+                        fontWeight: "600",
+                      }}
+                    />
+                  ),
+                  },
+              }}
       />
 
       {/* Modal */}

@@ -169,10 +169,10 @@ const ConfirmStatus = () => {
         <h1 style={{ margin: 0 }}>Biên bản xác nhận tình trạng thiết bị</h1>
         <Space>
           <Tooltip title="Tìm kiếm">
-            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} />
+            <Button icon={<SearchOutlined />} onClick={() => setShowFilters(!showFilters)} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} />
+            <Button onClick={handleAdd} icon={<PlusOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xóa">
             <Button
@@ -183,10 +183,10 @@ const ConfirmStatus = () => {
             />
           </Tooltip>
           <Tooltip title="In">
-            <Button icon={<PrinterOutlined />} />
+            <Button icon={<PrinterOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
+            <Button icon={<FileExcelOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
         </Space>
       </div>
@@ -245,6 +245,20 @@ const ConfirmStatus = () => {
         dataSource={dataSource}
         pagination={{ pageSize: 5 }}
         bordered
+        components={{
+                header: {
+                  cell: (props) => (
+                    <th
+                      {...props}
+                      style={{
+                        backgroundColor: "#e6f4fb",
+                        color: "#0700ad",
+                        fontWeight: "600",
+                      }}
+                    />
+                  ),
+                  },
+              }}
       />
 
       {/* Modal */}

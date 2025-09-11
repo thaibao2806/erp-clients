@@ -6,7 +6,7 @@ import {
   createApproveSetting,
   getApprovalSetting,
 } from "../services/apiApproveSetting";
-
+import { v4 as uuidv4 } from "uuid";
 const { Option } = Select;
 
 const ApprovalSettingModal = ({ open, onClose }) => {
@@ -14,6 +14,7 @@ const ApprovalSettingModal = ({ open, onClose }) => {
   const [selectedPage, setSelectedPage] = useState(null);
   const [approverCount, setApproverCount] = useState(1);
   const user = useSelector((state) => state.auth.login?.currentUser);
+  
 
   useEffect(() => {
     if (selectedModule || selectedPage) {
@@ -38,7 +39,7 @@ const ApprovalSettingModal = ({ open, onClose }) => {
   };
 
   const handleOk = async () => {
-    let id = crypto.randomUUID();
+    let id = uuidv4();
     try {
       let res = await createApproveSetting(
         id,

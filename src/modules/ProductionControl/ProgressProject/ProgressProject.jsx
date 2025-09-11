@@ -275,10 +275,11 @@ const ProgressProject = () => {
             <Button
               icon={<SearchOutlined />}
               onClick={() => setShowFilters(!showFilters)}
+              style={{ background:"#e6f4fb", color:"#0700ad" }}
             />
           </Tooltip>
           <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} />
+            <Button onClick={handleAdd} icon={<PlusOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xóa">
             <Button

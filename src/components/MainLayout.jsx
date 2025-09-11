@@ -33,6 +33,7 @@ import {
 import HeaderIcons from "./HeaderIcon";
 import Title from "antd/es/typography/Title";
 import QuoteMarquee from "./QuoteMarquee";
+import "./mainLayout.css";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -206,6 +207,8 @@ const MainLayout = () => {
           bottom: 0,
           zIndex: 101, // Đảm bảo Sider luôn ở trên
           borderRight: "1px solid #f0f0f0", // Thêm đường viền phải nhẹ nhàng
+          background: "#bbdceb", 
+          color: "#000",
         }}
       >
         {/* Phần Header của Sider (chứa Select hoặc Icon) */}
@@ -219,10 +222,11 @@ const MainLayout = () => {
             position: "sticky", // Giữ cố định khi scroll menu
             top: 0,
             color: "#ffff",
-            //background: '#fff',
+            background: '#006eb4',
             zIndex: 1, // Trên Menu
             borderBottom: "1px solid #f0f0f0", // Đường kẻ dưới
             transition: "padding 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)",
+            
           }}
         >
           <Dropdown
@@ -234,14 +238,14 @@ const MainLayout = () => {
               <AppstoreOutlined
                 style={{
                   fontSize: "30px",
-                  color: "#1890ff",
+                  color: "#ffff",
                   cursor: "pointer",
                 }}
               />
               {!collapsed && (
                 <Text
                   style={{
-                    color: "#1890ff",
+                    color: "#ffff",
                     fontWeight: "bold",
                     margin: 0,
                     fontSize: "30px",
@@ -258,11 +262,12 @@ const MainLayout = () => {
 
         {/* Menu điều hướng */}
         <Menu
-          theme="dark"
+          // theme="light"
           mode="inline"
           selectedKeys={selectedKeys}
           items={menuItems}
-          style={{ borderRight: 0, paddingTop: 8 }} // Giảm padding top một chút
+          // style={{ borderRight: 0, paddingTop: 8,background: "#bbdceb",  }} // Giảm padding top một chút
+          className="custom-menu"
           // inlineCollapsed={collapsed} // Sider tự quản lý khi có prop `collapsed`
         />
       </Sider>
@@ -278,8 +283,9 @@ const MainLayout = () => {
         <Header
           style={{
             padding: "0 16px",
-            background: "#fff",
+            background: "#006eb4",
             borderBottom: "1px solid #f0f0f0",
+            color: "#fff",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between", // Canh đều các phần
@@ -300,7 +306,7 @@ const MainLayout = () => {
               height: "100%", // Chiều cao bằng Header
               marginRight: 16, // Khoảng cách với text bên phải
               marginLeft: -16, // Bù lại padding của Header để nút sát lề trái
-              color: "#000000d9", // Màu icon
+              color: "#fff", // Màu icon
               borderRadius: 0, // Bỏ bo góc nếu muốn
             }}
           />

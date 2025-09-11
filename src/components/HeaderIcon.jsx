@@ -8,6 +8,9 @@ import {
   LogoutOutlined,
   LockOutlined,
   CheckCircleOutlined,
+  CalendarFilled,
+  BellFilled,
+  EditFilled,
 } from "@ant-design/icons";
 import {
   Dropdown,
@@ -407,14 +410,14 @@ const HeaderIcons = () => {
       {contextHolder}
       <div style={{ display: "flex", alignItems: "center", gap: "35px" }}>
         <Tooltip title="Xét duyệt">
-          <EditOutlined
+          <EditFilled
             style={{ fontSize: "20px", cursor: "pointer" }}
             onClick={() => navigate("/review")}
           />
         </Tooltip>
 
         <Tooltip title="Lịch">
-          <CalendarOutlined
+          <CalendarFilled
             style={{ fontSize: "20px", cursor: "pointer" }}
             onClick={() => navigate("/calendar")}
           />
@@ -431,11 +434,11 @@ const HeaderIcons = () => {
               count={notifications.filter((n) => !n.isRead).length}
               size="small"
             >
-              <BellOutlined
+              <BellFilled
                 style={{
                   fontSize: "20px",
                   cursor: "pointer",
-                  color: showNotifications ? "#1890ff" : "inherit",
+                  color: showNotifications ? "#1890ff" : "white",
                 }}
               />
             </Badge>
@@ -470,7 +473,7 @@ const HeaderIcons = () => {
               <span
                 style={{
                   fontSize: "12px",
-                  color: "#999",
+                  color: "#fff",
                   fontWeight: 500,
                   paddingTop: "4px",
                 }}

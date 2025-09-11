@@ -260,6 +260,20 @@ const PlantsDetail = () => {
               size="small"
               bordered
               pagination={false}
+              components={{
+                header: {
+                  cell: (props) => (
+                    <th
+                      {...props}
+                      style={{
+                        backgroundColor: "#e6f4fb",
+                        color: "#0700ad",
+                        fontWeight: "600",
+                      }}
+                    />
+                  ),
+                  },
+              }}
             />
           )}
         </Panel>

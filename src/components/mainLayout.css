@@ -1,0 +1,31 @@
+/* Nền và chữ mặc định */
+.custom-menu {
+    background: #bbdceb !important;
+    color: #000 !important;
+    font-weight: 500;
+}
+
+/* Hover */
+.custom-menu .ant-menu-item:hover,
+.custom-menu .ant-menu-submenu-title:hover {
+    background: #e6f7ff !important;
+    color: #000 !important;
+}
+
+/* Item được chọn */
+.custom-menu .ant-menu-item-selected {
+    background: #006eb4 !important;
+    /* xanh đậm */
+    color: #fff !important;
+    /* chữ trắng */
+}
+
+/* Icon khi được chọn */
+.custom-menu .ant-menu-item-selected .ant-menu-item-icon {
+    color: #fff !important;
+}
+
+/* Mũi tên của submenu */
+.custom-menu .ant-menu-submenu-arrow {
+    color: #000 !important;
+}

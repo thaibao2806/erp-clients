@@ -55,7 +55,7 @@ import { jwtDecode } from "jwt-decode";
 import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import { addAttachments } from "../../../services/apiAttachment";
-
+import { v4 as uuidv4 } from "uuid";
 const statusOptions = [
   { value: "pending", label: "🕓 Chưa thực hiện", color: "default" },
   { value: "in-progress", label: "⚙️ Đang làm", color: "blue" },
@@ -1034,7 +1034,7 @@ const KanbanBoard = () => {
         id:
           task.id && !task.id.startsWith("task-")
             ? task.id
-            : crypto.randomUUID(),
+            : uuidv4(),
         title: task.title,
         description: task.description || "",
         priority: task.priority || "medium",
@@ -1202,7 +1202,7 @@ const KanbanBoard = () => {
         id:
           columnData.id && !columnData.id.startsWith("column-")
             ? columnData.id
-            : crypto.randomUUID(),
+            : uuidv4(),
         name: columnData.name,
         assignees: columnData.assignees.map((userId) => {
           const user = users.find((u) => (u.id || u.apk) === userId);
