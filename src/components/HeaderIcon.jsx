@@ -11,6 +11,7 @@ import {
   CalendarFilled,
   BellFilled,
   EditFilled,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Dropdown,
@@ -23,6 +24,7 @@ import {
   Menu,
   notification,
   Badge,
+  Drawer,
 } from "antd";
 import ApprovalSettingModal from "./ApprovalSettingModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -65,6 +67,30 @@ const getRandomColor = (seed) => {
   return colors[index];
 };
 
+// Hook để theo dõi kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const HeaderIcons = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -72,6 +98,7 @@ const HeaderIcons = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
   const initials = getInitials(user.data.fullName);
   const color = getRandomColor(initials);
@@ -79,6 +106,13 @@ const HeaderIcons = () => {
   const [userId, setUserId] = useState(null);
   const [api, contextHolder] = notification.useNotification();
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const { width } = useWindowSize();
+  
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+  const isDesktop = width > 1024;
+
   // Lấy userId từ token
   useEffect(() => {
     if (user && user.data.token) {
@@ -165,7 +199,7 @@ const HeaderIcons = () => {
             notificationData.message ||
             notificationData.content ||
             "Bạn có thông báo mới",
-          placement: "bottomRight",
+          placement: isMobile ? "top" : "bottomRight",
           duration: 5,
           icon: <BellOutlined style={{ color: "#1890ff" }} />,
         });
@@ -194,7 +228,7 @@ const HeaderIcons = () => {
           api.error({
             message: "Lỗi kết nối",
             description: "Không thể kết nối đến server thông báo",
-            placement: "bottomRight",
+            placement: isMobile ? "top" : "bottomRight",
             duration: 4,
           });
         }
@@ -217,7 +251,7 @@ const HeaderIcons = () => {
         connectionRef.current = null;
       }
     };
-  }, [userId, api]); // Chỉ phụ thuộc vào userId và api
+  }, [userId, api, isMobile]); // Thêm isMobile vào dependencies
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -230,7 +264,7 @@ const HeaderIcons = () => {
         api.info({
           message: "Thông tin",
           description: "Tất cả thông báo đã được đọc",
-          placement: "bottomRight",
+          placement: isMobile ? "top" : "bottomRight",
           duration: 2,
         });
         return;
@@ -247,7 +281,7 @@ const HeaderIcons = () => {
       api.success({
         message: "Thành công",
         description: "Đã đánh dấu tất cả thông báo là đã đọc",
-        placement: "bottomRight",
+        placement: isMobile ? "top" : "bottomRight",
         duration: 2,
       });
     } catch (err) {
@@ -255,7 +289,7 @@ const HeaderIcons = () => {
       api.error({
         message: "Lỗi",
         description: "Không thể đánh dấu thông báo đã đọc",
-        placement: "bottomRight",
+        placement: isMobile ? "top" : "bottomRight",
         duration: 3,
       });
     }
@@ -271,6 +305,7 @@ const HeaderIcons = () => {
       );
 
       navigate(notification.link);
+      setMobileMenuVisible(false); // Đóng mobile menu sau khi navigate
     } catch (err) {
       console.error("Error marking notification as read:", err);
     }
@@ -281,7 +316,7 @@ const HeaderIcons = () => {
       <div
         key={item.id}
         style={{
-          padding: "10px 16px",
+          padding: isMobile ? "8px 12px" : "10px 16px",
           cursor: "pointer",
           backgroundColor: item.isRead ? "transparent" : "#e6f7ff",
         }}
@@ -295,9 +330,11 @@ const HeaderIcons = () => {
       >
         <div style={{ display: "flex", alignItems: "center" }}>
           <div>
-            <Text strong>{item.content}</Text>
+            <Text strong style={{ fontSize: isMobile ? 12 : 14 }}>
+              {item.content}
+            </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: isMobile ? 10 : 12 }}>
               {dayjs(item.createdAt).format("DD/MM/YYYY")}
             </Text>
           </div>
@@ -312,14 +349,15 @@ const HeaderIcons = () => {
       connectionRef.current.stop().catch(console.log);
       connectionRef.current = null;
     }
+    setMobileMenuVisible(false);
     logOutUser(dispatch, navigate);
   };
 
   const notificationMenu = (
     <div
       style={{
-        width: 350,
-        maxHeight: 400,
+        width: isMobile ? Math.min(width - 40, 350) : 350,
+        maxHeight: isMobile ? Math.min(window.innerHeight - 200, 400) : 400,
         background: "#fff",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         borderRadius: 8,
@@ -331,32 +369,44 @@ const HeaderIcons = () => {
         onChange={(key) => setActiveTab(key)}
         centered
         style={{ padding: "8px 0 0 0" }}
+        size={isMobile ? "small" : "default"}
       >
         <TabPane tab="Thông báo" key="1">
-          <div style={{ maxHeight: 250, overflowY: "auto" }}>
+          <div 
+            style={{ 
+              maxHeight: isMobile ? 200 : 250, 
+              overflowY: "auto" 
+            }}
+          >
             {renderItems(notifications, "notification")}
           </div>
         </TabPane>
-        {/* <TabPane tab="Nhắc nhở" key="2">
-          <div style={{ maxHeight: 250, overflowY: "auto" }}>
-            {renderItems(notifications, "reminder")}
-          </div>
-        </TabPane> */}
       </Tabs>
 
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          padding: "8px 16px",
+          padding: isMobile ? "6px 12px" : "8px 16px",
           borderTop: "1px solid #f0f0f0",
           background: "#ffffff",
         }}
       >
-        <Button type="link" onClick={() => navigate("/notifications")}>
+        <Button 
+          type="link" 
+          size={isMobile ? "small" : "default"}
+          onClick={() => {
+            navigate("/notifications");
+            setShowNotifications(false);
+          }}
+        >
           Xem tất cả
         </Button>
-        <Button type="link" onClick={handleMarkAllAsRead}>
+        <Button 
+          type="link" 
+          size={isMobile ? "small" : "default"}
+          onClick={handleMarkAllAsRead}
+        >
           Đánh dấu đã đọc
         </Button>
       </div>
@@ -368,31 +418,35 @@ const HeaderIcons = () => {
       <Menu.Item
         key="profile"
         icon={<UserOutlined />}
-        onClick={() => navigate("/profile")}
+        onClick={() => {
+          navigate("/profile");
+          setMobileMenuVisible(false);
+        }}
       >
         Tài khoản
       </Menu.Item>
       <Menu.Item
         key="change-password"
         icon={<LockOutlined />}
-        onClick={() => navigate("/change-password")}
+        onClick={() => {
+          navigate("/change-password");
+          setMobileMenuVisible(false);
+        }}
       >
         Đổi mật khẩu
       </Menu.Item>
-      {user.data.department === "ADMIN" ? (
-        <>
-          <Menu.Item
-            key="setting-review"
-            icon={<CheckCircleOutlined />}
-            onClick={() => setApprovalModalOpen(true)}
-          >
-            Thiết lập xét duyệt
-          </Menu.Item>
-        </>
-      ) : (
-        <></>
+      {user.data.department === "ADMIN" && (
+        <Menu.Item
+          key="setting-review"
+          icon={<CheckCircleOutlined />}
+          onClick={() => {
+            setApprovalModalOpen(true);
+            setMobileMenuVisible(false);
+          }}
+        >
+          Thiết lập xét duyệt
+        </Menu.Item>
       )}
-
       <Menu.Divider />
       <Menu.Item
         key="logout"
@@ -405,20 +459,280 @@ const HeaderIcons = () => {
     </Menu>
   );
 
+  const renderUserInfo = (showText = true) => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer",
+        gap: "8px",
+      }}
+    >
+      {showText && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: "1",
+            whiteSpace: "nowrap",
+            textAlign: "right",
+          }}
+        >
+          <span 
+            style={{ 
+              fontWeight: 600, 
+              fontSize: isMobile ? "14px" : "16px" 
+            }}
+          >
+            {user.data.fullName}
+          </span>
+          <span
+            style={{
+              fontSize: isMobile ? "10px" : "12px",
+              color: "#fff",
+              fontWeight: 500,
+              paddingTop: "4px",
+            }}
+          >
+            {user.data.department}
+          </span>
+        </div>
+      )}
+      {avatarUrl ? (
+        <Avatar 
+          src={avatarUrl} 
+          size={isMobile ? "small" : "default"}
+        />
+      ) : (
+        <Avatar 
+          style={{ backgroundColor: color }}
+          size={isMobile ? "small" : "default"}
+        >
+          {initials.toUpperCase()}
+        </Avatar>
+      )}
+    </div>
+  );
+
+  // Mobile drawer content
+  const mobileMenuContent = (
+    <div style={{ padding: "20px 0" }}>
+      {/* User Info */}
+      <div 
+        style={{ 
+          padding: "0 24px 20px", 
+          borderBottom: "1px solid #f0f0f0",
+          marginBottom: "20px" 
+        }}
+      >
+        {renderUserInfo(true)}
+      </div>
+
+      {/* Navigation Items */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <Button
+          type="text"
+          icon={<EditFilled />}
+          style={{ 
+            justifyContent: "flex-start", 
+            height: "auto", 
+            padding: "12px 24px",
+            fontSize: "16px"
+          }}
+          onClick={() => {
+            navigate("/review");
+            setMobileMenuVisible(false);
+          }}
+        >
+          Xét duyệt
+        </Button>
+
+        <Button
+          type="text"
+          icon={<CalendarFilled />}
+          style={{ 
+            justifyContent: "flex-start", 
+            height: "auto", 
+            padding: "12px 24px",
+            fontSize: "16px"
+          }}
+          onClick={() => {
+            navigate("/calendar");
+            setMobileMenuVisible(false);
+          }}
+        >
+          Lịch
+        </Button>
+
+        <div style={{ padding: "0 24px" }}>
+          <div 
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "8px",
+              padding: "12px 0",
+              cursor: "pointer"
+            }}
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Badge
+              count={notifications.filter((n) => !n.isRead).length}
+              size="small"
+            >
+              <BellFilled style={{ fontSize: "16px" }} />
+            </Badge>
+            <span style={{ fontSize: "16px" }}>Thông báo</span>
+          </div>
+          
+          {showNotifications && (
+            <div style={{ marginLeft: "24px", marginTop: "8px" }}>
+              <div 
+                style={{ 
+                  maxHeight: 200, 
+                  overflowY: "auto",
+                  border: "1px solid #f0f0f0",
+                  borderRadius: "4px"
+                }}
+              >
+                {renderItems(notifications)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Divider style={{ margin: "8px 0" }} />
+
+        {/* Account Menu Items */}
+        <Button
+          type="text"
+          icon={<UserOutlined />}
+          style={{ 
+            justifyContent: "flex-start", 
+            height: "auto", 
+            padding: "12px 24px",
+            fontSize: "16px"
+          }}
+          onClick={() => {
+            navigate("/profile");
+            setMobileMenuVisible(false);
+          }}
+        >
+          Tài khoản
+        </Button>
+
+        <Button
+          type="text"
+          icon={<LockOutlined />}
+          style={{ 
+            justifyContent: "flex-start", 
+            height: "auto", 
+            padding: "12px 24px",
+            fontSize: "16px"
+          }}
+          onClick={() => {
+            navigate("/change-password");
+            setMobileMenuVisible(false);
+          }}
+        >
+          Đổi mật khẩu
+        </Button>
+
+        {user.data.department === "ADMIN" && (
+          <Button
+            type="text"
+            icon={<CheckCircleOutlined />}
+            style={{ 
+              justifyContent: "flex-start", 
+              height: "auto", 
+              padding: "12px 24px",
+              fontSize: "16px"
+            }}
+            onClick={() => {
+              setApprovalModalOpen(true);
+              setMobileMenuVisible(false);
+            }}
+          >
+            Thiết lập xét duyệt
+          </Button>
+        )}
+
+        <Button
+          type="text"
+          danger
+          icon={<LogoutOutlined />}
+          style={{ 
+            justifyContent: "flex-start", 
+            height: "auto", 
+            padding: "12px 24px",
+            fontSize: "16px"
+          }}
+          onClick={handleLogOut}
+        >
+          Đăng xuất
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {contextHolder}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            style={{ color: "white", fontSize: "18px" }}
+            onClick={() => setMobileMenuVisible(true)}
+          />
+          
+          {renderUserInfo(false)}
+
+          <Drawer
+            title="Menu"
+            placement="right"
+            onClose={() => setMobileMenuVisible(false)}
+            open={mobileMenuVisible}
+            width={280}
+          >
+            {mobileMenuContent}
+          </Drawer>
+
+          <ApprovalSettingModal
+            open={approvalModalOpen}
+            onClose={() => setApprovalModalOpen(false)}
+          />
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       {contextHolder}
-      <div style={{ display: "flex", alignItems: "center", gap: "35px" }}>
+      <div 
+        style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: isTablet ? "20px" : "35px" 
+        }}
+      >
         <Tooltip title="Xét duyệt">
           <EditFilled
-            style={{ fontSize: "20px", cursor: "pointer" }}
+            style={{ 
+              fontSize: isTablet ? "18px" : "20px", 
+              cursor: "pointer" 
+            }}
             onClick={() => navigate("/review")}
           />
         </Tooltip>
 
         <Tooltip title="Lịch">
           <CalendarFilled
-            style={{ fontSize: "20px", cursor: "pointer" }}
+            style={{ 
+              fontSize: isTablet ? "18px" : "20px", 
+              cursor: "pointer" 
+            }}
             onClick={() => navigate("/calendar")}
           />
         </Tooltip>
@@ -436,7 +750,7 @@ const HeaderIcons = () => {
             >
               <BellFilled
                 style={{
-                  fontSize: "20px",
+                  fontSize: isTablet ? "18px" : "20px",
                   cursor: "pointer",
                   color: showNotifications ? "#1890ff" : "white",
                 }}
@@ -450,49 +764,7 @@ const HeaderIcons = () => {
           trigger={["click"]}
           placement="bottomRight"
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-              gap: "8px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                lineHeight: "1",
-                whiteSpace: "nowrap",
-                textAlign: "right",
-              }}
-            >
-              <span style={{ fontWeight: 600, fontSize: "16px" }}>
-                {user.data.fullName}
-              </span>
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#fff",
-                  fontWeight: 500,
-                  paddingTop: "4px",
-                }}
-              >
-                {user.data.department}
-              </span>
-            </div>
-            {avatarUrl ? (
-              <>
-                <Avatar src={avatarUrl} />
-              </>
-            ) : (
-              <>
-                <Avatar style={{ backgroundColor: color }}>
-                  {initials.toUpperCase()}
-                </Avatar>
-              </>
-            )}
-          </div>
+          {renderUserInfo(!isTablet)}
         </Dropdown>
 
         <ApprovalSettingModal

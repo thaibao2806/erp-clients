@@ -186,7 +186,7 @@ const RepairSupplies = () => {
             <Button icon={<PrinterOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
           </Tooltip>
           <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} />
+            <Button icon={<FileExcelOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}s/>
           </Tooltip>
         </Space>
       </div>
