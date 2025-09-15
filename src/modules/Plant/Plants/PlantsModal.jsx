@@ -12,8 +12,9 @@ import {
   Tooltip,
   notification,
   Select,
+  Drawer,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined,TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { createPlan, updatePlans } from "../../../services/apiPlan/apiPlan";
@@ -35,6 +36,30 @@ const approvalStatusOptions = [
   { value: "rejected", label: "Từ chối" },
 ];
 
+// Hook để theo dõi kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
@@ -45,6 +70,14 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [isEditApproval, setIsEditApproval] = useState(false);
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
+  const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
+
+  const { width } = useWindowSize();
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+  const isDesktop = width > 1024;
 
   useEffect(() => {
     if (open) {
@@ -185,12 +218,13 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "",
         dataIndex: "action",
-        width: 40,
+        width: isMobile ? 35 : 40,
+        fixed: isMobile ? "left" : false,
         render: (_, record) => (
           <Tooltip title="Xóa dòng">
             <Button
               icon={<DeleteOutlined />}
-              size="small"
+              size={isMobile ? "small" : "small"}
               danger
               onClick={() => handleDeleteRow(record.key)}
             />
@@ -200,14 +234,17 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "STT",
         dataIndex: "stt",
-        width: 50,
+        width: isMobile ? 45 : 50,
+        fixed: isMobile ? "left" : false,
       },
       {
         title: "Tên phương tiện",
         dataIndex: "vehicleName",
+        width: isMobile ? 150 : 200,
         render: (_, record) => (
           <Input
             value={record.vehicleName}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "vehicleName", e.target.value)
             }
@@ -217,6 +254,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Nội dung",
         dataIndex: "content",
+        width: isMobile ? 150 : 200,
         render: (_, record) => (
           <Input
             value={record.content}
@@ -229,10 +267,12 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Thời gian dự kiến",
         dataIndex: "expectedTime",
+        width: isMobile ? 80 : 100,
         render: (_, record) => (
           <DatePicker
             value={record.expectedTime ? dayjs(record.expectedTime) : null}
             format="DD/MM/YYYY"
+            size={isMobile ? "small" : "default"}
             onChange={(date) =>
               handleInputChange(
                 record.key,
@@ -247,9 +287,11 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Ghi chú",
         dataIndex: "note",
+        width: isMobile ? 120 : 150,
         render: (_, record) => (
           <Input
             value={record.note}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "note", e.target.value)
             }
@@ -358,7 +400,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -367,7 +409,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } finally{
@@ -411,7 +453,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -419,7 +461,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } finally{
@@ -429,10 +471,164 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
+  // Render Mobile Card View for table data
+  const renderMobileCards = () => (
+    <div style={{ marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 12,
+          alignItems: "center"
+        }}
+      >
+        <h4 style={{ margin: 0, fontSize: 14 }}>Nội dung giao việc ({tableData.length})</h4>
+        <Space size="small">
+          <Button 
+            icon={<PlusOutlined />} 
+            size="small"
+            onClick={handleAddRow}
+          >
+            Thêm
+          </Button>
+          <Button 
+            size="small"
+            onClick={() => setTableData([])}
+          >
+            Hủy
+          </Button>
+        </Space>
+      </div>
+      
+      {tableData.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: 24,
+            border: "1px dashed #d9d9d9",
+            borderRadius: 6,
+            color: "#999"
+          }}
+        >
+          Chưa có dữ liệu
+        </div>
+      ) : (
+        <div style={{ maxHeight: 300, overflowY: "auto" }}>
+          {tableData.map((record, index) => (
+            <div
+              key={record.key}
+              style={{
+                border: "1px solid #f0f0f0",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 8,
+                background: "#fafafa"
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8
+                }}
+              >
+                <strong style={{ fontSize: 12 }}>#{index + 1}</strong>
+                <Button
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  danger
+                  onClick={() => handleDeleteRow(record.key)}
+                />
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: "#666" }}>Tên phương tiện:</label>
+                  <Input
+                    value={record.vehicleName}
+                    size="small"
+                    placeholder="Nhập nội dung"
+                    onChange={(e) =>
+                      handleInputChange(record.key, "vehicleName", e.target.value)
+                    }
+                  />
+                </div>
+                
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>Nội dung:</label>
+                    <Input
+                      value={record.content}
+                      size="small"
+                      placeholder="Nội dung"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "content", e.target.value)
+                      }
+                    />
+                  </div>
+                  
+                </div>
+                <div style={{ flex: 1,gap: 8 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>Thời gian dự kiến:</label>
+                    <DatePicker
+                      value={record.expectedTime ? dayjs(record.expectedTime) : null}
+                      format="DD/MM/YYYY"
+                      size="small"
+                      onChange={(date) =>
+                        handleInputChange(
+                          record.key,
+                          "expectedTime",
+                          date ? date.toISOString() : null
+                        )
+                      }
+                    />
+                  </div>
+                
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>Ghi chú:</label>
+                    <Input
+                      value={record.note}
+                      size="small"
+                      placeholder="Ghi chú"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "note", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Determine modal width and layout
+  const getModalWidth = () => {
+    if (isMobile) return "95%";
+    if (isTablet) return 800;
+    return 1000;
+  };
+
+  const getColSpans = () => {
+    if (isMobile) return { main: 24, half: 24 };
+    if (isTablet) return { main: 24, half: 12 };
+    return { main: 24, half: 12 };
+  };
+
+  const colSpans = getColSpans();
+
   return (
+    <>
     <Modal
       title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
+        <span style={{ 
+            fontSize: isMobile ? 18 : 25, 
+            fontWeight: 600 
+          }}>
           {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
         </span>
       }
@@ -441,16 +637,21 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
         form.resetFields();
         setMonthYear(dayjs());
         setTableData([]);
+        setTableDrawerVisible(false);
         onCancel();
       }}
       onOk={handleOk}
+      width={getModalWidth()}
       okText={initialValues ? "Cập nhật" : "Thêm"}
       confirmLoading={loading}
-      width={1000}
+      style={isMobile ? { top: 20 } : {}}
+        bodyStyle={isMobile ? { padding: "16px" } : {}}
     >
-      <Form form={form} layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
+      <Form form={form} 
+          layout="vertical"
+          size={isMobile ? "small" : "default"}>
+        <Row gutter={isMobile ? [8, 8] : [16, 16]}>
+          <Col span={colSpans.half}>
             <Form.Item
               name="department"
               label="Đơn vị"
@@ -459,7 +660,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item
               name="documentNumber"
               label="Số chứng từ"
@@ -468,7 +669,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item
               name="planContent"
               label="Kế hoạch về việc"
@@ -477,7 +678,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item label="Ngày chứng từ" required>
               <DatePicker
                 picker="month"
@@ -497,7 +698,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col> */}
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="note" label="Ghi chú">
               <Input.TextArea rows={1} />
             </Form.Item>
@@ -506,7 +707,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             <>
               {approvers.map((item, idx) => (
                 <React.Fragment key={idx}>
-                  <Col span={12}>
+                  <Col span={colSpans.half}>
                     <Form.Item
                       label={`Người duyệt cấp ${idx + 1}`}
                       name={["approvers", idx, "username"]}
@@ -528,7 +729,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   </Col>
                   {initialValues && (
                     <>
-                      <Col span={12}>
+                      <Col span={colSpans.half}>
                         <Form.Item
                           label={`Trạng thái duyệt ${idx + 1}`}
                           name={["approvers", idx, "status"]}
@@ -547,7 +748,7 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
                         </Form.Item>
                       </Col>
                       {isEditApproval && (
-                        <Col span={12}>
+                        <Col span={colSpans.half}>
                           <Form.Item
                             label={`Ghi chú duyệt ${idx + 1}`}
                             name={["approvers", idx, "note"]}
@@ -568,33 +769,99 @@ const PlantsModal = ({ open, onCancel, onSubmit, initialValues }) => {
           )}
         </Row>
 
+        {/* Table Section */}
+        {isMobile ? (
+          renderMobileCards()
+        ) : (
         <>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 8,
+              alignItems: "center"
             }}
           >
             <h4>Nội dung kế hoạch</h4>
-            <Space>
-              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                Thêm dòng
-              </Button>
-              <Button onClick={() => setTableData([])}>Hủy</Button>
-            </Space>
+            {isTablet && (
+                  <Button
+                    icon={<TableOutlined />}
+                    onClick={() => setTableDrawerVisible(true)}
+                  >
+                    Xem bảng
+                  </Button>
+                )}
+            {!isTablet && (
+                  <Space>
+                    <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                      Thêm dòng
+                    </Button>
+                    <Button onClick={() => setTableData([])}>Hủy</Button>
+                  </Space>
+                )}
           </div>
-          <Table
-            columns={generateColumns()}
-            dataSource={tableData}
-            pagination={false}
-            scroll={{ x: "max-content" }}
-            bordered
-            size="small"
-          />
-        </>
+            {!isTablet && (
+                <Table
+                  columns={generateColumns()}
+                  dataSource={tableData}
+                  pagination={false}
+                  scroll={{ x: "max-content", y: 300 }}
+                  bordered
+                  size="small"
+                />
+              )}
+              {isTablet && tableData.length > 0 && (
+                <div
+                  style={{
+                    padding: 12,
+                    border: "1px solid #f0f0f0",
+                    borderRadius: 6,
+                    textAlign: "center"
+                  }}
+                >
+                  <span>Có {tableData.length} dòng dữ liệu. </span>
+                  <Button 
+                    type="link" 
+                    onClick={() => setTableDrawerVisible(true)}
+                  >
+                    Nhấn để xem chi tiết
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
       </Form>
     </Modal>
+    <Drawer
+        title="Nội dung kế hoạch"
+        width="90%"
+        onClose={() => setTableDrawerVisible(false)}
+        open={tableDrawerVisible}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <Space>
+            <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+              Thêm dòng
+            </Button>
+            <Button onClick={() => setTableData([])}>Hủy</Button>
+          </Space>
+        </div>
+        <Table
+          columns={generateColumns()}
+          dataSource={tableData}
+          pagination={false}
+          scroll={{ x: "max-content", y: "calc(100vh - 200px)" }}
+          bordered
+          size="small"
+        />
+      </Drawer>
+    </>
   );
 };
 

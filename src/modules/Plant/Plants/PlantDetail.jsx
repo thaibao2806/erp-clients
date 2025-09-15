@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -31,6 +32,7 @@ import { getApprovalsByRef } from "../../../services/apiApprovals";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const PlantsDetail = () => {
   const { id } = useParams();
@@ -46,6 +48,11 @@ const PlantsDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const fileInputRef = useRef(null);
   const navigator = useNavigate();
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -149,31 +156,149 @@ const PlantsDetail = () => {
     }
   };
 
-  const columns = [
-    { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Tên phương tiện", dataIndex: "vehicleName" },
-    { title: "Nội dung", dataIndex: "content" },
+  const getColumns  = () => {
+    const baseColumns = [
+    { title: "STT", dataIndex: "stt",  width: isMobile ? 50 : 60,
+        fixed: isMobile ? 'left' : false },
+    { title: "Tên phương tiện", dataIndex: "vehicleName",width: isMobile ? 80 : undefined, },
+    { title: "Nội dung", dataIndex: "content",width: isMobile ? 200 : undefined, },
     {
       title: "Thời gian (dự kiến)",
       dataIndex: "expectedTime",
+      width: isMobile ? 80 : undefined,
       render: (date) =>
         date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
-    { title: "Ghi chú", dataIndex: "note" },
-  ];
+    { title: "Ghi chú", dataIndex: "note",width: isMobile ? 150 : undefined },
+   ];
+
+    return baseColumns;
+  };
+
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div><strong>Đơn vị:</strong> {data.department || ""}</div>
+          <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
+          <div><strong>Kế hoạch về việc:</strong> {data.planContent || ""}</div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.documentDate
+              ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div><strong>Nơi nhận:</strong> {data.receiver || ""}</div>
+          <div><strong>Ghi chú:</strong> {data.note || ""}</div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space
+            direction="vertical"
+            size="small"
+            style={{ width: "100%" }}
+          >
+            <div><strong>Đơn vị:</strong> {data.department || ""}</div>
+            <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.documentDate
+                ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space
+            direction="vertical"
+            size="small"
+            style={{ width: "100%" }}
+          >
+            <div><strong>Kế hoạch về việc:</strong> {data.planContent || ""}</div>
+            <div><strong>Nơi nhận</strong> {data.receiver || ""}</div>
+            <div><strong>Ghi chú:</strong> {data.note || ""}</div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  // Responsive approval section
+  const renderApprovalSection = () => {
+    if (!approvals?.length) return null;
+
+    if (isMobile) {
+      return (
+        <div style={{ marginTop: 16 }}>
+          {approvals.map((item, index) => (
+            <div key={index} style={{ marginBottom: 16, padding: 12, border: '1px solid #d9d9d9', borderRadius: 6 }}>
+              <Space direction="vertical" size="small" style={{ width: "100%" }}>
+                <div><strong>Người duyệt {index + 1}:</strong> {item.fullName}</div>
+                <div>
+                  <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                  {item.status === "rejected"
+                    ? "Từ chối"
+                    : item.status === "approved"
+                    ? "Đã duyệt"
+                    : "Chờ duyệt"}
+                </div>
+                <div><strong>Ghi chú người duyệt {index + 1}:</strong> {item.note || ""}</div>
+              </Space>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {approvals.map((item, index) => (
+          <Col xs={24} sm={24} md={12} lg={12} xl={12} key={index}>
+            <Space
+              direction="vertical"
+              size="small"
+              style={{ width: "100%" }}
+            >
+              <div><strong>Người duyệt {index + 1}:</strong> {item.fullName}</div>
+              <div>
+                <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                {item.status === "rejected"
+                  ? "Từ chối"
+                  : item.status === "approved"
+                  ? "Đã duyệt"
+                  : "Chờ duyệt"}
+              </div>
+              <div><strong>Ghi chú người duyệt {index + 1}:</strong> {item.note || ""}</div>
+            </Space>
+          </Col>
+        ))}
+      </Row>
+    );
+  };
 
   return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết kế hoạch</Title>
+    <div style={{ padding: isMobile ? 8 : 16,
+      minHeight: '100vh'}}>
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title level={isMobile ? 4 : 3} style={{ 
+              margin: 0,
+              fontSize: isMobile ? '18px' : undefined
+            }}>Xem chi tiết kế hoạch</Title>
         </Col>
-        <Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button style={{ width: isMobile ? '100%' : 'auto' }}
+              size={isMobile ? 'middle' : 'middle'}>
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -184,79 +309,30 @@ const PlantsDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin kế hoạch" key="1">
           {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Đơn vị: {data.department || ""}</div>
-                  <div>Số chứng từ: {data.documentNumber || ""}</div>
-                  <div>Kế hoạch về việc: {data.planContent || ""}</div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.documentDate
-                      ? new Date(data.documentDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                  <div>Nơi nhận: {data.receiver || ""}</div>
-                  <div>Ghi chú: {data.note || ""}</div>
-                </Space>
-              </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
-            </Row>
+            <>
+              {renderInfoSection()}
+              {renderApprovalSection()}
+            </>
           )}
         </Panel>
 
         <Panel header="Nội dung kế hoạch" key="2">
           {data && (
+            <div style={{ overflowX: 'auto' }}>
             <Table
-              columns={columns}
+              columns={getColumns()}
               dataSource={data.details?.map((item, index) => ({
                 ...item,
                 stt: index + 1,
               }))}
-              scroll={{ x: "max-content" }}
+              scroll={{ 
+                  x: isMobile ? 600 : 'max-content',
+                  y: isMobile ? 300 : undefined
+                }}
               size="small"
               bordered
               pagination={false}
@@ -268,13 +344,17 @@ const PlantsDetail = () => {
                       style={{
                         backgroundColor: "#e6f4fb",
                         color: "#0700ad",
-                        fontWeight: "600",
+                        fontSize: isMobile ? '12px' : '14px'
                       }}
                     />
                   ),
                   },
               }}
+              style={{
+                  fontSize: isMobile ? '12px' : '14px'
+                }}
             />
+            </div>
           )}
         </Panel>
 
