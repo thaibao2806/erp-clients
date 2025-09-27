@@ -9,7 +9,7 @@ import {
   Space,
   Tooltip,
   Modal,
-   Drawer,
+  Drawer,
   Card,
   Tag,
   Divider,
@@ -22,19 +22,18 @@ import {
   DeleteOutlined,
   PrinterOutlined,
   FileExcelOutlined,
-    FilterOutlined,
+  FilterOutlined,
   MoreOutlined,
   MenuOutlined,
 } from "@ant-design/icons";
-import TestRunPlanModal from "./TestRunPlanModal";
 import { Link } from "react-router-dom";
 import {
-  deleteTestRunPlans,
+  deleteAssignmetSlip,
   exportExcel,
-  filterTestRunPlans,
-} from "../../../services/apiPlan/apiTestRunPlan";
-import dayjs from "dayjs";
+  fillterAssignmentSlip,
+} from "../../../services/apiPlan/apiAssignmentSlip";
 import { saveAs } from "file-saver";
+import RepairPlanModal from "./RepairPlanModal";
 
 const { RangePicker } = DatePicker;
 
@@ -62,7 +61,7 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-const TestRunPlan = () => {
+const RepairPlan = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [dataSource, setDataSource] = useState([]);
@@ -74,16 +73,6 @@ const TestRunPlan = () => {
     pageSize: 10,
     total: 0,
   });
-  const [filters, setFilters] = useState({
-    dateRange: null,
-    documentNumber: "",
-    managingDepartment: "",
-    vehicleName: "",
-    receivingLocation: "",
-    runLocation: "",
-    runSchedule: "",
-    runTime: "",
-  });
 
   const { width } = useWindowSize();
   
@@ -91,121 +80,6 @@ const TestRunPlan = () => {
   const isMobile = width <= 768;
   const isTablet = width > 768 && width <= 1024;
   const isDesktop = width > 1024;
-
-  const columns = [
-    {
-      title: "STT",
-      dataIndex: "stt",
-      width: isMobile ? 50 : 60,
-      fixed: isMobile ? "left" : false,
-    },
-    {
-      title: "Số chứng từ",
-      dataIndex: "documentNumber",
-      width: isMobile ? 150 : 200,
-      render: (text, record) => (
-        <Link to={`/pl/ke-hoach/ke-hoach-chay-thu-chi-tiet/${record.key}`}>
-          {text}
-        </Link> // ✅ THAY ĐOẠN NÀY
-      ),
-    },
-    {
-      title: "Ngày chứng từ",
-      dataIndex: "documentDate",
-      width: isMobile ? 120 : 150,
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
-    },
-    {
-      title: "Tên phương tiện",
-      width: isMobile ? 150 : 200,
-      dataIndex: "vehicleName",
-    },
-    {
-      title: "Đơn bị quản lý",
-      dataIndex: "managingDepartment",
-      width: isMobile ? 120 : 150,
-    },
-    // {
-    //   title: "Nơi nhận",
-    //   dataIndex: "receivingLocation",
-    // },
-    {
-      title: "Nơi chạy",
-      dataIndex: "runLocation",
-      width: isMobile ? 150 : 200,
-    },
-    {
-      title: "Thời gian chạy",
-      dataIndex: "runTime",
-      width: isMobile ? 120 : 150,
-      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY HH:mm") : "---"),
-    },
-    {
-      title: "Trạng thái duyệt",
-      dataIndex: "approvalStatus",
-      render: (status) => {
-       const statusConfig = {
-          approved: { color: "green", text: "Đã duyệt" },
-          rejected: { color: "red", text: "Từ chối" },
-          pending: { color: "orange", text: "Chờ duyệt" },
-        };
-        const config = statusConfig[status] || { color: "default", text: status };
-        return <Tag color={config.color}>{config.text}</Tag>;
-      },
-    },
-  ];
-
-    // Mobile columns - simplified view
-  const mobileColumns = [
-    {
-      title: "STT",
-      dataIndex: "stt",
-      width: 50,
-      fixed: "left",
-    },
-    {
-      title: "Thông tin",
-      dataIndex: "documentNumber",
-      fixed: "left",
-      width: 200,
-      render: (_, record) => (
-        <div>
-          <Link 
-            to={`/pl/ke-hoach/ke-hoach-chay-thu-chi-tiet/${record.id}`}
-            style={{ fontWeight: 600, fontSize: 14 }}
-          >
-            {record.documentNumber}
-          </Link>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.documentDate 
-              ? new Date(record.documentDate).toLocaleDateString("vi-VN")
-              : "---"}
-          </div>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.vehicleName}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "approvalStatus",
-      width: 100,
-      render: (status) => {
-        const statusConfig = {
-          approved: { color: "green", text: "Đã duyệt" },
-          rejected: { color: "red", text: "Từ chối" },
-          pending: { color: "orange", text: "Chờ duyệt" },
-        };
-        const config = statusConfig[status] || { color: "default", text: status };
-        return <Tag color={config.color} style={{ fontSize: 10 }}>{config.text}</Tag>;
-      },
-    },
-  ];
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingData, setEditingData] = useState(null);
 
   useEffect(() => {
     fetchData(pagination.current, pagination.pageSize);
@@ -215,25 +89,20 @@ const TestRunPlan = () => {
     try {
       setLoading(true);
       const {
-        dateRange,
-        managingDepartment,
         documentNumber,
-        vehicleName,
-        receivingLocation,
-        runLocation,
+        productName,
+        managementUnit,
+        department,
+        dateRange,
       } = filters;
-      let runSchedule = "";
-      let runTime = "";
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterTestRunPlans(
+      let res = await fillterAssignmentSlip(
         documentNumber,
-        managingDepartment,
-        vehicleName,
-        receivingLocation,
-        runLocation,
-        runSchedule,
+        productName,
+        department,
+        managementUnit,
         fromDate,
         toDate,
         "",
@@ -260,21 +129,141 @@ const TestRunPlan = () => {
     }
   };
 
+  const [filters, setFilters] = useState({
+    dateRange: null,
+    documentNumber: "",
+    productName: "",
+    managementUnit: "",
+    department: "",
+  });
+
+  const columns = [
+    {
+      title: "STT",
+      dataIndex: "stt",
+      width: isMobile ? 50 : 60,
+      fixed: isMobile ? "left" : false,
+    },
+    {
+      title: "Số chứng từ",
+      dataIndex: "documentNumber",
+      width: isMobile ? 120 : 150,
+      fixed: isMobile ? "left" : false,
+      render: (text, record) => (
+        <Link to={`/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/${record.id}`}>{text}</Link>
+      ),
+    },
+    // {
+    //   title: "Ngày chứng từ",
+    //   dataIndex: "documentDate",
+    //   width: isMobile ? 100 : 120,
+    //   render: (date) =>
+    //     date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+    // },
+    {
+      title: "Tên sản phẩm",
+      dataIndex: "productName",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Đơn vị quản lý sd",
+      dataIndex: "managementUnit",
+      width: isMobile ? 120 : 150,
+    },
+    {
+      title: "Ngày cập cảng",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Chạy kiểm tra",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Lên đà",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Khảo sát",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "N.T hạ thuỷ",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Tách bến",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Bàn giao",
+      dataIndex: "department",
+      width: isMobile ? 100 : 120,
+    },
+    {
+      title: "Ghi chú",
+      dataIndex: "note",
+      width: isMobile ? 120 : 150,
+      ellipsis: true,
+    },
+  ];
+
+  // Mobile columns - simplified view
+  const mobileColumns = [
+    {
+      title: "STT",
+      dataIndex: "stt",
+      width: 50,
+      fixed: "left",
+    },
+    {
+      title: "Thông tin",
+      dataIndex: "documentNumber",
+      fixed: "left",
+      width: 200,
+      render: (_, record) => (
+        <div>
+          <Link 
+            to={`/pl/phieu-giao-viec-chi-tiet/${record.id}`}
+            style={{ fontWeight: 600, fontSize: 14 }}
+          >
+            {record.documentNumber}
+          </Link>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.documentDate 
+              ? new Date(record.documentDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.productName}
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
+
   const handleAdd = () => {
-    setEditingData(null); // không có dữ liệu -> thêm mới
+    setEditingData(null);
     setModalOpen(true);
     setMobileActionDrawerVisible(false);
   };
 
   const handleEdit = (record) => {
-    setEditingData(record); // truyền dữ liệu -> chỉnh sửa
+    setEditingData(record);
     setModalOpen(true);
   };
 
   const handleSubmit = (values) => {
     if (editingData) {
       console.log("Cập nhật:", values);
-      // Gọi API update ở đây
     } else {
       fetchData(pagination.current, pagination.pageSize);
     }
@@ -322,14 +311,12 @@ const TestRunPlan = () => {
       cancelText: "Hủy",
       onOk: async () => {
         try {
-          setLoading(true); // bật loading cho Table
+          setLoading(true);
 
-          // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteTestRunPlans(id))
+            selectedRowKeys.map((id) => deleteAssignmetSlip(id))
           );
 
-          // Sau khi xóa thành công, cập nhật lại danh sách
           const remainingData = dataSource.filter(
             (item) => !selectedRowKeys.includes(item.key)
           );
@@ -367,8 +354,8 @@ const TestRunPlan = () => {
       for (const id of selectedRowKeys) {
         const matchedItem = dataSource.find((item) => item.id === id);
         const fileName = matchedItem?.documentNumber
-          ? `KeHoachChayThu_${matchedItem.documentNumber}.xlsx`
-          : `KeHoachChayThu_${id}.xlsx`;
+          ? `PhieuGiaoViec_${matchedItem.documentNumber}.xlsx`
+          : `PhieuGiaoViec_${id}.xlsx`;
         try {
           let res = await exportExcel(id);
           const blob = new Blob([res.data], {
@@ -406,12 +393,9 @@ const TestRunPlan = () => {
     setFilters({
       dateRange: null,
       documentNumber: "",
-      managingDepartment: "",
-      vehicleName: "",
-      receivingLocation: "",
-      runLocation: "",
-      runSchedule: "",
-      runTime: "",
+      productName: "",
+      managementUnit: "",
+      department: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -445,7 +429,7 @@ const TestRunPlan = () => {
     </Menu>
   );
 
-   // Render filter form
+  // Render filter form
   const renderFilterForm = () => (
     <div style={{ padding: isMobile ? 12 : 16 }}>
       <Row gutter={[16, 16]}>
@@ -500,7 +484,7 @@ const TestRunPlan = () => {
             size={isMobile ? "small" : "default"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8}>
+        {/* <Col xs={24} sm={12} md={8}>
           <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
             Bộ phận
           </label>
@@ -512,7 +496,7 @@ const TestRunPlan = () => {
             }
             size={isMobile ? "small" : "default"}
           />
-        </Col>
+        </Col> */}
       </Row>
       <div style={{ marginTop: 16, textAlign: "right" }}>
         <Button
@@ -554,7 +538,7 @@ const TestRunPlan = () => {
               <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
                 <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>#{item.stt}</span>
                 <Link 
-                  to={`/pl/ke-hoach/ke-hoach-chay-thu-chi-tiet/${item.id}`}
+                  to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${item.id}`}
                   style={{ fontWeight: 600, fontSize: 14 }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -569,22 +553,18 @@ const TestRunPlan = () => {
               </div>
               
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Tên phương tiện:</strong> {item.vehicleName}
+                <strong>Sản phẩm:</strong> {item.productName}
               </div>
               
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Đơn bị quản lý:</strong> {item.managingDepartment}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Thời gian chạy:</strong> {item.runTime}
+                <strong>Bộ phận:</strong> {item.department}
               </div>
               
-              {/* {item.note && (
+              {item.note && (
                 <div style={{ fontSize: 12, color: "#666" }}>
                   <strong>Ghi chú:</strong> {item.note}
                 </div>
-              )} */}
+              )}
             </div>
             
             <div style={{ marginLeft: 12 }}>
@@ -643,8 +623,10 @@ const TestRunPlan = () => {
           margin: 0, 
           fontSize: isMobile ? 18 : 24,
           flex: isMobile ? "1 1 100%" : "auto"
-        }}>Kế hoạch chạy thử</h1>
-
+        }}>
+          Kế hoạch tàu vào sửa chữa
+        </h1>
+        
         {isMobile ? (
           <Space size="small">
             <Button
@@ -658,46 +640,46 @@ const TestRunPlan = () => {
             </Dropdown>
           </Space>
         ) : (
-        <Space size={isTablet ? "small" : "default"}>
-          <Tooltip title="Tìm kiếm">
-            <Button
-              icon={<SearchOutlined />}
-              onClick={() => setShowFilters(!showFilters)}
-              style={{ background:"#e6f4fb", color:"#0700ad" }}
-              size={isTablet ? "small" : "default"}
-            />
-          </Tooltip>
-          <Tooltip title="Thêm">
-            <Button
+          <Space size={isTablet ? "small" : "default"}>
+            <Tooltip title="Tìm kiếm">
+              <Button
+                icon={<SearchOutlined />}
+                onClick={() => setShowFilters(!showFilters)}
+                style={{ background: "#e6f4fb", color: "#0700ad" }}
+                size={isTablet ? "small" : "default"}
+              />
+            </Tooltip>
+            <Tooltip title="Thêm">
+              <Button
                 onClick={handleAdd}
                 icon={<PlusOutlined />}
                 style={{ background: "#e6f4fb", color: "#0700ad" }}
                 size={isTablet ? "small" : "default"}
               />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={handleDelete}
-              disabled={selectedRowKeys.length === 0}
-              size={isTablet ? "small" : "default"}
-            />
-          </Tooltip>
-          <Tooltip title="Xuất excel">
-            <Button
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <Button
+                icon={<DeleteOutlined />}
+                danger
+                onClick={handleDelete}
+                disabled={selectedRowKeys.length === 0}
+                size={isTablet ? "small" : "default"}
+              />
+            </Tooltip>
+            <Tooltip title="Xuất excel">
+              <Button
                 icon={<FileExcelOutlined />}
                 onClick={handleExportExcel}
                 style={{ background: "#e6f4fb", color: "#0700ad" }}
                 size={isTablet ? "small" : "default"}
                 disabled={selectedRowKeys.length === 0}
               />
-          </Tooltip>
-        </Space>
+            </Tooltip>
+          </Space>
         )}
       </div>
 
-      {/* Bộ lọc tìm kiếm */}
+      {/* Selected items info for mobile */}
       {isMobile && selectedRowKeys.length > 0 && (
         <div
           style={{
@@ -712,6 +694,8 @@ const TestRunPlan = () => {
           Đã chọn {selectedRowKeys.length} mục
         </div>
       )}
+
+      {/* Filter Section */}
       {!isMobile && showFilters && (
         <div
           style={{
@@ -726,11 +710,11 @@ const TestRunPlan = () => {
         </div>
       )}
 
-      {/* Bảng dữ liệu */}
+      {/* Table for desktop/tablet, Cards for mobile */}
       {isMobile ? (
         renderMobileCards()
       ) : (
-      <Table
+        <Table
           rowSelection={rowSelection}
           columns={isMobile ? mobileColumns : columns}
           dataSource={dataSource}
@@ -767,8 +751,8 @@ const TestRunPlan = () => {
             },
           }}
         />
-        )}
-      
+      )}
+
       {/* Filter Drawer for Mobile */}
       <Drawer
         title="Lọc tìm kiếm"
@@ -781,7 +765,7 @@ const TestRunPlan = () => {
       </Drawer>
 
       {/* Modal */}
-      <TestRunPlanModal
+      <RepairPlanModal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onSubmit={handleSubmit}
@@ -791,4 +775,4 @@ const TestRunPlan = () => {
   );
 };
 
-export default TestRunPlan;
+export default RepairPlan;

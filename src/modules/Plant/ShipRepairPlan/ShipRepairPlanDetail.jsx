@@ -11,7 +11,7 @@ import {
   Space,
   message,
   Modal,
-    Grid,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -22,22 +22,22 @@ import {
 import NoteSection from "../../../components/NoteSection ";
 import AttachmentSection from "../../../components/AttachmentSection ";
 import SystemSection from "../../../components/SystemSection";
-import TestRunPlanModal from "./TestRunPlanModal";
-import { useSelector } from "react-redux";
 import {
-  deleteTestRunPlans,
-  getTestRunPlans,
-} from "../../../services/apiPlan/apiTestRunPlan";
-import { addAttachments } from "../../../services/apiAttachment";
+  deleteAssignmetSlip,
+  getAssignmentSlipById,
+} from "../../../services/apiPlan/apiAssignmentSlip";
 import dayjs from "dayjs";
-import { getApprovalSetting } from "../../../services/apiApproveSetting";
+import { addAttachments } from "../../../services/apiAttachment";
+import { useSelector } from "react-redux";
 import { getApprovalsByRef } from "../../../services/apiApprovals";
+import { getApprovalSetting } from "../../../services/apiApproveSetting";
+import ShipRepairPlanModal from "./ShipRepairPlanModal";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
 const { useBreakpoint } = Grid;
 
-const TestRunPlanDetail = () => {
+const ShipRepairPlanDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -49,8 +49,8 @@ const TestRunPlanDetail = () => {
   const [approvalNumber, setApprovalNumber] = useState();
   const [refreshFlag, setRefreshFlag] = useState(0);
   const user = useSelector((state) => state.auth.login.currentUser);
-  const fileInputRef = useRef(null);
   const navigator = useNavigate();
+  const fileInputRef = useRef(null);
   const screens = useBreakpoint();
 
   // Determine if mobile/tablet view
@@ -59,13 +59,13 @@ const TestRunPlanDetail = () => {
 
   useEffect(() => {
     getData();
-    getApprovalByModulePage();
     getApprovals();
+    getApprovalByModulePage();
   }, []);
 
   const getApprovalByModulePage = async () => {
     try {
-      let res = await getApprovalSetting("PL", "pl-ke-hoach-chay-thu");
+      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
       if (res && res.status === 200) {
         setApprovalNumber(res.data.data.approvalNumber);
       }
@@ -76,7 +76,7 @@ const TestRunPlanDetail = () => {
 
   const getApprovals = async () => {
     try {
-      let res = await getApprovalsByRef(id, "KHCT");
+      let res = await getApprovalsByRef(id, "PGV");
       if (res && res.status === 200) {
         setApproval(res.data.data);
       }
@@ -85,7 +85,7 @@ const TestRunPlanDetail = () => {
 
   const getData = async () => {
     try {
-      let res = await getTestRunPlans(id);
+      let res = await getAssignmentSlipById(id);
       if (res && res.status === 200) {
         setData(res.data.data);
       }
@@ -132,23 +132,23 @@ const TestRunPlanDetail = () => {
       if (type) {
         setEditingData({
           ...data,
-          type: type, // hoặc đơn giản: type
+          type: type,
         });
       } else {
         setEditingData(data);
       }
       setIsModalOpen(true);
     } else if (key === "attach") {
-      fileInputRef.current?.click(); // Mở hộp thoại chọn file
+      fileInputRef.current?.click();
     } else if (key === "delete") {
       try {
-        let res = await deleteTestRunPlans(data.id);
+        let res = await deleteAssignmetSlip(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
             content: `Đã xóa thành công phiếu`,
           });
-          navigator("/pl/ke-hoach/ke-hoach-chay-thu");
+          navigator("/pl/phieu-giao-viec");
         }
       } catch (error) {
         Modal.error({
@@ -159,6 +159,7 @@ const TestRunPlanDetail = () => {
     }
   };
 
+  // Responsive columns for table
   const getColumns = () => {
     const baseColumns = [
       { 
@@ -168,8 +169,8 @@ const TestRunPlanDetail = () => {
         fixed: isMobile ? 'left' : false
       },
       { 
-        title: "Đơn vị", 
-        dataIndex: "department",
+        title: "Nội dung", 
+        dataIndex: "content",
         width: isMobile ? 200 : undefined,
         onCell: () => ({
           style: { 
@@ -180,8 +181,18 @@ const TestRunPlanDetail = () => {
         }),
       },
       { 
-        title: "Số lượng người tham gia", 
-        dataIndex: "participantCount",
+        title: "ĐVT", 
+        dataIndex: "unit",
+        width: isMobile ? 80 : undefined
+      },
+      { 
+        title: "SL", 
+        dataIndex: "quantity",
+        width: isMobile ? 60 : undefined
+      },
+      { 
+        title: "N/Công", 
+        dataIndex: "workDay",
         width: isMobile ? 80 : undefined
       },
       { 
@@ -200,20 +211,16 @@ const TestRunPlanDetail = () => {
       return (
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
-          <div><strong>Tên phương tiện:</strong> {data.vehicleName || ""}</div>
+          <div><strong>Tên sản phẩm:</strong> {data.productName || ""}</div>
           <div>
             <strong>Ngày chứng từ:</strong>{" "}
             {data.documentDate
               ? new Date(data.documentDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
-          <div><strong>Đơn vị quản lý:</strong> {data.managingDepartment || ""}</div>
-          <div><strong>Nơi chạy:</strong> {data.runLocation || ""}</div>
-          <div><strong>Lộ trình chạy:</strong> {data.runSchedule || ""}</div>
-          <div><strong>Thời gian chạy:</strong> {data.runTime
-              ? new Date(data.runTime).toLocaleDateString("vi-VN")
-              : "---"}</div>
-          {/* <div><strong>Ghi chú:</strong> {data.note || ""}</div> */}
+          <div><strong>Đơn bị quản lý:</strong> {data.documentNumber || ""}</div>
+          <div><strong>Bộ phận:</strong> {data.department || ""}</div>
+          <div><strong>Ghi chú:</strong> {data.note || ""}</div>
         </Space>
       );
     }
@@ -227,14 +234,13 @@ const TestRunPlanDetail = () => {
             style={{ width: "100%" }}
           >
             <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
-          <div><strong>Tên phương tiện:</strong> {data.vehicleName || ""}</div>
-          <div>
-            <strong>Ngày chứng từ:</strong>{" "}
-            {data.documentDate
-              ? new Date(data.documentDate).toLocaleDateString("vi-VN")
-              : "---"}
-          </div>
-          <div><strong>Đơn vị quản lý:</strong> {data.managingDepartment || ""}</div>
+            <div><strong>Tên sản phẩm:</strong> {data.productName || ""}</div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.documentDate
+                ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
           </Space>
         </Col>
         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
@@ -243,11 +249,9 @@ const TestRunPlanDetail = () => {
             size="small"
             style={{ width: "100%" }}
           >
-            <div><strong>Nơi chạy:</strong> {data.runLocation || ""}</div>
-          <div><strong>Lộ trình chạy:</strong> {data.runSchedule || ""}</div>
-          <div><strong>Thời gian chạy:</strong> {data.runTime
-              ? new Date(data.runTime).toLocaleDateString("vi-VN")
-              : "---"}</div>
+            <div><strong>Đơn bị quản lý:</strong> {data.documentNumber || ""}</div>
+            <div><strong>Bộ phận:</strong> {data.department || ""}</div>
+            <div><strong>Ghi chú:</strong> {data.note || ""}</div>
           </Space>
         </Col>
       </Row>
@@ -314,11 +318,15 @@ const TestRunPlanDetail = () => {
     }}>
       <Row justify="space-between" align="middle" gutter={[16, 16]}>
         <Col xs={24} sm={16} md={18} lg={20}>
-          <Title level={isMobile ? 4 : 3}
+          <Title 
+            level={isMobile ? 4 : 3}
             style={{ 
               margin: 0,
               fontSize: isMobile ? '18px' : undefined
-            }}>Xem chi tiết kế hoạch</Title>
+            }}
+          >
+            Xem chi tiết phiếu giao việc
+          </Title>
         </Col>
         <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
@@ -326,8 +334,10 @@ const TestRunPlanDetail = () => {
             trigger={["click"]}
             placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button style={{ width: isMobile ? '100%' : 'auto' }}
-              size={isMobile ? 'middle' : 'middle'}>
+            <Button 
+              style={{ width: isMobile ? '100%' : 'auto' }}
+              size={isMobile ? 'middle' : 'middle'}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -340,7 +350,7 @@ const TestRunPlanDetail = () => {
         expandIconPosition="end"
         size={isMobile ? "small" : "middle"}
       >
-        <Panel header="Thông tin kế hoạch" key="1">
+        <Panel header="Thông tin phiếu giao việc" key="1">
           {data && (
             <>
               {renderInfoSection()}
@@ -349,41 +359,41 @@ const TestRunPlanDetail = () => {
           )}
         </Panel>
 
-        <Panel header="Nội dung kế hoạch" key="2">
+        <Panel header="Nội dung phiếu giao việc" key="2">
           {data && (
             <div style={{ overflowX: 'auto' }}>
-            <Table
-              columns={getColumns()}
-              dataSource={data.details?.map((item, index) => ({
-                ...item,
-                stt: index + 1,
-              }))}
-              scroll={{ 
+              <Table
+                columns={getColumns()}
+                dataSource={data.details?.map((item, index) => ({
+                  ...item,
+                  stt: index + 1,
+                }))}
+                scroll={{ 
                   x: isMobile ? 600 : 'max-content',
                   y: isMobile ? 300 : undefined
                 }}
-              size="small"
-              bordered
-              pagination={false}
-              components={{
-                header: {
-                  cell: (props) => (
-                    <th
-                      {...props}
-                      style={{
-                        backgroundColor: "#e6f4fb",
-                        color: "#0700ad",
-                        fontWeight: "600",
-                        fontSize: isMobile ? '12px' : '14px'
-                      }}
-                    />
-                  ),
+                size="small"
+                bordered
+                pagination={false}
+                components={{
+                  header: {
+                    cell: (props) => (
+                      <th
+                        {...props}
+                        style={{
+                          backgroundColor: "#e6f4fb",
+                          color: "#0700ad",
+                          fontWeight: "600",
+                          fontSize: isMobile ? '12px' : '14px'
+                        }}
+                      />
+                    ),
                   },
-              }}
-              style={{
+                }}
+                style={{
                   fontSize: isMobile ? '12px' : '14px'
                 }}
-            />
+              />
             </div>
           )}
         </Panel>
@@ -391,7 +401,7 @@ const TestRunPlanDetail = () => {
         <Panel header="Đính kèm" key="3">
           <AttachmentSection
             refId={data ? data.id : ""}
-            refType={"TestRunPlan"}
+            refType={"AssignmentSlip"}
             refreshTrigger={refreshFlag}
           />
         </Panel>
@@ -399,7 +409,7 @@ const TestRunPlanDetail = () => {
         <Panel header="Ghi chú" key="4">
           <NoteSection
             refId={data ? data.id : ""}
-            refType={"TestRunPlan"}
+            refType={"AssignmentSlip"}
             voucherNo={data ? data.documentNumber : ""}
           />
         </Panel>
@@ -418,12 +428,23 @@ const TestRunPlanDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"TestRunPlan"}
+              refType={"AssignmentSlip"}
               voucherNo={data.documentNumber}
             />
           )}
         </Panel>
       </Collapse>
+
+      <ShipRepairPlanModal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onSubmit={() => {
+          getData();
+          getApprovals();
+          setIsModalOpen(false);
+        }}
+        initialValues={editingData}
+      />
 
       <input
         type="file"
@@ -437,38 +458,24 @@ const TestRunPlanDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data.id); // id của AssignmentSlip
-            formData.append("refType", "TestRunPlan");
+            formData.append("refId", data.id);
+            formData.append("refType", "AssignmentSlip");
 
             try {
               const res = await addAttachments(formData, user.data.token);
-
               message.success(`Đã upload file: ${file.name}`);
-              // Có thể reload danh sách file nếu muốn
             } catch (err) {
               console.error(err);
               message.error(`Upload thất bại: ${file.name}`);
             }
           }
 
-          // Reset lại input để có thể chọn cùng file lần nữa nếu muốn
           e.target.value = "";
           setRefreshFlag((prev) => prev + 1);
         }}
-      />
-
-      <TestRunPlanModal
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onSubmit={(data) => {
-          getData();
-          getApprovals();
-          setIsModalOpen(false);
-        }}
-        initialValues={editingData}
       />
     </div>
   );
 };
 
-export default TestRunPlanDetail;
+export default ShipRepairPlanDetail;

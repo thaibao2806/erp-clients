@@ -31,6 +31,8 @@ export const moduleData = {
         { key: 'pl-ke-hoach-root', label: 'C. Kế hoạch', children: [
           { key: 'pl-ke-hoach', label: '1. Kế hoạch', path: '/pl/ke-hoach/ke-hoach' },
           { key: 'pl-ke-hoach-chay-thu', label: '2. Kế hoạch chạy thử', path: '/pl/ke-hoach/ke-hoach-chay-thu' },
+          { key: 'pl-ke-hoach-tau-vao-sua-chua', label: '3. Kế hoạch tàu vào', path: '/pl/ke-hoach/ke-hoach-tau-vao-sua-chua' },
+          { key: 'pl-ke-hoach-sua-chua', label: '4. Kế hoạch sửa chữa', path: '/pl/ke-hoach/ke-hoach-sua-chua' },
         ] },
         { key: 'pl-bien-ban', label: 'D. Biên bản', children: [
           { key: 'pl-bien-ban-tiep-nhan', label: '1. Biên bản tiếp nhận', path: '/pl/bien-ban/bien-ban-tiep-nhan' },

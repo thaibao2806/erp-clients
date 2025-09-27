@@ -75,6 +75,10 @@ import MaterialInspection from "../modules/TechnicalMaterial/Supplies/MaterialIn
 import MaterialInspectionDetail from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspectionDetail";
 import MaterialEstimate from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimate";
 import MaterialEstimateDetail from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimateDetail";
+import ShipRepairPlan from "../modules/Plant/ShipRepairPlan/ShipRepairPlan";
+import ShipRepairPlanDetail from "../modules/Plant/ShipRepairPlan/ShipRepairPlanDetail";
+import RepairPlan from "../modules/Plant/RepairPlan/RepairPlan";
+import RepairPlanDetail from "../modules/Plant/RepairPlan/RepairPlanDetail";
 
 function AppRoute() {
   return (
@@ -297,6 +301,22 @@ function AppRoute() {
           <Route
             path="/tm/du-tru-vat-tu-chi-tiet/:id"
             element={<MaterialEstimateDetail />}
+          />
+          <Route
+            path="/pl/ke-hoach/ke-hoach-tau-vao-sua-chua"
+            element={<ShipRepairPlan />}
+          />
+          <Route
+            path="/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/:id"
+            element={<ShipRepairPlanDetail />}
+          />
+          <Route
+            path="/pl/ke-hoach/ke-hoach-sua-chua"
+            element={<RepairPlan />}
+          />
+          <Route
+            path="/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/:id"
+            element={<RepairPlanDetail />}
           />
         </Route>
       </Route>

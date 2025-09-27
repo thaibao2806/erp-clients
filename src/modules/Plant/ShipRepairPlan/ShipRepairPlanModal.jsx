@@ -10,20 +10,20 @@ import {
   Button,
   Space,
   Tooltip,
-  Select,
   notification,
-   Drawer,
+  Select,
+  Drawer,
 } from "antd";
 import { DeleteOutlined, PlusOutlined, TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import {
-  createTestRunPlan,
-  updateTestRunPlans,
-} from "../../../services/apiPlan/apiTestRunPlan";
+  addAssignmentSlip,
+  updateAssignmentSlip,
+} from "../../../services/apiPlan/apiAssignmentSlip";
 import { getDocumentNumber } from "../../../services/apiAutoNumbering";
-import { getAllUser } from "../../../services/apiAuth";
 import { getApprovalSetting } from "../../../services/apiApproveSetting";
+import { getAllUser } from "../../../services/apiAuth";
 import {
   createApprovals,
   getApprovalsByRef,
@@ -63,18 +63,17 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
+const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
   const [approvalNumber, setApprovalNumber] = useState();
   const [approvers, setApprovers] = useState([]);
   const [dataUser, setDataUser] = useState([]);
-  const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
   const [isEditApproval, setIsEditApproval] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
-
   const { width } = useWindowSize();
 
   // Responsive breakpoints
@@ -84,15 +83,11 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   useEffect(() => {
     if (open) {
-      const values = { ...initialValues };
       if (!initialValues) {
         getVoucherNo();
       }
 
-      if (values.runTime) {
-        values.runTime = dayjs(values.runTime);
-      }
-      form.setFieldsValue(values || {});
+      form.setFieldsValue(initialValues || {});
       setIsEditApproval(!!initialValues?.type);
       setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
       if (initialValues?.details?.length) {
@@ -102,11 +97,13 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         const formattedDetails = initialValues.details.map((item, index) => ({
           key: `${Date.now()}_${index}`,
           stt: index + 1,
-          department: item.department || "",
-          participantCount: item.participantCount || "",
+          content: item.content || "",
+          unit: item.unit || "",
+          quantity: item.quantity || "",
+          workDay: item.workDay || "",
           note: item.note || "",
           ...columns.reduce((acc, day) => {
-            acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
+            acc[`d${day}`] = item[`d${day}`] || "";
             return acc;
           }, {}),
         }));
@@ -116,26 +113,26 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         setTableData([]);
       }
       getApprovalByModulePage();
+      getUser();
       if (initialValues) {
         getApprovals(initialValues.id);
       }
-      getUser();
     }
   }, [open, initialValues, form]);
 
   useEffect(() => {
     if (open && !initialValues && approvalNumber > 0) {
-      setApprovers(Array(approvalNumber).fill({ user: null }));
+      setApprovers(Array(approvalNumber).fill({ userName: null }));
     }
   }, [approvalNumber, open, initialValues]);
 
   const getApprovals = async (refId) => {
     try {
-      let res = await getApprovalsByRef(refId, "KHCT");
+      let res = await getApprovalsByRef(refId, "PGV");
       if (res && res.status === 200) {
         const list = res.data.data.map((ap) => ({
           id: ap.id,
-          username: ap.userName, // phải trùng key với name trong Form
+          username: ap.userName,
           status: ap.status,
           note: ap.note,
         }));
@@ -151,7 +148,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
           id: user.apk,
-          value: user.userName, // hoặc user.id nếu cần
+          value: user.userName,
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
@@ -163,9 +160,20 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   const getApprovalByModulePage = async () => {
     try {
-      let res = await getApprovalSetting("PL", "pl-ke-hoach-chay-thu");
+      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
       if (res && res.status === 200) {
         setApprovalNumber(res.data.data.approvalNumber);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getVoucherNo = async () => {
+    try {
+      let res = await getDocumentNumber("PGV");
+      if (res && res.status === 200) {
+        form.setFieldsValue({ documentNumber: res.data.data.code });
       }
     } catch (error) {
       console.log(error);
@@ -187,25 +195,12 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     const newRow = {
       key: newKey,
       stt: tableData.length + 1,
-      hoTen: "",
-      chucVu: "",
       ...columns.reduce((acc, day) => {
         acc[`d${day}`] = "";
         return acc;
       }, {}),
     };
     setTableData((prev) => [...prev, newRow]);
-  };
-
-  const getVoucherNo = async () => {
-    try {
-      let res = await getDocumentNumber("KHCT");
-      if (res && res.status === 200) {
-        form.setFieldsValue({ documentNumber: res.data.data.code });
-      }
-    } catch (error) {
-      console.log(error);
-    }
   };
 
   const handleDeleteRow = (key) => {
@@ -245,37 +240,65 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         fixed: isMobile ? "left" : false,
       },
       {
-        title: "Đơn vị",
-        dataIndex: "department",
+        title: "Nội dung",
+        dataIndex: "content",
         width: isMobile ? 150 : 200,
         render: (_, record) => (
           <Input
-            value={record.department}
+            value={record.content}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "department", e.target.value)
+              handleInputChange(record.key, "content", e.target.value)
             }
           />
         ),
       },
       {
-        title: "Số lượng người tham gia",
+        title: "ĐVT",
+        dataIndex: "unit",
         width: isMobile ? 80 : 100,
-        dataIndex: "participantCount",
         render: (_, record) => (
           <Input
-            value={record.participantCount}
+            value={record.unit}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "participantCount", e.target.value)
+              handleInputChange(record.key, "unit", e.target.value)
+            }
+          />
+        ),
+      },
+      {
+        title: "Số lượng",
+        dataIndex: "quantity",
+        width: isMobile ? 90 : 120,
+        render: (_, record) => (
+          <Input
+            value={record.quantity}
+            size={isMobile ? "small" : "default"}
+            onChange={(e) =>
+              handleInputChange(record.key, "quantity", e.target.value)
+            }
+          />
+        ),
+      },
+      {
+        title: "N/Công",
+        dataIndex: "workDay",
+        width: isMobile ? 80 : 100,
+        render: (_, record) => (
+          <Input
+            value={record.workDay}
+            size={isMobile ? "small" : "default"}
+            onChange={(e) =>
+              handleInputChange(record.key, "workDay", e.target.value)
             }
           />
         ),
       },
       {
         title: "Ghi chú",
-        width: isMobile ? 120 : 150,
         dataIndex: "note",
+        width: isMobile ? 120 : 150,
         render: (_, record) => (
           <Input
             value={record.note}
@@ -299,17 +322,17 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         const user = dataUser.find((u) => u.value === item.username);
         return {
           userName: item.username,
-          fullName: user?.label || "", // hoặc tìm từ danh sách user để lấy fullName
+          fullName: user?.label || "",
           level: index + 1,
         };
       });
 
       const res = await createApprovals(
         refId,
-        "KHCT",
+        "PGV",
         formattedApprovers,
         documentNumber,
-        `/pl/ke-hoach/ke-hoach-chay-thu-chi-tiet/${refId}?type=KHCT`
+        `/pl/phieu-giao-viec-chi-tiet/${refId}?type=PGV`
       );
       if (res && res.status === 200) {
         console.log("Tạo danh sách duyệt thành công");
@@ -329,7 +352,6 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         return null;
       });
 
-      // Lọc null (nếu có), chờ tất cả promise hoàn thành
       const responses = await Promise.all(updatePromises.filter(Boolean));
     } catch (error) {
       console.error("Lỗi cập nhật phê duyệt:", error);
@@ -347,42 +369,42 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            documentDate: monthYear.toISOString(), // ISO định dạng
+            documentDate: monthYear.toISOString(),
             note: values.note || "",
             details: tableData.map((item) => ({
-              department: item.department || "",
-              participantCount: item.participantCount || "",
+              content: item.content || "",
+              unit: item.unit || "",
+              quantity: Number(item.quantity) || 0,
+              workDay: Number(item.workDay) || 0,
               note: item.note || "",
             })),
           };
 
-          let res = await createTestRunPlan(
+          let res = await addAssignmentSlip(
             payload.documentNumber,
-            payload.managingDepartment,
-            payload.vehicleName,
+            payload.productName,
             payload.documentDate,
-            "",
-            payload.runLocation,
-            payload.runSchedule,
-            payload.runTime,
+            payload.department,
+            payload.managementUnit,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {
-            onSubmit(); // callback từ cha để reload
             await handleAddApprovals(res.data.data, payload.documentNumber);
             const newFollowers = dataUser.find(u => u.value === user.data.userName);
             await addFollower(
               res.data.data,
-              "TestRunPlan",
+              "AssignmentSlip",
                payload.documentNumber,
                [
                 {
-                  userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
-                  userName: newFollowers.value, // chính là userName
+                  userId: newFollowers.id,
+                  userName: newFollowers.value,
                   fullName: user.data.fullName,
                 }
               ]
             )
+            onSubmit();
             form.resetFields();
             setMonthYear(dayjs());
             setTableData([]);
@@ -394,13 +416,15 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           }
         } catch (error) {
           if (error) {
+            console.log(error);
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
               placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        }
+        finally{
           setLoading(false);
         }
       });
@@ -410,31 +434,32 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            documentDate: monthYear.toISOString(), // ISO định dạng
+            documentDate: monthYear.toISOString(),
             note: values.note || "",
             details: tableData.map((item) => ({
-              department: item.department || "",
-              participantCount: item.participantCount || "",
+              content: item.content || "",
+              unit: item.unit || "",
+              quantity: Number(item.quantity) || 0,
+              workDay: Number(item.workDay) || 0,
               note: item.note || "",
             })),
           };
-          let res = await updateTestRunPlans(
+
+          let res = await updateAssignmentSlip(
             initialValues.id,
             payload.documentNumber,
-            payload.managingDepartment,
-            payload.vehicleName,
+            payload.productName,
             payload.documentDate,
-            "",
-            payload.runLocation,
-            payload.runSchedule,
-            payload.runTime,
+            payload.department,
+            payload.managementUnit,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {
             if (isEditApproval) {
               await handleUpdateApprovals();
             }
-            onSubmit(); // callback từ cha để reload
+            onSubmit();
             form.resetFields();
             setMonthYear(dayjs());
             setTableData([]);
@@ -459,7 +484,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-    // Render Mobile Card View for table data
+  // Render Mobile Card View for table data
   const renderMobileCards = () => (
     <div style={{ marginTop: 16 }}>
       <div
@@ -532,26 +557,51 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div>
-                  <label style={{ fontSize: 11, color: "#666" }}>Đơn vị:</label>
+                  <label style={{ fontSize: 11, color: "#666" }}>Nội dung:</label>
                   <Input
-                    value={record.department}
+                    value={record.content}
                     size="small"
-                    placeholder="Nhập đơn vị"
+                    placeholder="Nhập nội dung"
                     onChange={(e) =>
-                      handleInputChange(record.key, "department", e.target.value)
+                      handleInputChange(record.key, "content", e.target.value)
                     }
                   />
                 </div>
                 
                 <div style={{ display: "flex", gap: 8 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>Số lượng người tham gia:</label>
+                    <label style={{ fontSize: 11, color: "#666" }}>ĐVT:</label>
                     <Input
-                      value={record.participantCount}
+                      value={record.unit}
                       size="small"
-                      placeholder="Số lượng người tham gia"
+                      placeholder="ĐVT"
                       onChange={(e) =>
-                        handleInputChange(record.key, "participantCount", e.target.value)
+                        handleInputChange(record.key, "unit", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>Số lượng:</label>
+                    <Input
+                      value={record.quantity}
+                      size="small"
+                      placeholder="Số lượng"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "quantity", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>N/Công:</label>
+                    <Input
+                      value={record.workDay}
+                      size="small"
+                      placeholder="N/Công"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "workDay", e.target.value)
                       }
                     />
                   </div>
@@ -592,195 +642,171 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   return (
     <>
-    <Modal
-      title={
-        <span style={{ fontSize: isMobile ? 18 : 25, fontWeight: 600 }}>
-          {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
-        </span>
-      }
-      open={open}
-      onCancel={() => {
-        form.resetFields();
-        setMonthYear(dayjs());
-        setTableData([]);
-        setTableDrawerVisible(false);
-        onCancel();
-      }}
-      onOk={handleOk}
-      okText={initialValues ? "Cập nhật" : "Thêm"}
-      width={getModalWidth()}
-      confirmLoading={loading}
-      style={isMobile ? { top: 20 } : {}}
+      <Modal
+        title={
+          <span style={{ 
+            fontSize: isMobile ? 18 : 25, 
+            fontWeight: 600 
+          }}>
+            {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
+          </span>
+        }
+        open={open}
+        onCancel={() => {
+          form.resetFields();
+          setMonthYear(dayjs());
+          setTableData([]);
+          setTableDrawerVisible(false);
+          onCancel();
+        }}
+        onOk={handleOk}
+        okText={initialValues ? "Cập nhật" : "Thêm"}
+        width={getModalWidth()}
+        confirmLoading={loading}
+        style={isMobile ? { top: 20 } : {}}
         bodyStyle={isMobile ? { padding: "16px" } : {}}
-    >
-      <Form form={form} 
+      >
+        <Form 
+          form={form} 
           layout="vertical"
-          size={isMobile ? "small" : "default"}>
-        <Row gutter={isMobile ? [8, 8] : [16, 16]}>
+          size={isMobile ? "small" : "default"}
+        >
+          <Row gutter={isMobile ? [8, 8] : [16, 16]}>
             <Col span={colSpans.half}>
-            <Form.Item
-              name="documentNumber"
-              label="Số chứng từ"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={colSpans.half}>
-            <Form.Item
-              name="vehicleName"
-              label="Tên phương tiện"
-              // rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={colSpans.half}>
-            <Form.Item
-              name="managingDepartment"
-              label="Đơn vị quản lý"
-              // rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={colSpans.half}>
-            <Form.Item label="Ngày chứng từ" required>
-              <DatePicker
-                picker="month"
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={monthYear}
-                onChange={handleMonthChange}
-              />
-            </Form.Item>
-          </Col>
-          {/* <Col span={12}>
-            <Form.Item
-              name="receivingLocation"
-              label="Nơi nhận"
-              // rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col> */}
-          <Col span={colSpans.half}>
-            <Form.Item
-              name="runLocation"
-              label="Nơi chạy"
-              // rules={[{ required: true, message: "Vui lòng chọn nơi chạy" }]}
-            >
-              <Select placeholder="Chọn nơi chạy">
-                <Option value="HCM">Hồ Chí Minh</Option>
-                <Option value="KG">Kiên Giang</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={colSpans.half}>
-            <Form.Item
-              name="runSchedule"
-              label="Lộ trình chạy"
-              // rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={colSpans.half}>
-            <Form.Item
-              name="runTime"
-              label="Thời gian chạy"
-              // rules={[
-              //   { required: true, message: "Vui lòng chọn thời gian chạy" },
-              // ]}
-            >
-              <DatePicker
-                showTime
-                format="DD/MM/YYYY HH:mm"
-                style={{ width: "100%" }}
-                placeholder="Chọn ngày và giờ"
-              />
-            </Form.Item>
-          </Col>
-          {approvalNumber > 0 && (
-            <>
-              {approvers.map((item, idx) => (
-                <React.Fragment key={idx}>
-                  <Col span={colSpans.half}>
-                    <Form.Item
-                      label={`Người duyệt cấp ${idx + 1}`}
-                      name={["approvers", idx, "username"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng chọn người duyệt",
-                        },
-                      ]}
-                    >
-                      <Select
-                        options={dataUser}
-                        placeholder="Chọn người duyệt"
-                        showSearch
-                        optionFilterProp="label"
-                        disabled={!!initialValues}
-                      />
-                    </Form.Item>
-                  </Col>
-                  {initialValues && (
-                    <>
-                      <Col span={colSpans.half}>
-                        <Form.Item
-                          label={`Trạng thái duyệt ${idx + 1}`}
-                          name={["approvers", idx, "status"]}
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng chọn trạng thái duyệt",
-                            },
-                          ]}
-                        >
-                          <Select
-                            options={approvalStatusOptions}
-                            placeholder="Chọn trạng thái"
-                            disabled={!isEditApproval || item.username !== user.data.userName}
-                          />
-                        </Form.Item>
-                      </Col>
-                      {isEditApproval && (
+              <Form.Item
+                name="documentNumber"
+                label="Số chứng từ"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="productName"
+                label="Tên sản phẩm"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item label="Ngày chứng từ" required>
+                <DatePicker
+                  picker="day"
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  value={monthYear}
+                  onChange={handleMonthChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="managementUnit"
+                label="Đơn bị quản lý sử dụng"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="department"
+                label="Bộ phận"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item name="note" label="Ghi chú">
+                <Input.TextArea rows={1} />
+              </Form.Item>
+            </Col>
+
+            {/* Approval Section */}
+            {approvalNumber > 0 && (
+              <>
+                {approvers.map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <Col span={colSpans.half}>
+                      <Form.Item
+                        label={`Người duyệt cấp ${idx + 1}`}
+                        name={["approvers", idx, "username"]}
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng chọn người duyệt",
+                          },
+                        ]}
+                      >
+                        <Select
+                          options={dataUser}
+                          placeholder="Chọn người duyệt"
+                          showSearch
+                          optionFilterProp="label"
+                          disabled={!!initialValues}
+                        />
+                      </Form.Item>
+                    </Col>
+                    {initialValues && (
+                      <>
                         <Col span={colSpans.half}>
                           <Form.Item
-                            label={`Ghi chú duyệt ${idx + 1}`}
-                            name={["approvers", idx, "note"]}
+                            label={`Trạng thái duyệt ${idx + 1}`}
+                            name={["approvers", idx, "status"]}
+                            rules={[
+                              {
+                                required: true,
+                                message: "Vui lòng chọn trạng thái duyệt",
+                              },
+                            ]}
                           >
-                            <Input.TextArea
-                              rows={1}
-                              placeholder="Ghi chú duyệt"
+                            <Select
+                              options={approvalStatusOptions}
+                              placeholder="Chọn trạng thái"
                               disabled={!isEditApproval || item.username !== user.data.userName}
                             />
                           </Form.Item>
                         </Col>
-                      )}
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
-            </>
-          )}
-        </Row>
+                        {isEditApproval && (
+                          <Col span={colSpans.half}>
+                            <Form.Item
+                              label={`Ghi chú duyệt ${idx + 1}`}
+                              name={["approvers", idx, "note"]}
+                            >
+                              <Input.TextArea
+                                rows={1}
+                                placeholder="Ghi chú duyệt"
+                                disabled={!isEditApproval || item.username !== user.data.userName}
+                              />
+                            </Form.Item>
+                          </Col>
+                        )}
+                      </>
+                    )}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </Row>
 
-        {isMobile ? (
+          {/* Table Section */}
+          {isMobile ? (
             renderMobileCards()
           ) : (
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 8,
-              alignItems: "center"
-            }}
-          >
-            <h4 style={{ margin: 0 }}>Nội dung kế hoạch</h4>
-            {isTablet && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                  alignItems: "center"
+                }}
+              >
+                <h4 style={{ margin: 0 }}>Nội dung giao việc</h4>
+                {isTablet && (
                   <Button
                     icon={<TableOutlined />}
                     onClick={() => setTableDrawerVisible(true)}
@@ -788,7 +814,7 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     Xem bảng
                   </Button>
                 )}
-            {!isTablet && (
+                {!isTablet && (
                   <Space>
                     <Button icon={<PlusOutlined />} onClick={handleAddRow}>
                       Thêm dòng
@@ -796,19 +822,21 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     <Button onClick={() => setTableData([])}>Hủy</Button>
                   </Space>
                 )}
-          </div>
-          {!isTablet && (
-          <Table
-            columns={generateColumns()}
-            dataSource={tableData}
-            pagination={false}
-            scroll={{ x: "max-content" }}
-            bordered
-            size="small"
-          />
-          )}
-          {isTablet && tableData.length > 0 && (
-            <div
+              </div>
+              
+              {!isTablet && (
+                <Table
+                  columns={generateColumns()}
+                  dataSource={tableData}
+                  pagination={false}
+                  scroll={{ x: "max-content", y: 300 }}
+                  bordered
+                  size="small"
+                />
+              )}
+              
+              {isTablet && tableData.length > 0 && (
+                <div
                   style={{
                     padding: 12,
                     border: "1px solid #f0f0f0",
@@ -825,11 +853,13 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   </Button>
                 </div>
               )}
-        </>
-        )}
-      </Form>
-    </Modal>
-    <Drawer
+            </>
+          )}
+        </Form>
+      </Modal>
+
+      {/* Table Drawer for Tablet */}
+      <Drawer
         title="Nội dung giao việc"
         width="90%"
         onClose={() => setTableDrawerVisible(false)}
@@ -858,8 +888,8 @@ const TestRunPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           size="small"
         />
       </Drawer>
-      </>
+    </>
   );
 };
 
-export default TestRunPlanModal;
+export default ShipRepairPlanModal;
