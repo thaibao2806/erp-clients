@@ -27,8 +27,8 @@ import { useSelector } from "react-redux";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import { getApprovalsByRef } from "../../../../services/apiApprovals";
 import {
+  deleteRepair,
   getRepairByID,
-  deleteRepairByID,
 } from "../../../../services/apiProductControl/apiRepair";
 import dayjs from "dayjs";
 import { addAttachments } from "../../../../services/apiAttachment";
@@ -142,7 +142,7 @@ const RepairDetail = () => {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else if (key === "delete") {
       try {
-        let res = await deleteRepairByID(data.id);
+        let res = await deleteRepair(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",

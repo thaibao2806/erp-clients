@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { saveAs } from "file-saver";
-import ImportWareHouseModal from "./ImportWareHouseModal";
+// import ImportWareHouseModal from "./ImportWareHouseModal";
 import {
   deleteJobRequirements,
   exportExcelJR,
@@ -61,7 +61,7 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-const ImportWareHouse = () => {
+const MaterialManager = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [dataSource, setDataSource] = useState([]);
@@ -149,49 +149,39 @@ const ImportWareHouse = () => {
       fixed: isMobile ? "left" : false,
     },
     {
-      title: "Số chứng từ",
-      dataIndex: "voucherNo",
+      title: "Mã vật tư",
+      dataIndex: "materialCode",
+      width: isMobile ? 120 : 150,
+    },
+    {
+      title: "Tên vật tư",
       width: isMobile ? 150 : 200,
-      render: (text, record) => (
-        <Link to={`/tm/yeu-cau-cong-viec-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
-      ),
+      dataIndex: "materialName",
     },
     {
-      title: "Ngày chứng từ",
-      width: isMobile ? 120 : 150,
-      dataIndex: "voucherDate",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+      title: "Đơn vị tính",
+      width: isMobile ? 80 : 120,
+      dataIndex: "unit",
     },
     {
-      title: "Đối tượng",
-      width: isMobile ? 150 : 200,
-      dataIndex: "objectName",
+      title: "Tồn đầu kỳ",
+      width: isMobile ? 80 : 120,
+      dataIndex: "beginningInventory",
     },
     {
-      title: "Kho nhập",
-      width: isMobile ? 120 : 150,
-      dataIndex: "warehouseName",
+      title: "Nhập kho",
+      width: isMobile ? 80 : 120,
+      dataIndex: "imported",
     },
     {
-      title: "Địa chỉ kho",
-      width: isMobile ? 120 : 150,
-      dataIndex: "warehouseAddress",
+      title: "Xuất kho",
+      width: isMobile ? 80 : 120,
+      dataIndex: "exported",
     },
     {
-      title: "Loại hàng",
-      width: isMobile ? 120 : 150,
-      dataIndex: "goodsTypeName",
-    },
-    {
-      title: "Người lập",
-      width: isMobile ? 120 : 150,
-      dataIndex: "createdByName",
-    },
-    {
-      title: "Ghi chú",
-      width: isMobile ? 120 : 150,
-      dataIndex: "note",
+      title: "Tồn cuối kỳ",
+      width: isMobile ? 80 : 120,
+      dataIndex: "endingInventory",
     },
     // {
     //   title: "Trạng thái duyệt",
@@ -221,39 +211,31 @@ const ImportWareHouse = () => {
     },
     {
       title: "Thông tin",
-      dataIndex: "voucherNo",
+      dataIndex: "materialCode",
       fixed: "left",
       width: 200,
       render: (_, record) => (
         <div>
-          <Link
-            to={`/tm/vat-tu/phieu-nhap-chi-tiet/${record.id}`}
-            style={{ fontWeight: 600, fontSize: 14 }}
-          >
-            {record.voucherNo}
-          </Link>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.voucherDate
-              ? new Date(record.voucherDate).toLocaleDateString("vi-VN")
-              : "---"}
+            {record.materialCode}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.objectName}
+            {record.materialName}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.warehouseName}
+            {record.unit}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.warehouseAddress}
+            {record.beginningInventory}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.goodsTypeName}
+            {record.imported}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.createdByName}
+            {record.exported}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.note}
+            {record.endingInventory}
           </div>
         </div>
       ),
@@ -443,7 +425,7 @@ const ImportWareHouse = () => {
   // Action menu for mobile
   const actionMenu = (
     <Menu>
-      <Menu.Item key="add" icon={<PlusOutlined />} onClick={handleAdd}>
+      {/* <Menu.Item key="add" icon={<PlusOutlined />} onClick={handleAdd}>
         Thêm mới
       </Menu.Item>
       <Menu.Item
@@ -454,7 +436,7 @@ const ImportWareHouse = () => {
         danger
       >
         Xóa ({selectedRowKeys.length})
-      </Menu.Item>
+      </Menu.Item> */}
       <Menu.Item
         key="export"
         icon={<FileExcelOutlined />}
@@ -496,12 +478,12 @@ const ImportWareHouse = () => {
               fontSize: isMobile ? 12 : 14,
             }}
           >
-            Số chứng từ
+            Mã vật tư
           </label>
           <Input
-            placeholder="Số chứng từ"
-            value={filters.voucherNo}
-            onChange={(e) => handleFilterChange("voucherNo", e.target.value)}
+            placeholder="Mã vật tư"
+            value={filters.materialCode}
+            onChange={(e) => handleFilterChange("materialCode", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
@@ -513,72 +495,15 @@ const ImportWareHouse = () => {
               fontSize: isMobile ? 12 : 14,
             }}
           >
-            Đối tượng
+            Tên vật tư
           </label>
           <Input
-            placeholder="Đối tượng"
-            value={filters.objectName}
-            onChange={(e) => handleFilterChange("objectName", e.target.value)}
+            placeholder="Tên vật tư"
+            value={filters.materialName}
+            onChange={(e) => handleFilterChange("materialName", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 4,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
-            Loại hàng
-          </label>
-          <Input
-            placeholder="Loại hàng"
-            value={filters.goodsTypeName}
-            onChange={(e) =>
-              handleFilterChange("goodsTypeName", e.target.value)
-            }
-            size={isMobile ? "small" : "default"}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 4,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
-            Kho nhập
-          </label>
-          <Input
-            placeholder="Kho nhập"
-            value={filters.warehouseName}
-            onChange={(e) =>
-              handleFilterChange("warehouseName", e.target.value)
-            }
-            size={isMobile ? "small" : "default"}
-          />
-        </Col>
-        {/* <Col xs={24} sm={12} md={8}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 4,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
-            Lệnh sửa chữa
-          </label>
-          <Input
-            placeholder="Lệnh sửa chữa"
-            value={filters.repairOrderCode}
-            onChange={(e) =>
-              handleFilterChange("repairOrderCode", e.target.value)
-            }
-            size={isMobile ? "small" : "default"}
-          />
-        </Col> */}
       </Row>
       <div style={{ marginTop: 16, textAlign: "right" }}>
         <Button
@@ -635,42 +560,32 @@ const ImportWareHouse = () => {
                 <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>
                   #{item.stt}
                 </span>
-                <Link
-                  to={`/tm/vat-tu/phieu-nhap-chi-tiet/${item.id}`}
-                  style={{ fontWeight: 600, fontSize: 14 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {item.voucherNo}
-                </Link>
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Ngày:</strong>{" "}
-                {item.voucherDate
-                  ? new Date(item.voucherDate).toLocaleDateString("vi-VN")
-                  : "---"}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Đối tượng:</strong> {item.objectName}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Loại hàng:</strong> {item.goodsTypeName}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Kho nhập:</strong> {item.warehouseName}
-              </div>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Địa chỉ kho:</strong> {item.warehouseAddress}
-              </div>
-
-              {item.note && (
-                <div style={{ fontSize: 12, color: "#666" }}>
-                  <strong>Ghi chú:</strong> {item.note}
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                  <strong>Mã vật tư:</strong> {item.materialCode}
                 </div>
-              )}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Tên vật tư:</strong> {item.materialName}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>ĐVT:</strong> {item.unit}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Tồn đầu kỳ:</strong> {item.beginningInventory}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Nhập kho:</strong> {item.imported}
+              </div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Xuất kho:</strong> {item.exported}
+              </div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Tồn cuối kỳ:</strong> {item.endingInventory}
+              </div>
             </div>
 
             {/* <div style={{ marginLeft: 12 }}>
@@ -742,7 +657,7 @@ const ImportWareHouse = () => {
             flex: isMobile ? "1 1 100%" : "auto",
           }}
         >
-          Phiếu nhập kho
+          Quản lý vật tư
         </h1>
 
         {isMobile ? (
@@ -767,7 +682,7 @@ const ImportWareHouse = () => {
                 size={isTablet ? "small" : "default"}
               />
             </Tooltip>
-            <Tooltip title="Thêm">
+            {/* <Tooltip title="Thêm">
               <Button
                 onClick={handleAdd}
                 icon={<PlusOutlined />}
@@ -783,7 +698,7 @@ const ImportWareHouse = () => {
                 disabled={selectedRowKeys.length === 0}
                 size={isTablet ? "small" : "default"}
               />
-            </Tooltip>
+            </Tooltip> */}
             <Tooltip title="Xuất excel">
               <Button
                 icon={<FileExcelOutlined />}
@@ -880,14 +795,14 @@ const ImportWareHouse = () => {
       </Drawer>
 
       {/* Modal */}
-      <ImportWareHouseModal
+      {/* <ImportWareHouseModal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         initialValues={editingData}
-      />
+      /> */}
     </div>
   );
 };
 
-export default ImportWareHouse;
+export default MaterialManager;

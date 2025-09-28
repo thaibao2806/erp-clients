@@ -47,8 +47,6 @@ import ImportWareHouse from "../modules/TechnicalMaterial/Supplies/ImportWareHou
 import ImportWareHouseDetail from "../modules/TechnicalMaterial/Supplies/ImportWareHouse/ImportWareHouseDetail";
 import ExportWareHouse from "../modules/TechnicalMaterial/Supplies/ExportWareHouse/ExportWareHouse";
 import ExportWareHouseDetail from "../modules/TechnicalMaterial/Supplies/ExportWareHouse/ExportWareHouseDetail";
-import MaterialInspection from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspection";
-import MaterialInspectionDetail from "../modules/TechnicalMaterial/Supplies/MaterialInspection/MaterialInspectionDetail";
 import MaterialEstimate from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimate";
 import MaterialEstimateDetail from "../modules/TechnicalMaterial/MaterialEstimate/MaterialEstimateDetail";
 import ShipRepairPlan from "../modules/Plant/ShipRepairPlan/ShipRepairPlan";
@@ -59,6 +57,7 @@ import Repair from "../modules/ProductionControl/Propose/Repair/Repair";
 import RepairDetail from "../modules/ProductionControl/Propose/Repair/RepairDetail";
 import BuySupplies from "../modules/ProductionControl/Propose/BuySupplies/BuySupplies";
 import BuySuppliesDetail from "../modules/ProductionControl/Propose/BuySupplies/BuySuppliesDetail";
+import MaterialManager from "../modules/TechnicalMaterial/Supplies/MaterialManager/MaterialManager";
 function AppRoute() {
   return (
     <Routes>
@@ -181,24 +180,6 @@ function AppRoute() {
             path="/pm/bao-cao/quan-ly-thiet-bi-chi-tiet/:id"
             element={<DeviceManagementDetail />}
           />
-          <Route path="/tm/vat-tu/phieu-nhap" element={<ImportWareHouse />} />
-          <Route
-            path="/tm/vat-tu/phieu-nhap-chi-tiet/:id"
-            element={<ImportWareHouseDetail />}
-          />
-          <Route path="/tm/vat-tu/phieu-xuat" element={<ExportWareHouse />} />
-          <Route
-            path="/tm/vat-tu/phieu-xuat-chi-tiet/:id"
-            element={<ExportWareHouseDetail />}
-          />
-          <Route
-            path="/tm/vat-tu/bien-ban-kiem-tra-vt"
-            element={<MaterialInspection />}
-          />
-          <Route
-            path="/tm/vat-tu/bien-ban-kiem-tra-vt-chi-tiet/:id"
-            element={<MaterialInspectionDetail />}
-          />
           <Route path="/tm/du-tru-vat-tu" element={<MaterialEstimate />} />
           <Route
             path="/tm/du-tru-vat-tu-chi-tiet/:id"
@@ -219,6 +200,20 @@ function AppRoute() {
           <Route
             path="/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/:id"
             element={<RepairPlanDetail />}
+          />
+          <Route path="/tm/vat-tu/phieu-nhap" element={<ImportWareHouse />} />
+          <Route
+            path="/tm/vat-tu/phieu-nhap-chi-tiet/:id"
+            element={<ImportWareHouseDetail />}
+          />
+          <Route path="/tm/vat-tu/phieu-xuat" element={<ExportWareHouse />} />
+          <Route
+            path="/tm/vat-tu/phieu-xuat-chi-tiet/:id"
+            element={<ExportWareHouseDetail />}
+          />
+          <Route
+            path="/tm/vat-tu/quan-ly-vat-tu"
+            element={<MaterialManager />}
           />
         </Route>
       </Route>

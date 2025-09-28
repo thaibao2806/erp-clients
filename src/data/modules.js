@@ -17,7 +17,7 @@ export const moduleData = {
         { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
           { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },
           { key: 'tm-phieu-xuat', label: '2. Phiếu xuất', path: '/tm/vat-tu/phieu-xuat' },
-          // { key: 'tm-bien-ban-kiem-tra', label: '3. Biên bản kiểm tra VT', path: '/tm/vat-tu/bien-ban-kiem-tra-vt' },
+          { key: 'tm-quan-ly-vat-tu', label: '3. Quản lý vật tư', path: '/tm/vat-tu/quan-ly-vat-tu' },
         ] }, 
       ],
     },
