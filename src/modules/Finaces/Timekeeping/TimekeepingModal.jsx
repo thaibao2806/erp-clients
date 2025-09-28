@@ -11,6 +11,7 @@ import {
   Space,
   Tooltip,
   notification,
+  Card,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -27,6 +28,8 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -61,6 +64,17 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
       }
     }
   }, [open, initialValues]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 576);
+      setIsTablet(width >= 576 && width < 992);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const getVoucherNo = async () => {
     try {
@@ -138,11 +152,7 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
           </Tooltip>
         ),
       },
-      {
-        title: "STT",
-        dataIndex: "stt",
-        width: 50,
-      },
+      { title: "STT", dataIndex: "stt", width: 50 },
       {
         title: "Họ và tên",
         dataIndex: "fullName",
@@ -191,119 +201,54 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
-    if (!initialValues) {
-      form.validateFields().then(async (values) => {
-        try {
-          const daysInMonth = monthYear.daysInMonth();
-          const dayFields = Array.from(
-            { length: daysInMonth },
-            (_, i) => i + 1
-          );
+    form.validateFields().then(async (values) => {
+      try {
+        const daysInMonth = monthYear.daysInMonth();
+        const dayFields = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-          const details = tableData.map((item) => {
-            const dayData = dayFields.reduce((acc, day) => {
-              acc[`d${day}`] = item[`d${day}`] || "";
-              return acc;
-            }, {});
-
-            const totalWork = dayFields.reduce((sum, day) => {
-              const val = (item[`d${day}`] || "").trim().toUpperCase();
-              switch (val) {
-                case "X":
-                case "CT":
-                  return sum + 1;
-                case "X/2":
-                  return sum + 0.5;
-                default:
-                  return sum;
-              }
-            }, 0);
-
-            return {
-              fullName: item.fullName,
-              position: item.position,
-              ...dayData,
-              totalWork,
-            };
-          });
-
-          const payload = {
-            ...values,
-            voucherDate: monthYear.toISOString(),
-            month: monthYear.toISOString(),
-            details,
+        const details = tableData.map((item) => {
+          const dayData = dayFields.reduce((acc, day) => {
+            acc[`d${day}`] = item[`d${day}`] || "";
+            return acc;
+          }, {});
+          const totalWork = dayFields.reduce((sum, day) => {
+            const val = (item[`d${day}`] || "").trim().toUpperCase();
+            switch (val) {
+              case "X":
+              case "CT":
+                return sum + 1;
+              case "X/2":
+                return sum + 0.5;
+              default:
+                return sum;
+            }
+          }, 0);
+          return {
+            fullName: item.fullName,
+            position: item.position,
+            ...dayData,
+            totalWork,
           };
+        });
 
-          console.log(payload.detail);
-          let res = await createTimeKeeping(
+        const payload = {
+          ...values,
+          voucherDate: monthYear.toISOString(),
+          month: monthYear.toISOString(),
+          details,
+        };
+
+        let res;
+        if (!initialValues) {
+          res = await createTimeKeeping(
             payload.voucherNo,
             payload.voucherDate,
             payload.month,
             payload.note,
             details
           );
-          if (res && res.status === 200) {
-            onSubmit(payload);
-            form.resetFields();
-            setTableData([]);
-            setMonthYear(dayjs());
-            notification.success({
-              message: "Thành công",
-              description: "Lưu bảng chấm công thành công.",
-            });
-          }
-        } catch (error) {
-          notification.error({
-            message: "Lỗi",
-            description: "Đã có lỗi xảy ra khi lưu.",
-          });
-        }
-      });
-    } else {
-      form.validateFields().then(async (values) => {
-        try {
-          const daysInMonth = monthYear.daysInMonth();
-          const dayFields = Array.from(
-            { length: daysInMonth },
-            (_, i) => i + 1
-          );
-
-          const details = tableData.map((item) => {
-            const dayData = dayFields.reduce((acc, day) => {
-              acc[`d${day}`] = item[`d${day}`] || "";
-              return acc;
-            }, {});
-
-            const totalWork = dayFields.reduce((sum, day) => {
-              const val = (item[`d${day}`] || "").trim().toUpperCase();
-              switch (val) {
-                case "X":
-                case "CT":
-                  return sum + 1;
-                case "X/2":
-                  return sum + 0.5;
-                default:
-                  return sum;
-              }
-            }, 0);
-
-            return {
-              fullName: item.fullName,
-              position: item.position,
-              ...dayData,
-              totalWork,
-            };
-          });
-
-          const payload = {
-            ...values,
-            voucherDate: monthYear.toISOString(),
-            month: monthYear.toISOString(),
-            details,
-          };
-
-          console.log(payload.detail);
-          let res = await updateTimeKeepingByID(
+        } else {
+          res = await updateTimeKeepingByID(
             initialValues.id,
             payload.voucherNo,
             payload.voucherDate,
@@ -311,30 +256,64 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.note,
             details
           );
-          if ((res && res.status === 200) || res.status === 204) {
-            onSubmit(payload);
-            form.resetFields();
-            setTableData([]);
-            setMonthYear(dayjs());
-            notification.success({
-              message: "Thành công",
-              description: "Lưu bảng chấm công thành công.",
-            });
-          }
-        } catch (error) {
-          notification.error({
-            message: "Lỗi",
-            description: "Đã có lỗi xảy ra khi lưu.",
+        }
+
+        if (res && (res.status === 200 || res.status === 204)) {
+          onSubmit(payload);
+          form.resetFields();
+          setTableData([]);
+          setMonthYear(dayjs());
+          notification.success({
+            message: "Thành công",
+            description: "Lưu bảng chấm công thành công.",
           });
         }
-      });
-    }
+      } catch (error) {
+        notification.error({
+          message: "Lỗi",
+          description: "Đã có lỗi xảy ra khi lưu.",
+        });
+      }
+    });
   };
+
+  const renderMobileCards = () => (
+    <div style={{ display: "grid", gap: 8 }}>
+      <Card size="small" title="Số chứng từ">
+        <Form.Item name="voucherNo" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Ngày chứng từ">
+        <DatePicker
+          picker="day"
+          style={{ width: "100%" }}
+          format="DD/MM/YYYY"
+          value={monthYear}
+          onChange={handleMonthChange}
+        />
+      </Card>
+      <Card size="small" title="Chấm công tháng">
+        <DatePicker
+          picker="month"
+          style={{ width: "100%" }}
+          format="MM/YYYY"
+          value={monthYear}
+          onChange={handleMonthChange}
+        />
+      </Card>
+      <Card size="small" title="Ghi chú">
+        <Form.Item name="note">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+      </Card>
+    </div>
+  );
 
   return (
     <Modal
       title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
+        <span style={{ fontSize: 22, fontWeight: 600 }}>
           {initialValues ? "Cập nhật chấm công" : "Thêm chấm công"}
         </span>
       }
@@ -347,58 +326,62 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
       }}
       onOk={handleOk}
       okText={initialValues ? "Cập nhật" : "Thêm"}
-      width="100%"
+      width={isMobile ? "100%" : "95%"}
       style={{ top: 30 }}
     >
       <Form form={form} layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="voucherNo"
-              label="Số chứng từ"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Ngày chứng từ" required>
-              <DatePicker
-                picker="day"
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={monthYear}
-                onChange={handleMonthChange}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Chấm công tháng">
-              <DatePicker
-                picker="month"
-                style={{ width: "100%" }}
-                format="MM/YYYY"
-                value={monthYear}
-                onChange={handleMonthChange}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item name="note" label="Ghi chú">
-              <Input.TextArea rows={2} />
-            </Form.Item>
-          </Col>
-        </Row>
+        {isMobile ? (
+          renderMobileCards()
+        ) : (
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="voucherNo"
+                label="Số chứng từ"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Ngày chứng từ" required>
+                <DatePicker
+                  picker="day"
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  value={monthYear}
+                  onChange={handleMonthChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Chấm công tháng">
+                <DatePicker
+                  picker="month"
+                  style={{ width: "100%" }}
+                  format="MM/YYYY"
+                  value={monthYear}
+                  onChange={handleMonthChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="note" label="Ghi chú">
+                <Input.TextArea rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
 
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            marginBottom: 8,
+            margin: "16px 0 8px",
           }}
         >
           <h4>
-            Chi tiết chấm công (X: đủ công, X/2: nữa công, CT: công tác, P: nghỉ
+            Chi tiết chấm công (X: đủ công, X/2: nửa công, CT: công tác, P: nghỉ
             có phép)
           </h4>
           <Space>
@@ -408,6 +391,7 @@ const TimekeepingModal = ({ open, onCancel, onSubmit, initialValues }) => {
             <Button onClick={() => setTableData([])}>Hủy</Button>
           </Space>
         </div>
+
         <Table
           columns={generateColumns()}
           dataSource={tableData}

@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -34,6 +35,7 @@ import { getApprovalsByRef } from "../../../services/apiApprovals";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const ReceptionMinutesDetail = () => {
   const { id } = useParams();
@@ -49,6 +51,11 @@ const ReceptionMinutesDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const fileInputRef = useRef(null);
   const navigator = useNavigate();
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -152,18 +159,201 @@ const ReceptionMinutesDetail = () => {
     }
   };
 
-  return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết biên bản</Title>
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Số chứng từ:</strong> {data.documentNumber || ""}
+          </div>
+          <div>
+            <strong>Tên phương tiện:</strong> {data.vehicleName || ""}
+          </div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.documentDate
+              ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Ngày tiếp nhận:</strong>{" "}
+            {data.receivingDate
+              ? new Date(data.receivingDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Đại diện công ty:</strong>{" "}
+            {data.companyRepresentativePosition || ""}
+          </div>
+          <div>
+            <strong>Đại diện phương tiện (1): </strong>{" "}
+            {data.shipRepresentative1 || ""}
+          </div>
+          <div>
+            <strong>Chức vụ:</strong> {data.shipRepresentative1Position || ""}
+          </div>
+          <div>
+            <strong>Đại diện phương tiện (2): </strong>{" "}
+            {data.shipRepresentative2 || ""}
+          </div>
+          <div>
+            <strong>Chức vụ:</strong> {data.shipRepresentative2Position || ""}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.documentNumber || ""}
+            </div>
+            <div>
+              <strong>Tên phương tiện:</strong> {data.vehicleName || ""}
+            </div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.documentDate
+                ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+            <div>
+              <strong>Ngày tiếp nhận:</strong>{" "}
+              {data.receivingDate
+                ? new Date(data.receivingDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
         </Col>
-        <Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Đại diện công ty:</strong>{" "}
+              {data.companyRepresentativePosition || ""}
+            </div>
+            <div>
+              <strong>Đại diện phương tiện (1): </strong>{" "}
+              {data.shipRepresentative1 || ""}
+            </div>
+            <div>
+              <strong>Chức vụ:</strong> {data.shipRepresentative1Position || ""}
+            </div>
+            <div>
+              <strong>Đại diện phương tiện (2): </strong>{" "}
+              {data.shipRepresentative2 || ""}
+            </div>
+            <div>
+              <strong>Chức vụ:</strong> {data.shipRepresentative2Position || ""}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  // Responsive approval section
+  const renderApprovalSection = () => {
+    if (!approvals?.length) return null;
+
+    if (isMobile) {
+      return (
+        <div style={{ marginTop: 16 }}>
+          {approvals.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                border: "1px solid #d9d9d9",
+                borderRadius: 6,
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>
+                  <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+                </div>
+                <div>
+                  <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                  {item.status === "rejected"
+                    ? "Từ chối"
+                    : item.status === "approved"
+                    ? "Đã duyệt"
+                    : "Chờ duyệt"}
+                </div>
+                <div>
+                  <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                  {item.note || ""}
+                </div>
+              </Space>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {approvals.map((item, index) => (
+          <Col xs={24} sm={24} md={12} lg={12} xl={12} key={index}>
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <div>
+                <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+              </div>
+              <div>
+                <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                {item.status === "rejected"
+                  ? "Từ chối"
+                  : item.status === "approved"
+                  ? "Đã duyệt"
+                  : "Chờ duyệt"}
+              </div>
+              <div>
+                <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                {item.note || ""}
+              </div>
+            </Space>
+          </Col>
+        ))}
+      </Row>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{
+              margin: 0,
+              fontSize: isMobile ? "18px" : undefined,
+            }}
+          >
+            Xem chi tiết biên bản
+          </Title>
+        </Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button
+              style={{ width: isMobile ? "100%" : "auto" }}
+              size={isMobile ? "middle" : "middle"}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -174,78 +364,14 @@ const ReceptionMinutesDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin biên bản" key="1">
           {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Số chứng từ: {data.documentNumber || ""}</div>
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.documentDate
-                      ? new Date(data.documentDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                  <div>Tên phương tiện: {data.vehicleName || ""}</div>
-                  <div>
-                    Ngày tiếp nhận:{" "}
-                    {data.receivingDate
-                      ? new Date(data.receivingDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>
-                    Đại diện công ty: {data.companyRepresentative || ""}
-                  </div>
-                  <div>Chức vụ: {data.companyRepresentativePosition || ""}</div>
-                  <div>Đại diện tàu (1): {data.shipRepresentative1 || ""}</div>
-                  <div>Chức vụ: {data.shipRepresentative1Position || ""}</div>
-                  <div>Đại diện tàu (2): {data.shipRepresentative2 || ""}</div>
-                  <div>Chức vụ: {data.shipRepresentative2Position || ""}</div>
-                </Space>
-              </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
-            </Row>
+            <>
+              {renderInfoSection()}
+              {renderApprovalSection()}
+            </>
           )}
         </Panel>
 

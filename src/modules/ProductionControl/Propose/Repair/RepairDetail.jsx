@@ -10,6 +10,8 @@ import {
   Table,
   Space,
   message,
+  Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -24,12 +26,16 @@ import RepairModal from "./RepairModal";
 import { useSelector } from "react-redux";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import { getApprovalsByRef } from "../../../../services/apiApprovals";
-import { getRepairByID } from "../../../../services/apiProductControl/apiRepair";
+import {
+  getRepairByID,
+  deleteRepairByID,
+} from "../../../../services/apiProductControl/apiRepair";
 import dayjs from "dayjs";
 import { addAttachments } from "../../../../services/apiAttachment";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const RepairDetail = () => {
   const { id } = useParams();
@@ -45,6 +51,11 @@ const RepairDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
   const fileInputRef = useRef(null);
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -131,7 +142,7 @@ const RepairDetail = () => {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else if (key === "delete") {
       try {
-        let res = await deleteEquipmentInventoryID(data.id);
+        let res = await deleteRepairByID(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
@@ -148,28 +159,236 @@ const RepairDetail = () => {
     }
   };
 
-  const columns = [
-    { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Nội dung", dataIndex: "content" },
-    { title: "Kí hiệu", dataIndex: "code" },
-    { title: "ĐVT", dataIndex: "unit" },
-    { title: "Số lượng", dataIndex: "quantity" },
-    { title: "Tình trạng", dataIndex: "condition" },
-    { title: "Ghi chú", dataIndex: "notes" },
-  ];
+  // Responsive columns for table
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        title: "STT",
+        dataIndex: "stt",
+        width: isMobile ? 50 : 60,
+        fixed: isMobile ? "left" : false,
+      },
+      {
+        title: "Nội dung",
+        dataIndex: "content",
+        width: isMobile ? 150 : undefined,
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 150 : 200,
+          },
+        }),
+      },
+      {
+        title: "Kí hiệu",
+        dataIndex: "code",
+        width: isMobile ? 80 : undefined,
+      },
+      {
+        title: "ĐVT",
+        dataIndex: "unit",
+        width: isMobile ? 60 : undefined,
+      },
+      {
+        title: "Số lượng",
+        dataIndex: "quantity",
+        width: isMobile ? 80 : undefined,
+      },
+      {
+        title: "Tình trạng",
+        dataIndex: "condition",
+        width: isMobile ? 100 : undefined,
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 100 : 120,
+          },
+        }),
+      },
+      {
+        title: "Ghi chú",
+        dataIndex: "notes",
+        width: isMobile ? 120 : undefined,
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 120 : 150,
+          },
+        }),
+      },
+    ];
+
+    return baseColumns;
+  };
+
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+          </div>
+          <div>
+            <strong>Tên thiết bị:</strong> {data.assetName || ""}
+          </div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.voucherDate
+              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Loại đề xuất:</strong> {data.assetType || ""}
+          </div>
+          <div>
+            <strong>Bộ phận:</strong> {data.department || ""}
+          </div>
+          <div>
+            <strong>Ghi chú:</strong> {data.note || ""}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            </div>
+            <div>
+              <strong>Tên thiết bị:</strong> {data.assetName || ""}
+            </div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.voucherDate
+                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Loại đề xuất:</strong> {data.assetType || ""}
+            </div>
+            <div>
+              <strong>Bộ phận:</strong> {data.department || ""}
+            </div>
+            <div>
+              <strong>Ghi chú:</strong> {data.note || ""}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  // Responsive approval section
+  const renderApprovalSection = () => {
+    if (!approvals?.length) return null;
+
+    if (isMobile) {
+      return (
+        <div style={{ marginTop: 16 }}>
+          {approvals.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                border: "1px solid #d9d9d9",
+                borderRadius: 6,
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>
+                  <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+                </div>
+                <div>
+                  <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                  {item.status === "rejected"
+                    ? "Từ chối"
+                    : item.status === "approved"
+                    ? "Đã duyệt"
+                    : "Chờ duyệt"}
+                </div>
+                <div>
+                  <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                  {item.note || ""}
+                </div>
+              </Space>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {approvals.map((item, index) => (
+          <Col xs={24} sm={24} md={12} lg={12} xl={12} key={index}>
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <div>
+                <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+              </div>
+              <div>
+                <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                {item.status === "rejected"
+                  ? "Từ chối"
+                  : item.status === "approved"
+                  ? "Đã duyệt"
+                  : "Chờ duyệt"}
+              </div>
+              <div>
+                <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                {item.note || ""}
+              </div>
+            </Space>
+          </Col>
+        ))}
+      </Row>
+    );
+  };
 
   return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết đề xuất sửa chữa</Title>
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{
+              margin: 0,
+              fontSize: isMobile ? "18px" : undefined,
+            }}
+          >
+            Xem chi tiết đề xuất sửa chữa
+          </Title>
         </Col>
-        <Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button
+              style={{ width: isMobile ? "100%" : "auto" }}
+              size={isMobile ? "middle" : "middle"}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -180,97 +399,53 @@ const RepairDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin đề xuất" key="1">
           {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Số chứng từ: {data.voucherNo || ""}</div>
-                  <div>Tên thiết bị: {data.assetName || ""}</div>
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.voucherDate
-                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Loại đề xuất: {data.assetType || ""}</div>
-                  <div>Bộ phận: {data.department || ""}</div>
-                  <div>Ghi chú: {data.note || ""}</div>
-                </Space>
-              </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
-            </Row>
+            <>
+              {renderInfoSection()}
+              {renderApprovalSection()}
+            </>
           )}
         </Panel>
 
         <Panel header="Bảng vật tư, thiết bị sửa chữa, thanh lý" key="2">
           {data && (
-            <Table
-              columns={columns}
-              dataSource={data.details?.map((item, index) => ({
-                ...item,
-                stt: index + 1,
-              }))}
-              scroll={{ x: "max-content" }}
-              size="small"
-              bordered
-              pagination={false}
-              components={{
-                header: {
-                  cell: (props) => (
-                    <th
-                      {...props}
-                      style={{
-                        backgroundColor: "#e6f4fb",
-                        color: "#0700ad",
-                        fontWeight: "600",
-                      }}
-                    />
-                  ),
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={getColumns()}
+                dataSource={data.details?.map((item, index) => ({
+                  ...item,
+                  stt: index + 1,
+                }))}
+                scroll={{
+                  x: isMobile ? 600 : "max-content",
+                  y: isMobile ? 300 : undefined,
+                }}
+                size="small"
+                bordered
+                pagination={false}
+                components={{
+                  header: {
+                    cell: (props) => (
+                      <th
+                        {...props}
+                        style={{
+                          backgroundColor: "#e6f4fb",
+                          color: "#0700ad",
+                          fontWeight: "600",
+                          fontSize: isMobile ? "12px" : "14px",
+                        }}
+                      />
+                    ),
                   },
-              }}
-            />
+                }}
+                style={{
+                  fontSize: isMobile ? "12px" : "14px",
+                }}
+              />
+            </div>
           )}
         </Panel>
 
@@ -304,7 +479,7 @@ const RepairDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"EquipmentInventory"}
+              refType={"Repair"}
               voucherNo={data.voucherNo}
             />
           )}
@@ -333,7 +508,7 @@ const RepairDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data?.id); // id của AssignmentSlip
+            formData.append("refId", data?.id); // id của Repair
             formData.append("refType", "Repair");
 
             try {

@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -38,6 +39,7 @@ import {
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const TimekeepingDetail = () => {
   const { id } = useParams();
@@ -53,6 +55,11 @@ const TimekeepingDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
   const fileInputRef = useRef(null);
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -134,32 +141,153 @@ const TimekeepingDetail = () => {
     }
   };
 
-  const columns = [
-    { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Họ và tên", dataIndex: "fullName" },
-    { title: "Chức vụ", dataIndex: "position" },
-    ...Array.from({ length: 31 }, (_, i) => ({
-      title: `Ngày ${i + 1}`,
+  // Responsive columns for the complex timekeeping table
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        title: "STT",
+        dataIndex: "stt",
+        width: isMobile ? 50 : 60,
+        fixed: "left",
+      },
+      {
+        title: "Họ và tên",
+        dataIndex: "fullName",
+        width: isMobile ? 120 : 150,
+        fixed: "left",
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 120 : 150,
+          },
+        }),
+      },
+      {
+        title: "Chức vụ",
+        dataIndex: "position",
+        width: isMobile ? 100 : 120,
+        fixed: "left",
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 100 : 120,
+          },
+        }),
+      },
+    ];
+
+    // Add 31 day columns
+    const dayColumns = Array.from({ length: 31 }, (_, i) => ({
+      title: isMobile ? `${i + 1}` : `Ngày ${i + 1}`,
       dataIndex: `d${i + 1}`,
-      width: 80,
+      width: isMobile ? 40 : 60,
       align: "center",
-    })),
-    { title: "Thời gian hoàn thành", dataIndex: "workDay" },
-    { title: "Tổng công", dataIndex: "totalWork" },
-  ];
+    }));
+
+    const endColumns = [
+      {
+        title: isMobile ? "TG" : "Thời gian hoàn thành",
+        dataIndex: "workDay",
+        width: isMobile ? 60 : 120,
+        fixed: "right",
+      },
+      {
+        title: isMobile ? "TC" : "Tổng công",
+        dataIndex: "totalWork",
+        width: isMobile ? 60 : 100,
+        fixed: "right",
+      },
+    ];
+
+    return [...baseColumns, ...dayColumns, ...endColumns];
+  };
+
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+          </div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.voucherDate
+              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Chấm công tháng:</strong>{" "}
+            {data.month ? dayjs(data.month).format("MM/YYYY") : "---"}
+          </div>
+          <div>
+            <strong>Ghi chú:</strong> {data.note || ""}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            </div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.voucherDate
+                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Chấm công tháng:</strong>{" "}
+              {data.month ? dayjs(data.month).format("MM/YYYY") : "---"}
+            </div>
+            <div>
+              <strong>Ghi chú:</strong> {data.note || ""}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
 
   return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết phiếu chấm công</Title>
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{
+              margin: 0,
+              fontSize: isMobile ? "18px" : undefined,
+            }}
+          >
+            Xem chi tiết phiếu chấm công
+          </Title>
         </Col>
-        <Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button
+              style={{ width: isMobile ? "100%" : "auto" }}
+              size={isMobile ? "middle" : "middle"}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -170,55 +298,69 @@ const TimekeepingDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin phiếu chấm công" key="1">
-          {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Số chứng từ: {data.voucherNo || ""}</div>
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.voucherDate
-                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>
-                    Chấm công tháng:{" "}
-                    {data.month ? dayjs(data.month).format("MM/YYYY") : "---"}
-                  </div>
-                  <div>Ghi chú: {data.note || ""}</div>
-                </Space>
-              </Col>
-            </Row>
-          )}
+          {data && renderInfoSection()}
         </Panel>
 
         <Panel header="Nội dung phiếu chấm công" key="2">
           {data && (
-            <Table
-              columns={columns}
-              dataSource={data.details?.map((item, index) => ({
-                ...item,
-                stt: index + 1,
-              }))}
-              scroll={{ x: "max-content" }}
-              size="small"
-              bordered
-              pagination={false}
-            />
+            <div style={{ overflowX: "auto" }}>
+              {isMobile && (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    color: "#666",
+                    fontSize: "12px",
+                    fontStyle: "italic",
+                  }}
+                >
+                  * Vuốt ngang để xem thêm các ngày trong tháng
+                </div>
+              )}
+              <Table
+                columns={getColumns()}
+                dataSource={data.details?.map((item, index) => ({
+                  ...item,
+                  stt: index + 1,
+                }))}
+                scroll={{
+                  x: isMobile ? 1800 : "max-content",
+                  y: isMobile ? 400 : undefined,
+                }}
+                size={isMobile ? "small" : "small"}
+                bordered
+                pagination={false}
+                components={{
+                  header: {
+                    cell: (props) => (
+                      <th
+                        {...props}
+                        style={{
+                          backgroundColor: "#e6f4fb",
+                          color: "#0700ad",
+                          fontWeight: "600",
+                          fontSize: isMobile ? "11px" : "12px",
+                          padding: isMobile ? "4px" : "8px",
+                        }}
+                      />
+                    ),
+                  },
+                  body: {
+                    cell: (props) => (
+                      <td
+                        {...props}
+                        style={{
+                          fontSize: isMobile ? "11px" : "12px",
+                          padding: isMobile ? "4px" : "8px",
+                        }}
+                      />
+                    ),
+                  },
+                }}
+              />
+            </div>
           )}
         </Panel>
 
@@ -281,7 +423,7 @@ const TimekeepingDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refId", data.id); // id của TimeKeeping
             formData.append("refType", "TimeKeeping");
 
             try {

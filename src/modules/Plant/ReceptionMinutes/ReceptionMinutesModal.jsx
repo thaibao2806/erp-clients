@@ -12,8 +12,9 @@ import {
   Tooltip,
   notification,
   Select,
+  Drawer,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useSelector } from "react-redux";
@@ -39,6 +40,30 @@ const approvalStatusOptions = [
   { value: "rejected", label: "Từ chối" },
 ];
 
+// Hook để theo dõi kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
@@ -50,6 +75,15 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [dataUser, setDataUser] = useState([]);
   const [isEditApproval, setIsEditApproval] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
+
+  const { width } = useWindowSize();
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+  const isDesktop = width > 1024;
+
   useEffect(() => {
     if (open) {
       const values = { ...initialValues };
@@ -232,26 +266,28 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
           if ((res && res.status === 200) || res.status === 201) {
             onSubmit(); // callback từ cha để reload
             await handleAddApprovals(res.data.data, payload.documentNumber);
-            const newFollowers = dataUser.find(u => u.value === user.data.userName);
+            const newFollowers = dataUser.find(
+              (u) => u.value === user.data.userName
+            );
             await addFollower(
               res.data.data,
               "ReceivingReport",
-               payload.documentNumber,
-               [
+              payload.documentNumber,
+              [
                 {
-                  userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
+                  userId: newFollowers.id, // bạn đã đặt id = user.apk trong getUser
                   userName: newFollowers.value, // chính là userName
                   fullName: user.data.fullName,
-                }
+                },
               ]
-            )
+            );
             form.resetFields();
             setMonthYear(dayjs());
             setTableData([]);
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -259,10 +295,10 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
@@ -303,7 +339,7 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -311,20 +347,35 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
     }
   };
 
+  // Determine modal width and layout
+  const getModalWidth = () => {
+    if (isMobile) return "95%";
+    if (isTablet) return 800;
+    return 1000;
+  };
+
+  const getColSpans = () => {
+    if (isMobile) return { main: 24, half: 24 };
+    if (isTablet) return { main: 24, half: 12 };
+    return { main: 24, half: 12 };
+  };
+
+  const colSpans = getColSpans();
+
   return (
     <Modal
       title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
+        <span style={{ fontSize: isMobile ? 18 : 25, fontWeight: 600 }}>
           {initialValues ? "Cập nhật biên bản" : "Thêm biên bản"}
         </span>
       }
@@ -334,15 +385,18 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
         setMonthYear(dayjs());
         setTableData([]);
         onCancel();
+        setTableDrawerVisible(false);
       }}
       onOk={handleOk}
       okText={initialValues ? "Cập nhật" : "Thêm"}
-      width={1000}
+      width={getModalWidth()}
       confirmLoading={loading}
+      style={isMobile ? { top: 20 } : {}}
+      bodyStyle={isMobile ? { padding: "16px" } : {}}
     >
-      <Form form={form} layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
+      <Form form={form} layout="vertical" size={isMobile ? "small" : "default"}>
+        <Row gutter={isMobile ? [8, 8] : [16, 16]}>
+          <Col span={colSpans.half}>
             <Form.Item
               name="documentNumber"
               label="Số chứng từ"
@@ -351,12 +405,12 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="vehicleName" label="Tên phương tiện">
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item label="Ngày tiếp nhận">
               <DatePicker
                 picker="day"
@@ -367,7 +421,7 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item label="Ngày chứng từ" required>
               <DatePicker
                 picker="day"
@@ -378,32 +432,38 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="companyRepresentative" label="Đại diện công ty">
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="companyRepresentativePosition" label="Chức vụ">
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="shipRepresentative1" label="Đại diện tàu (1)">
+          <Col span={colSpans.half}>
+            <Form.Item
+              name="shipRepresentative1"
+              label="Đại diện phương tiện (1)"
+            >
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="shipRepresentative1Position" label="Chức vụ">
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="shipRepresentative2" label="Đại diện tàu (2)">
+          <Col span={colSpans.half}>
+            <Form.Item
+              name="shipRepresentative2"
+              label="Đại diện phương tiện (2)"
+            >
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={colSpans.half}>
             <Form.Item name="shipRepresentative2Position" label="Chức vụ">
               <Input />
             </Form.Item>
@@ -412,7 +472,7 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
             <>
               {approvers.map((item, idx) => (
                 <React.Fragment key={idx}>
-                  <Col span={12}>
+                  <Col span={colSpans.half}>
                     <Form.Item
                       label={`Người duyệt cấp ${idx + 1}`}
                       name={["approvers", idx, "username"]}
@@ -434,7 +494,7 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   </Col>
                   {initialValues && (
                     <>
-                      <Col span={12}>
+                      <Col span={colSpans.half}>
                         <Form.Item
                           label={`Trạng thái duyệt ${idx + 1}`}
                           name={["approvers", idx, "status"]}
@@ -448,12 +508,15 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
                           <Select
                             options={approvalStatusOptions}
                             placeholder="Chọn trạng thái"
-                            disabled={!isEditApproval || item.username !== user.data.userName}
+                            disabled={
+                              !isEditApproval ||
+                              item.username !== user.data.userName
+                            }
                           />
                         </Form.Item>
                       </Col>
                       {isEditApproval && (
-                        <Col span={12}>
+                        <Col span={colSpans.half}>
                           <Form.Item
                             label={`Ghi chú duyệt ${idx + 1}`}
                             name={["approvers", idx, "note"]}
@@ -461,7 +524,10 @@ const ReceptionMinutesModal = ({ open, onCancel, onSubmit, initialValues }) => {
                             <Input.TextArea
                               rows={1}
                               placeholder="Ghi chú duyệt"
-                              disabled={!isEditApproval || item.username !== user.data.userName}
+                              disabled={
+                                !isEditApproval ||
+                                item.username !== user.data.userName
+                              }
                             />
                           </Form.Item>
                         </Col>

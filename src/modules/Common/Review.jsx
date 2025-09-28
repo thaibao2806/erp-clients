@@ -11,12 +11,16 @@ import {
   Dropdown,
   Checkbox,
   Modal,
+  Card,
+  Drawer,
 } from "antd";
 import {
   SearchOutlined,
   CloseCircleOutlined,
   CheckCircleOutlined,
   SettingOutlined,
+  MenuOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import {
@@ -53,6 +57,20 @@ const Review = () => {
   const [approveModalVisible, setApproveModalVisible] = useState(false);
   const [approveStatus, setApproveStatus] = useState(null);
   const [approveNote, setApproveNote] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [searchDrawerVisible, setSearchDrawerVisible] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   useEffect(() => {
     fetchData(pagination.current, pagination.pageSize);
@@ -92,7 +110,11 @@ const Review = () => {
   };
 
   const toggleSearch = () => {
-    setSearchVisible(!searchVisible);
+    if (isMobile) {
+      setSearchDrawerVisible(!searchDrawerVisible);
+    } else {
+      setSearchVisible(!searchVisible);
+    }
   };
 
   const allColumns = [
@@ -103,36 +125,81 @@ const Review = () => {
       render: (_, __, index) => index + 1,
       width: 70,
       align: "center",
+      responsive: ["lg"],
     },
     {
       title: "Mã phiếu",
       dataIndex: "voucherNo",
       key: "voucherNo",
       render: (text, record) => (
-        <a href={record.linkDetail} target="_blank" rel="noopener noreferrer">
+        <a
+          href={record.linkDetail}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            wordBreak: "break-word",
+            fontSize: isMobile ? "12px" : "14px",
+          }}
+        >
           {text}
         </a>
       ),
+      width: isMobile ? 120 : 150,
     },
     {
       title: "Loại",
       dataIndex: "refType",
       key: "refType",
+      width: isMobile ? 80 : 120,
+      responsive: ["md"],
+      render: (text) => (
+        <span style={{ fontSize: isMobile ? "12px" : "14px" }}>{text}</span>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        if (status === "approved") return "Đã duyệt";
-        if (status === "rejected") return "Từ chối";
-        return "Chờ duyệt";
+        let statusText = "Chờ duyệt";
+        let color = "#faad14";
+
+        if (status === "approved") {
+          statusText = "Đã duyệt";
+          color = "#52c41a";
+        } else if (status === "rejected") {
+          statusText = "Từ chối";
+          color = "#ff4d4f";
+        }
+
+        return (
+          <span
+            style={{
+              color,
+              fontWeight: "500",
+              fontSize: isMobile ? "11px" : "14px",
+              padding: isMobile ? "2px 6px" : "4px 8px",
+              borderRadius: "4px",
+              backgroundColor: `${color}15`,
+            }}
+          >
+            {statusText}
+          </span>
+        );
       },
+      width: isMobile ? 80 : 100,
     },
     {
-      title: "Ý kiến người duyệt",
+      title: "Ý kiến",
       dataIndex: "note",
       key: "note",
+      responsive: ["lg"],
+      ellipsis: true,
+      render: (text) => (
+        <span style={{ fontSize: isMobile ? "12px" : "14px" }}>
+          {text || "-"}
+        </span>
+      ),
     },
   ];
 
@@ -165,15 +232,13 @@ const Review = () => {
 
     const ids = selectedRows
       .map((row) => row.id)
-      .filter((id) => /^[0-9a-fA-F-]{36}$/.test(id)); // Đảm bảo là GUID
+      .filter((id) => /^[0-9a-fA-F-]{36}$/.test(id));
 
     try {
-      // Duyệt tuần tự (có thể thay bằng Promise.all nếu muốn chạy song song)
       for (const id of ids) {
         await updateStatusApprovals(id, approveStatus, approveNote || "");
       }
 
-      // Sau khi duyệt xong:
       setApproveModalVisible(false);
       setSelectedRows([]);
       fetchData(pagination.current, pagination.pageSize);
@@ -184,163 +249,351 @@ const Review = () => {
     }
   };
 
+  // Search form component
+  const SearchForm = () => (
+    <div style={{ padding: isMobile ? "8px 0" : "0" }}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={8}>
+          <div style={{ marginBottom: 8 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 4,
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: "500",
+              }}
+            >
+              Mã phiếu
+            </label>
+            <Input
+              placeholder="Tìm theo mã phiếu"
+              value={search.voucherNo}
+              onChange={(e) =>
+                setSearch({ ...search, voucherNo: e.target.value })
+              }
+              size={isMobile ? "middle" : "middle"}
+            />
+          </div>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <div style={{ marginBottom: 8 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 4,
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: "500",
+              }}
+            >
+              Loại phiếu
+            </label>
+            <Input
+              placeholder="Loại phiếu"
+              value={search.refType}
+              onChange={(e) =>
+                setSearch({ ...search, refType: e.target.value })
+              }
+              size={isMobile ? "middle" : "middle"}
+            />
+          </div>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <div style={{ marginBottom: 8 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 4,
+                fontSize: isMobile ? "13px" : "14px",
+                fontWeight: "500",
+              }}
+            >
+              Trạng thái
+            </label>
+            <Select
+              placeholder="Trạng thái"
+              value={search.status}
+              onChange={(value) => setSearch({ ...search, status: value })}
+              style={{ width: "100%" }}
+              allowClear
+              size={isMobile ? "middle" : "middle"}
+            >
+              <Option value="pending">Chờ duyệt</Option>
+              <Option value="approved">Đã duyệt</Option>
+              <Option value="rejected">Từ chối</Option>
+            </Select>
+          </div>
+        </Col>
+      </Row>
+      <Row justify="end" style={{ marginTop: 16 }}>
+        <Space size={isMobile ? "small" : "middle"}>
+          <Button
+            type="primary"
+            icon={<SearchOutlined />}
+            onClick={() => {
+              fetchData(1, pagination.pageSize);
+              if (isMobile) setSearchDrawerVisible(false);
+            }}
+            size={isMobile ? "middle" : "middle"}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+              setSearch({
+                voucherNo: "",
+                refType: "",
+                status: "",
+              });
+              fetchData(1, pagination.pageSize);
+              if (isMobile) setSearchDrawerVisible(false);
+            }}
+            size={isMobile ? "middle" : "middle"}
+          >
+            Hủy
+          </Button>
+        </Space>
+      </Row>
+    </div>
+  );
+
   return (
-    <div>
-      {/* === Header === */}
+    <div
+      style={{
+        padding: isMobile ? "8px" : "16px",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: isMobile ? "flex-start" : "center",
           marginBottom: 16,
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? "12px" : "0",
         }}
       >
-        <Title level={3} style={{ margin: 0 }}>
+        <Title
+          level={isMobile ? 4 : 3}
+          style={{
+            margin: 0,
+            fontSize: isMobile ? "18px" : "24px",
+          }}
+        >
           Xét duyệt
         </Title>
 
-        <Space>
+        <Space
+          size={isMobile ? "small" : "middle"}
+          wrap={isMobile}
+          style={{ width: isMobile ? "100%" : "auto" }}
+        >
           <Button
-            icon={searchVisible ? <CloseCircleOutlined /> : <SearchOutlined />}
+            icon={
+              isMobile ? (
+                <FilterOutlined />
+              ) : searchVisible ? (
+                <CloseCircleOutlined />
+              ) : (
+                <SearchOutlined />
+              )
+            }
             onClick={toggleSearch}
+            size={isMobile ? "middle" : "middle"}
+            block={isMobile}
           >
-            {/* {searchVisible ? 'Đóng tìm kiếm' : 'Tìm kiếm'} */}
+            {isMobile ? "Tìm kiếm" : ""}
           </Button>
           <Button
             type="primary"
             icon={<CheckCircleOutlined />}
             disabled={selectedRows.length === 0}
             onClick={handleApproveSelected}
+            size={isMobile ? "middle" : "middle"}
+            block={isMobile}
           >
-            Duyệt hàng loạt
+            Duyệt hàng loạt ({selectedRows.length})
           </Button>
         </Space>
       </div>
 
-      {/* === Form Tìm kiếm === */}
-      {searchVisible && (
-        <>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={6}>
-              <label>Mã phiếu</label>
-              <Input
-                placeholder="Tìm theo mã phiếu"
-                value={search.voucherNo}
-                onChange={(e) =>
-                  setSearch({ ...search, voucherNo: e.target.value })
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <label>Loại phiếu</label>
-              <Input
-                placeholder="Loại phiếu"
-                value={search.refType}
-                onChange={(e) =>
-                  setSearch({ ...search, refType: e.target.value })
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <label>Trạng thái </label>
-              <Select
-                placeholder="Trạng thái"
-                value={search.status}
-                onChange={(value) => setSearch({ ...search, status: value })}
-                style={{ width: "100%" }}
-                allowClear
-              >
-                <Option value="pending">Chờ duyệt</Option>
-                <Option value="approved">Đã duyệt</Option>
-                <Option value="rejected">Từ chối</Option>
-              </Select>
-            </Col>
-          </Row>
-          <Row justify="end" style={{ marginBottom: 16 }}>
-            <Space>
-              <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={() => {
-                  fetchData(1, pagination.pageSize);
-                }}
-              >
-                Lọc
-              </Button>
-              <Button
-                onClick={() => {
-                  setSearch({
-                    voucherNo: "",
-                    refType: "",
-                    status: "",
-                  });
-                  fetchData(1, pagination.pageSize);
-                }}
-              >
-                Hủy
-              </Button>
-            </Space>
-          </Row>
-        </>
+      {/* Desktop Search Form */}
+      {!isMobile && searchVisible && (
+        <Card style={{ marginBottom: 16 }}>
+          <SearchForm />
+        </Card>
       )}
 
-      {/* === Bảng dữ liệu === */}
-      <Table
-        rowSelection={{
-          onChange: (_, rows) => setSelectedRows(rows),
-        }}
-        columns={filteredColumns}
-        dataSource={dataSource}
-        loading={loading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
-        onChange={(pagination) => {
-          fetchData(pagination.current, pagination.pageSize);
-        }}
-        bordered
-      />
+      {/* Mobile Search Drawer */}
+      {isMobile && (
+        <Drawer
+          title="Tìm kiếm"
+          placement="right"
+          onClose={() => setSearchDrawerVisible(false)}
+          open={searchDrawerVisible}
+          width="100%"
+        >
+          <SearchForm />
+        </Drawer>
+      )}
 
+      {/* Table */}
+      <div
+        style={{
+          overflowX: "auto",
+          backgroundColor: "white",
+          borderRadius: "6px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Table
+          rowSelection={{
+            onChange: (_, rows) => setSelectedRows(rows),
+            columnWidth: isMobile ? 40 : 60,
+          }}
+          columns={filteredColumns}
+          dataSource={dataSource}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: !isMobile,
+            showQuickJumper: !isMobile,
+            showTotal: (total, range) =>
+              isMobile
+                ? `${range[0]}-${range[1]} / ${total}`
+                : `${range[0]}-${range[1]} trên ${total} mục`,
+            pageSizeOptions: isMobile
+              ? ["10", "20"]
+              : ["10", "20", "50", "100"],
+            size: isMobile ? "small" : "default",
+            responsive: true,
+          }}
+          onChange={(pagination) => {
+            fetchData(pagination.current, pagination.pageSize);
+          }}
+          bordered={!isMobile}
+          size={isMobile ? "small" : "middle"}
+          scroll={{
+            x: isMobile ? 400 : "100%",
+            scrollToFirstRowOnChange: true,
+          }}
+          style={{
+            fontSize: isMobile ? "12px" : "14px",
+          }}
+          components={{
+            header: {
+              cell: (props) => (
+                <th
+                  {...props}
+                  style={{
+                    backgroundColor: "#e6f4fb",
+                    color: "#0700ad",
+                    fontWeight: "600",
+                    fontSize: isMobile ? 12 : 14,
+                  }}
+                />
+              ),
+            },
+          }}
+        />
+      </div>
+
+      {/* Approval Modal */}
       <Modal
         title="Xét duyệt hàng loạt"
-        visible={approveModalVisible}
+        open={approveModalVisible}
         onCancel={() => setApproveModalVisible(false)}
         onOk={handleSubmitApproval}
         okText="Duyệt"
         cancelText="Hủy"
+        width={isMobile ? "90%" : 520}
+        centered={isMobile}
       >
         <div style={{ marginBottom: 16 }}>
-          <label>Trạng thái</label>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 8,
+              fontWeight: "500",
+            }}
+          >
+            Trạng thái *
+          </label>
           <Select
             value={approveStatus}
             onChange={setApproveStatus}
             style={{ width: "100%" }}
             placeholder="Chọn trạng thái"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng chọn trạng thái duyệt",
-              },
-            ]}
+            size="middle"
           >
             <Option value="approved">Đã duyệt</Option>
             <Option value="rejected">Từ chối</Option>
           </Select>
         </div>
         <div>
-          <label>Ghi chú</label>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 8,
+              fontWeight: "500",
+            }}
+          >
+            Ghi chú
+          </label>
           <Input.TextArea
             rows={4}
             placeholder="Nhập ý kiến duyệt"
             value={approveNote}
             onChange={(e) => setApproveNote(e.target.value)}
+            maxLength={500}
+            showCount={!isMobile}
           />
         </div>
+
+        {selectedRows.length > 0 && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 8,
+              backgroundColor: "#f6ffed",
+              borderRadius: 4,
+              border: "1px solid #b7eb8f",
+            }}
+          >
+            <small style={{ color: "#389e0d" }}>
+              Sẽ áp dụng cho {selectedRows.length} phiếu đã chọn
+            </small>
+          </div>
+        )}
       </Modal>
+
+      {/* Mobile floating action button for batch approval */}
+      {isMobile && selectedRows.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 1000,
+          }}
+        >
+          <Button
+            type="primary"
+            shape="round"
+            icon={<CheckCircleOutlined />}
+            onClick={handleApproveSelected}
+            size="large"
+            style={{
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            Duyệt ({selectedRows.length})
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

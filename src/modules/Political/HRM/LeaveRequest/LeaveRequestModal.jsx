@@ -6,15 +6,11 @@ import {
   DatePicker,
   Row,
   Col,
-  Table,
-  Button,
-  Space,
-  Tooltip,
   notification,
   Select,
   InputNumber,
+  Card,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
@@ -30,6 +26,7 @@ import {
 } from "../../../../services/apiPolitical/apiLeaveRequest";
 import { useSelector } from "react-redux";
 import { jwtDecode } from "jwt-decode";
+
 dayjs.extend(customParseFormat);
 
 const approvalStatusOptions = [
@@ -46,19 +43,15 @@ const calculateWorkingHours = (start, end) => {
 
   while (current.isBefore(end)) {
     const date = current.format("YYYY-MM-DD");
-
     const morningStart = dayjs(`${date} 07:00`);
     const morningEnd = dayjs(`${date} 11:00`);
     const afternoonStart = dayjs(`${date} 13:00`);
     const afternoonEnd = dayjs(`${date} 17:00`);
 
-    // Tính thời gian làm việc buổi sáng
     const msMorning = Math.min(
       Math.max(0, Math.min(morningEnd, end) - Math.max(morningStart, current)),
       4 * 60 * 60 * 1000
     );
-
-    // Tính thời gian làm việc buổi chiều
     const msAfternoon = Math.min(
       Math.max(
         0,
@@ -68,18 +61,14 @@ const calculateWorkingHours = (start, end) => {
     );
 
     totalMinutes += (msMorning + msAfternoon) / 60000;
-
-    // chuyển sang ngày tiếp theo
     current = current.add(1, "day").startOf("day");
   }
 
-  return totalMinutes / 60; // trả về tổng số giờ
+  return totalMinutes / 60;
 };
 
 const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
-  const [monthYear, setMonthYear] = useState(dayjs());
-  const [tableData, setTableData] = useState([]);
   const [approvalNumber, setApprovalNumber] = useState();
   const [approvers, setApprovers] = useState([]);
   const [dataUser, setDataUser] = useState([]);
@@ -89,12 +78,14 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [totalDays, setTotalDays] = useState(0);
   const user = useSelector((state) => state.auth.login?.currentUser);
   const [userID, setUserID] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     if (user && user.data.token) {
       const decode = jwtDecode(user.data.token);
       setUserID(decode.nameid);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (
@@ -123,7 +114,6 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
             : null,
           endDate: initialValues.endDate ? dayjs(initialValues.endDate) : null,
         };
-
         form.setFieldsValue(patchedValues);
         setStartDate(patchedValues.startDate);
         setEndDate(patchedValues.endDate);
@@ -134,7 +124,6 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
         setStartDate(null);
         setEndDate(null);
       }
-
       getApprovalByModulePage();
       getUser();
     }
@@ -146,20 +135,29 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   }, [approvalNumber, open, initialValues]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 576);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const getApprovals = async (refId) => {
     try {
       let res = await getApprovalsByRef(refId, "DXNP");
       if (res && res.status === 200) {
         const list = res.data.data.map((ap) => ({
           id: ap.id,
-          username: ap.userName, // phải trùng key với name trong Form
+          username: ap.userName,
           status: ap.status,
           note: ap.note,
         }));
         setApprovers(list);
         form.setFieldsValue({ approvers: list });
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const getUser = async () => {
@@ -167,7 +165,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
       let res = await getAllUser();
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
-          value: user.userName, // hoặc user.id nếu cần
+          value: user.userName,
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
@@ -188,78 +186,22 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-  const handleInputChange = (key, field, value) => {
-    setTableData((prev) =>
-      prev.map((item) =>
-        item.key === key ? { ...item, [field]: value } : item
-      )
-    );
-  };
-
-  const handleAddApprovals = async (refId, documentNumber) => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-
-      const formattedApprovers = approversData.map((item, index) => {
-        const user = dataUser.find((u) => u.value === item.username);
-        return {
-          userName: item.username,
-          fullName: user?.label || "", // hoặc tìm từ danh sách user để lấy fullName
-          level: index + 1,
-        };
-      });
-
-      const res = await createApprovals(
-        refId,
-        "DXNP",
-        formattedApprovers,
-        documentNumber,
-        `/pt/nhan-su/nghi-phep-chi-tiet/${refId}?type=DXNP`
-      );
-      if (res && res.status === 200) {
-        console.log("Tạo danh sách duyệt thành công");
-      }
-    } catch (error) {
-      console.error("Lỗi khi tạo duyệt:", error);
-    }
-  };
-
-  const handleUpdateApprovals = async () => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-      const updatePromises = approversData.map((item) => {
-        if (item.id) {
-          return updateStatusApprovals(item.id, item.status, item.note);
-        }
-        return null;
-      });
-
-      // Lọc null (nếu có), chờ tất cả promise hoàn thành
-      const responses = await Promise.all(updatePromises.filter(Boolean));
-    } catch (error) {
-      console.error("Lỗi cập nhật phê duyệt:", error);
-      notification.error({
-        message: "Cập nhật thất bại",
-        description: "Có lỗi xảy ra khi cập nhật trạng thái duyệt.",
-      });
-    }
-  };
-
   const handleOk = () => {
-    if (!initialValues) {
-      form.validateFields().then(async (values) => {
-        try {
-          const payload = {
-            ...values,
-            startDate: values.startDate
-              ? dayjs(values.startDate).format("YYYY-MM-DD HH:mm:ss")
-              : null,
-            endDate: values.endDate
-              ? dayjs(values.endDate).format("YYYY-MM-DD HH:mm:ss")
-              : null,
-          };
+    form.validateFields().then(async (values) => {
+      try {
+        const payload = {
+          ...values,
+          startDate: values.startDate
+            ? dayjs(values.startDate).format("YYYY-MM-DD HH:mm:ss")
+            : null,
+          endDate: values.endDate
+            ? dayjs(values.endDate).format("YYYY-MM-DD HH:mm:ss")
+            : null,
+        };
 
-          let res = await createLeaveRequest(
+        let res;
+        if (!initialValues) {
+          res = await createLeaveRequest(
             payload.fullName || "",
             payload.department || "",
             payload.position || "",
@@ -273,41 +215,23 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.emailOrPhone || ""
           );
           if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.documentNumber);
-            onSubmit(); // callback từ cha để reload
-            form.resetFields();
-            setMonthYear(dayjs());
-            setTableData([]);
-            notification.success({
-              message: "Thành công",
-              description: "Lưu phiếu thành công.",
-              placement: "topRight",
-            });
+            await createApprovals(
+              res.data.data,
+              "DXNP",
+              (form.getFieldValue("approvers") || []).map((item, index) => {
+                const user = dataUser.find((u) => u.value === item.username);
+                return {
+                  userName: item.username,
+                  fullName: user?.label || "",
+                  level: index + 1,
+                };
+              }),
+              payload.documentNumber,
+              `/pt/nhan-su/nghi-phep-chi-tiet/${res.data.data}?type=DXNP`
+            );
           }
-        } catch (error) {
-          if (error) {
-            notification.error({
-              message: "Thất bại",
-              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
-            });
-          }
-        }
-      });
-    } else {
-      form.validateFields().then(async (values) => {
-        try {
-          const payload = {
-            ...values,
-            startDate: values.startDate
-              ? dayjs(values.startDate).format("YYYY-MM-DD HH:mm:ss")
-              : null,
-            endDate: values.endDate
-              ? dayjs(values.endDate).format("YYYY-MM-DD HH:mm:ss")
-              : null,
-          };
-
-          let res = await updateLeaveRequestByID(
+        } else {
+          res = await updateLeaveRequestByID(
             initialValues.id,
             payload.fullName,
             payload.department,
@@ -321,174 +245,249 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.address,
             payload.emailOrPhone
           );
-          if (res && res.status === 204) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
+          if (res && res.status === 204 && isEditApproval) {
+            for (const item of form.getFieldValue("approvers") || []) {
+              if (item.id) {
+                await updateStatusApprovals(item.id, item.status, item.note);
+              }
             }
-            onSubmit(); // callback từ cha để reload
-            form.resetFields();
-            setMonthYear(dayjs());
-            setTableData([]);
-            notification.success({
-              message: "Thành công",
-              description: "Lưu phiếu thành công.",
-              placement: "topRight",
-            });
-          }
-        } catch (error) {
-          if (error) {
-            notification.error({
-              message: "Thất bại",
-              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
-            });
           }
         }
-      });
-    }
+
+        if (res && (res.status === 200 || res.status === 204)) {
+          onSubmit();
+          form.resetFields();
+          notification.success({
+            message: "Thành công",
+            description: "Lưu đơn xin nghỉ thành công.",
+            placement: "topRight",
+          });
+        }
+      } catch (error) {
+        notification.error({
+          message: "Thất bại",
+          description: "Đã có lỗi xảy ra. Vui lòng thử lại",
+        });
+      }
+    });
   };
+
+  const renderMobileCards = () => (
+    <div style={{ display: "grid", gap: 8 }}>
+      <Card size="small" title="Họ và tên">
+        <Form.Item name="fullName" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Phòng ban">
+        <Form.Item name="department" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Chức vụ">
+        <Form.Item name="position">
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Loại phép">
+        <Form.Item name="leaveType">
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Ngày bắt đầu nghỉ">
+        <Form.Item name="startDate" rules={[{ required: true }]}>
+          <DatePicker
+            showTime
+            style={{ width: "100%" }}
+            format="DD/MM/YYYY HH:mm"
+            onChange={(v) => setStartDate(v)}
+          />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Ngày kết thúc nghỉ">
+        <Form.Item name="endDate" rules={[{ required: true }]}>
+          <DatePicker
+            showTime
+            style={{ width: "100%" }}
+            format="DD/MM/YYYY HH:mm"
+            onChange={(v) => setEndDate(v)}
+          />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Tổng số ngày nghỉ">
+        <Form.Item name="totalDate">
+          <InputNumber style={{ width: "100%" }} value={totalDays} readOnly />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Lý do nghỉ">
+        <Form.Item name="reason" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Số điện thoại/email liên hệ">
+        <Form.Item name="emailOrPhone">
+          <Input />
+        </Form.Item>
+      </Card>
+      <Card size="small" title="Nơi nghỉ">
+        <Form.Item name="address">
+          <Input />
+        </Form.Item>
+      </Card>
+      {approvalNumber > 0 &&
+        approvers.map((item, idx) => (
+          <Card key={idx} size="small" title={`Người duyệt cấp ${idx + 1}`}>
+            <Form.Item
+              name={["approvers", idx, "username"]}
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={dataUser}
+                placeholder="Chọn người duyệt"
+                showSearch
+                optionFilterProp="label"
+                disabled={!!initialValues}
+              />
+            </Form.Item>
+            {initialValues && (
+              <>
+                <Form.Item
+                  name={["approvers", idx, "status"]}
+                  label="Trạng thái duyệt"
+                >
+                  <Select
+                    options={approvalStatusOptions}
+                    disabled={!isEditApproval}
+                  />
+                </Form.Item>
+                {isEditApproval && (
+                  <Form.Item
+                    name={["approvers", idx, "note"]}
+                    label="Ghi chú duyệt"
+                  >
+                    <Input.TextArea rows={1} />
+                  </Form.Item>
+                )}
+              </>
+            )}
+          </Card>
+        ))}
+    </div>
+  );
 
   return (
     <Modal
       title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
+        <span style={{ fontSize: 22, fontWeight: 600 }}>
           {initialValues ? "Cập nhật đơn xin nghỉ phép" : "Đơn xin nghỉ phép"}
         </span>
       }
       open={open}
       onCancel={() => {
         form.resetFields();
-        setMonthYear(dayjs());
-        setTableData([]);
         onCancel();
       }}
       onOk={handleOk}
       okText={initialValues ? "Cập nhật" : "Thêm"}
-      width={1000}
+      width={isMobile ? "100%" : 1000}
     >
       <Form form={form} layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="fullName"
-              label="Họ và tên"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="department"
-              label="Phòng ban"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="position"
-              label="Chức vụ"
-              rules={[{ required: false }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="leaveType"
-              label="Loại phép"
-              rules={[{ required: false }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="startDate"
-              label="Ngày bắt đầu nghỉ"
-              rules={[
-                { required: true, message: "Vui lòng chọn ngày bắt đầu" },
-              ]}
-            >
-              <DatePicker
-                showTime
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY HH:mm"
-                onChange={(value) => setStartDate(value)}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item
-              name="endDate"
-              label="Ngày kết thúc nghỉ"
-              rules={[
-                { required: true, message: "Vui lòng chọn ngày kết thúc" },
-              ]}
-            >
-              <DatePicker
-                showTime
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY HH:mm"
-                onChange={(value) => setEndDate(value)}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item name="totalDate" label="Tổng số ngày nghỉ">
-              <InputNumber
-                style={{ width: "100%" }}
-                value={totalDays}
-                readOnly
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item
-              name="reason"
-              label="Lý do nghỉ"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="emailOrPhone"
-              label="Số điện thoại/email liên hệ"
-              rules={[{ required: false }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="address"
-              label="Nơi nghỉ"
-              rules={[{ required: false }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          {approvalNumber > 0 && (
-            <>
-              {approvers.map((item, idx) => (
+        {isMobile ? (
+          renderMobileCards()
+        ) : (
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="fullName"
+                label="Họ và tên"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="department"
+                label="Phòng ban"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="position" label="Chức vụ">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="leaveType" label="Loại phép">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="startDate"
+                label="Ngày bắt đầu nghỉ"
+                rules={[{ required: true }]}
+              >
+                <DatePicker
+                  showTime
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY HH:mm"
+                  onChange={(v) => setStartDate(v)}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="endDate"
+                label="Ngày kết thúc nghỉ"
+                rules={[{ required: true }]}
+              >
+                <DatePicker
+                  showTime
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY HH:mm"
+                  onChange={(v) => setEndDate(v)}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="totalDate" label="Tổng số ngày nghỉ">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  value={totalDays}
+                  readOnly
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="reason"
+                label="Lý do nghỉ"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="emailOrPhone" label="SĐT/email liên hệ">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="address" label="Nơi nghỉ">
+                <Input />
+              </Form.Item>
+            </Col>
+            {approvalNumber > 0 &&
+              approvers.map((item, idx) => (
                 <React.Fragment key={idx}>
                   <Col span={12}>
                     <Form.Item
                       label={`Người duyệt cấp ${idx + 1}`}
                       name={["approvers", idx, "username"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng chọn người duyệt",
-                        },
-                      ]}
+                      rules={[{ required: true }]}
                     >
                       <Select
                         options={dataUser}
@@ -505,16 +504,9 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
                         <Form.Item
                           label={`Trạng thái duyệt ${idx + 1}`}
                           name={["approvers", idx, "status"]}
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng chọn trạng thái duyệt",
-                            },
-                          ]}
                         >
                           <Select
                             options={approvalStatusOptions}
-                            placeholder="Chọn trạng thái"
                             disabled={!isEditApproval}
                           />
                         </Form.Item>
@@ -525,10 +517,7 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
                             label={`Ghi chú duyệt ${idx + 1}`}
                             name={["approvers", idx, "note"]}
                           >
-                            <Input.TextArea
-                              rows={1}
-                              placeholder="Ghi chú duyệt"
-                            />
+                            <Input.TextArea rows={1} />
                           </Form.Item>
                         </Col>
                       )}
@@ -536,9 +525,8 @@ const LeaveRequestModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   )}
                 </React.Fragment>
               ))}
-            </>
-          )}
-        </Row>
+          </Row>
+        )}
       </Form>
     </Modal>
   );

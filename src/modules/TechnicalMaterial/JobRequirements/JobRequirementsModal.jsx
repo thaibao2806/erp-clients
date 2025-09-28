@@ -12,8 +12,9 @@ import {
   Tooltip,
   notification,
   Select,
+  Drawer,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import {
@@ -42,16 +43,47 @@ const approvalStatusOptions = [
   { value: "rejected", label: "Từ chối" },
 ];
 
+// Hook để theo dõi kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
   const [approvalNumber, setApprovalNumber] = useState();
   const [approvers, setApprovers] = useState([]);
+  const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
   const [dataUser, setDataUser] = useState([]);
   const [isEditApproval, setIsEditApproval] = useState(false);
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
+  const { width } = useWindowSize();
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+  const isDesktop = width > 1024;
 
   useEffect(() => {
     if (open) {
@@ -192,12 +224,13 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "",
         dataIndex: "action",
-        width: 40,
+        width: isMobile ? 35 : 40,
+        fixed: isMobile ? "left" : false,
         render: (_, record) => (
           <Tooltip title="Xóa dòng">
             <Button
               icon={<DeleteOutlined />}
-              size="small"
+              size={isMobile ? "small" : "small"}
               danger
               onClick={() => handleDeleteRow(record.key)}
             />
@@ -207,14 +240,17 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "STT",
         dataIndex: "stt",
-        width: 50,
+        width: isMobile ? 45 : 50,
+        fixed: isMobile ? "left" : false,
       },
       {
         title: "Nội dung",
+        width: isMobile ? 150 : 200,
         dataIndex: "content",
         render: (_, record) => (
           <Input
             value={record.content}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "content", e.target.value)
             }
@@ -223,10 +259,12 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "ĐVT",
+        width: isMobile ? 80 : 100,
         dataIndex: "unit",
         render: (_, record) => (
           <Input
             value={record.unit}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "unit", e.target.value)
             }
@@ -235,10 +273,12 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "Số lượng",
+        width: isMobile ? 80 : 100,
         dataIndex: "quantity",
         render: (_, record) => (
           <Input
             value={record.quantity}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "quantity", e.target.value)
             }
@@ -247,10 +287,12 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "T/G hoàn thành",
+        width: isMobile ? 80 : 100,
         dataIndex: "workDay",
         render: (_, record) => (
           <Input
             value={record.workDay}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "workDay", e.target.value)
             }
@@ -259,10 +301,12 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
       },
       {
         title: "Ghi chú",
+        width: isMobile ? 120 : 150,
         dataIndex: "note",
         render: (_, record) => (
           <Input
             value={record.note}
+            size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "note", e.target.value)
             }
@@ -351,19 +395,21 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
           );
           if (res && res.status === 200) {
             await handleAddApprovals(res.data.data, payload.voucherNo);
-            const newFollowers = dataUser.find(u => u.value === user.data.userName);
+            const newFollowers = dataUser.find(
+              (u) => u.value === user.data.userName
+            );
             await addFollower(
               res.data.data,
               "JobRequirement",
-               payload.voucherNo,
-               [
+              payload.voucherNo,
+              [
                 {
-                  userId: newFollowers.id,      // bạn đã đặt id = user.apk trong getUser
+                  userId: newFollowers.id, // bạn đã đặt id = user.apk trong getUser
                   userName: newFollowers.value, // chính là userName
                   fullName: user.data.fullName,
-                }
+                },
               ]
-            )
+            );
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -371,7 +417,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -379,10 +425,10 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
@@ -423,7 +469,7 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.success({
               message: "Thành công",
               description: "Lưu phiếu thành công.",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
         } catch (error) {
@@ -431,187 +477,423 @@ const JobRequirementsModal = ({ open, onCancel, onSubmit, initialValues }) => {
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
+              placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
     }
   };
 
+  // Render Mobile Card View for table data
+  const renderMobileCards = () => (
+    <div style={{ marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 12,
+          alignItems: "center",
+        }}
+      >
+        <h4 style={{ margin: 0, fontSize: 14 }}>
+          Nội dung yêu cầu công việc ({tableData.length})
+        </h4>
+        <Space size="small">
+          <Button icon={<PlusOutlined />} size="small" onClick={handleAddRow}>
+            Thêm
+          </Button>
+          <Button size="small" onClick={() => setTableData([])}>
+            Hủy
+          </Button>
+        </Space>
+      </div>
+
+      {tableData.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: 24,
+            border: "1px dashed #d9d9d9",
+            borderRadius: 6,
+            color: "#999",
+          }}
+        >
+          Chưa có dữ liệu
+        </div>
+      ) : (
+        <div style={{ maxHeight: 300, overflowY: "auto" }}>
+          {tableData.map((record, index) => (
+            <div
+              key={record.key}
+              style={{
+                border: "1px solid #f0f0f0",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 8,
+                background: "#fafafa",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <strong style={{ fontSize: 12 }}>#{index + 1}</strong>
+                <Button
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  danger
+                  onClick={() => handleDeleteRow(record.key)}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: "#666" }}>
+                    Nội dung:
+                  </label>
+                  <Input
+                    value={record.content}
+                    size="small"
+                    placeholder="Nhập Nội dung"
+                    onChange={(e) =>
+                      handleInputChange(record.key, "content", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>ĐVT:</label>
+                    <Input
+                      value={record.unit}
+                      size="small"
+                      placeholder="ĐVT"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "unit", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Số lượng:
+                    </label>
+                    <Input
+                      value={record.quantity}
+                      size="small"
+                      placeholder="Số lượng"
+                      onChange={(e) =>
+                        handleInputChange(
+                          record.key,
+                          "quantity",
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      T/G hoàn thành:
+                    </label>
+                    <Input
+                      value={record.workDay}
+                      size="small"
+                      placeholder="T/G hoàn thành"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "workDay", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Ghi chú:
+                    </label>
+                    <Input
+                      value={record.note}
+                      size="small"
+                      placeholder="Ghi chú"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "note", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Determine modal width and layout
+  const getModalWidth = () => {
+    if (isMobile) return "95%";
+    if (isTablet) return 800;
+    return 1000;
+  };
+
+  const getColSpans = () => {
+    if (isMobile) return { main: 24, half: 24 };
+    if (isTablet) return { main: 24, half: 12 };
+    return { main: 24, half: 12 };
+  };
+
+  const colSpans = getColSpans();
+
   return (
-    <Modal
-      title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
-          {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
-        </span>
-      }
-      open={open}
-      onCancel={() => {
-        form.resetFields();
-        setMonthYear(dayjs());
-        setTableData([]);
-        onCancel();
-      }}
-      onOk={handleOk}
-      okText={initialValues ? "Cập nhật" : "Thêm"}
-      width={1000}
-      confirmLoading={loading}
-    >
-      <Form form={form} layout="vertical">
-        <Row gutter={16}>
-          {/* <Col span={12}>
-            <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}> 
-              <Input />
-            </Form.Item>
-          </Col> */}
-          <Col span={12}>
-            <Form.Item
-              name="voucherNo"
-              label="Số chứng từ"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="productName"
-              label="Tên sản phẩm"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Ngày chứng từ" required>
-              <DatePicker
-                picker="day"
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={monthYear}
-                onChange={handleMonthChange}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="managementUnit"
-              label="Đơn bị quản lý sử dụng"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="department"
-              label="Bộ phận"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="repairOrderCode" label="Lệnh sửa chữa">
-              <Input />
-            </Form.Item>
-          </Col>
-          {approvalNumber > 0 && (
-            <>
-              {approvers.map((item, idx) => (
-                <React.Fragment key={idx}>
-                  <Col span={12}>
-                    <Form.Item
-                      label={`Người duyệt cấp ${idx + 1}`}
-                      name={["approvers", idx, "username"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng chọn người duyệt",
-                        },
-                      ]}
-                    >
-                      <Select
-                        options={dataUser}
-                        placeholder="Chọn người duyệt"
-                        showSearch
-                        optionFilterProp="label"
-                        disabled={!!initialValues}
-                      />
-                    </Form.Item>
-                  </Col>
-                  {initialValues && (
-                    <>
-                      <Col span={12}>
-                        <Form.Item
-                          label={`Trạng thái duyệt ${idx + 1}`}
-                          name={["approvers", idx, "status"]}
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng chọn trạng thái duyệt",
-                            },
-                          ]}
-                        >
-                          <Select
-                            options={approvalStatusOptions}
-                            placeholder="Chọn trạng thái"
-                            disabled={!isEditApproval || item.username !== user.data.userName}
-                          />
-                        </Form.Item>
-                      </Col>
-                      {isEditApproval && (
-                        <Col span={12}>
+    <>
+      <Modal
+        title={
+          <span style={{ fontSize: isMobile ? 18 : 25, fontWeight: 600 }}>
+            {initialValues
+              ? "Cập nhật phiếu giao việc"
+              : "Thêm phiếu giao việc"}
+          </span>
+        }
+        open={open}
+        onCancel={() => {
+          form.resetFields();
+          setMonthYear(dayjs());
+          setTableData([]);
+          onCancel();
+          setTableDrawerVisible(false);
+        }}
+        onOk={handleOk}
+        okText={initialValues ? "Cập nhật" : "Thêm"}
+        width={getModalWidth()}
+        confirmLoading={loading}
+        style={isMobile ? { top: 20 } : {}}
+        bodyStyle={isMobile ? { padding: "16px" } : {}}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          size={isMobile ? "small" : "default"}
+        >
+          <Row gutter={isMobile ? [8, 8] : [16, 16]}>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="voucherNo"
+                label="Số chứng từ"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="productName"
+                label="Tên sản phẩm"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item label="Ngày chứng từ" required>
+                <DatePicker
+                  picker="day"
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  value={monthYear}
+                  onChange={handleMonthChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="managementUnit"
+                label="Đơn bị quản lý sử dụng"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item
+                name="department"
+                label="Bộ phận"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={colSpans.half}>
+              <Form.Item name="repairOrderCode" label="Lệnh sửa chữa">
+                <Input />
+              </Form.Item>
+            </Col>
+            {approvalNumber > 0 && (
+              <>
+                {approvers.map((item, idx) => (
+                  <React.Fragment key={idx}>
+                    <Col span={colSpans.half}>
+                      <Form.Item
+                        label={`Người duyệt cấp ${idx + 1}`}
+                        name={["approvers", idx, "username"]}
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng chọn người duyệt",
+                          },
+                        ]}
+                      >
+                        <Select
+                          options={dataUser}
+                          placeholder="Chọn người duyệt"
+                          showSearch
+                          optionFilterProp="label"
+                          disabled={!!initialValues}
+                        />
+                      </Form.Item>
+                    </Col>
+                    {initialValues && (
+                      <>
+                        <Col span={colSpans.half}>
                           <Form.Item
-                            label={`Ghi chú duyệt ${idx + 1}`}
-                            name={["approvers", idx, "note"]}
+                            label={`Trạng thái duyệt ${idx + 1}`}
+                            name={["approvers", idx, "status"]}
+                            rules={[
+                              {
+                                required: true,
+                                message: "Vui lòng chọn trạng thái duyệt",
+                              },
+                            ]}
                           >
-                            <Input.TextArea
-                              rows={1}
-                              placeholder="Ghi chú duyệt"
-                              disabled={!isEditApproval || item.username !== user.data.userName}
+                            <Select
+                              options={approvalStatusOptions}
+                              placeholder="Chọn trạng thái"
+                              disabled={
+                                !isEditApproval ||
+                                item.username !== user.data.userName
+                              }
                             />
                           </Form.Item>
                         </Col>
-                      )}
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
+                        {isEditApproval && (
+                          <Col span={colSpans.half}>
+                            <Form.Item
+                              label={`Ghi chú duyệt ${idx + 1}`}
+                              name={["approvers", idx, "note"]}
+                            >
+                              <Input.TextArea
+                                rows={1}
+                                placeholder="Ghi chú duyệt"
+                                disabled={
+                                  !isEditApproval ||
+                                  item.username !== user.data.userName
+                                }
+                              />
+                            </Form.Item>
+                          </Col>
+                        )}
+                      </>
+                    )}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </Row>
+
+          {isMobile ? (
+            renderMobileCards()
+          ) : (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                  alignItems: "center",
+                }}
+              >
+                <h4 style={{ margin: 0 }}>Nội dung giao việc</h4>
+                {isTablet && (
+                  <Button
+                    icon={<TableOutlined />}
+                    onClick={() => setTableDrawerVisible(true)}
+                  >
+                    Xem bảng
+                  </Button>
+                )}
+                {!isTablet && (
+                  <Space>
+                    <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+                      Thêm dòng
+                    </Button>
+                    <Button onClick={() => setTableData([])}>Hủy</Button>
+                  </Space>
+                )}
+              </div>
+              {!isTablet && (
+                <Table
+                  columns={generateColumns()}
+                  dataSource={tableData}
+                  pagination={false}
+                  scroll={{ x: "max-content" }}
+                  bordered
+                  size="small"
+                />
+              )}
+              {isTablet && tableData.length > 0 && (
+                <div
+                  style={{
+                    padding: 12,
+                    border: "1px solid #f0f0f0",
+                    borderRadius: 6,
+                    textAlign: "center",
+                  }}
+                >
+                  <span>Có {tableData.length} dòng dữ liệu. </span>
+                  <Button
+                    type="link"
+                    onClick={() => setTableDrawerVisible(true)}
+                  >
+                    Nhấn để xem chi tiết
+                  </Button>
+                </div>
+              )}
             </>
           )}
-        </Row>
-
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <h4>Nội dung giao việc</h4>
-            <Space>
-              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                Thêm dòng
-              </Button>
-              <Button onClick={() => setTableData([])}>Hủy</Button>
-            </Space>
-          </div>
-          <Table
-            columns={generateColumns()}
-            dataSource={tableData}
-            pagination={false}
-            scroll={{ x: "max-content" }}
-            bordered
-            size="small"
-          />
-        </>
-      </Form>
-    </Modal>
+        </Form>
+      </Modal>
+      <Drawer
+        title="Nội dung giao việc"
+        width="90%"
+        onClose={() => setTableDrawerVisible(false)}
+        open={tableDrawerVisible}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <Space>
+            <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+              Thêm dòng
+            </Button>
+            <Button onClick={() => setTableData([])}>Hủy</Button>
+          </Space>
+        </div>
+        <Table
+          columns={generateColumns()}
+          dataSource={tableData}
+          pagination={false}
+          scroll={{ x: "max-content", y: "calc(100vh - 200px)" }}
+          bordered
+          size="small"
+        />
+      </Drawer>
+    </>
   );
 };
 

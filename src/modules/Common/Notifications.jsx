@@ -1,283 +1,526 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  Table,
-  Button,
-  Input,
-  DatePicker,
   Row,
   Col,
+  Typography,
+  Button,
+  Dropdown,
+  Collapse,
+  Table,
   Space,
-  Tooltip,
+  message,
   Modal,
+  Card,
+  Descriptions,
+  Drawer,
+  Badge,
+  Divider,
+  FloatButton,
+  Tooltip,
 } from "antd";
 import {
-  SearchOutlined,
-  PlusOutlined,
+  DownOutlined,
+  EditOutlined,
+  PaperClipOutlined,
   DeleteOutlined,
-  PrinterOutlined,
-  FileExcelOutlined,
+  ArrowLeftOutlined,
+  BellOutlined,
+  MenuOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
-// import BuySuppliesModal from "./BuySuppliesModal";
-import { Link } from "react-router-dom";
-import AddNotificationModal from "../../components/AddNotification";
+import NoteSection from "../../components/NoteSection ";
+import AttachmentSection from "../../components/AttachmentSection ";
+import SystemSection from "../../components/SystemSection";
+import dayjs from "dayjs";
+import { addAttachments } from "../../services/apiAttachment";
 import { useSelector } from "react-redux";
-import { jwtDecode } from "jwt-decode";
-import { filterNofifications } from "../../services/notificationApi";
+import { getNotificationByID } from "../../services/notificationApi";
 
-const { RangePicker } = DatePicker;
+const { Title, Text, Paragraph } = Typography;
+const { Panel } = Collapse;
 
-const Notifications = () => {
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [dataSource, setDataSource] = useState([]);
-  const [filters, setFilters] = useState({
-    dateRange: null,
-    keyword: "",
-  });
-  const user = useSelector((state) => state.auth.login?.currentUser);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    total: 0,
-  });
+const NotificationDetail = () => {
+  const { id } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const type = queryParams.get("type");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
+  const [data, setData] = useState();
+  const [approvals, setApproval] = useState();
+  const [approvalNumber, setApprovalNumber] = useState();
+  const [refreshFlag, setRefreshFlag] = useState(0);
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const navigator = useNavigate();
+  const fileInputRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [actionDrawerVisible, setActionDrawerVisible] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState(["1"]);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   useEffect(() => {
-    if (user && user.data.token) {
-      try {
-        const decode = jwtDecode(user.data.token);
-        setUserId(decode.nameid);
-        console.log("UserId extracted:", decode.nameid);
-        fetchData(pagination.current, pagination.pageSize, uid);
-      } catch (error) {
-        console.error("Error decoding token:", error);
-      }
-    }
-  }, [user]);
+    getData();
+  }, []);
 
-  useEffect(() => {
-    if (userId) fetchData(pagination.current, pagination.pageSize);
-  }, [userId]);
-
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const getData = async () => {
     try {
-      setLoading(true);
-      const { keyword, dateRange } = filters;
-      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
-      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
-
-      let res = await filterNofifications(
-        userId,
-        keyword,
-        "",
-        fromDate,
-        toDate,
-        page,
-        pageSize
-      );
+      let res = await getNotificationByID(id);
       if (res && res.status === 200) {
-        let { items, totalCount } = res.data.data;
-        console.log(res.data.data);
-
-        // Thêm STT và key
-        let dataWithStt = items.map((item, index) => ({
-          ...item,
-          key: item.id,
-          stt: (page - 1) * pageSize + index + 1,
-        }));
-
-        setDataSource(dataWithStt);
-        setPagination({ current: page, pageSize, total: totalCount });
+        setData(res.data.data);
       }
     } catch (error) {
-      console.error("Lỗi khi gọi API:", error);
-    } finally {
-      setLoading(false);
+      console.log(error);
     }
   };
 
-  const columns = [
+  const items = [
     {
-      title: "STT",
-      dataIndex: "stt",
-      width: 60,
+      key: "edit",
+      label: (
+        <span>
+          <EditOutlined /> Sửa
+        </span>
+      ),
+      disabled: true,
     },
     {
-      title: "Tiêu đề",
-      dataIndex: "title",
-      render: (text, record) => (
-        <Link to={`/notification-detail/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+      key: "attach",
+      label: (
+        <span>
+          <PaperClipOutlined /> Đính kèm
+        </span>
       ),
     },
     {
-      title: "Nội dung",
-      dataIndex: "content",
-    },
-    {
-      title: "Ngày gửi",
-      dataIndex: "createdAt",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+      key: "delete",
+      label: (
+        <span style={{ color: "red" }}>
+          <DeleteOutlined /> Xóa
+        </span>
+      ),
+      disabled: true,
     },
   ];
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingData, setEditingData] = useState(null);
+  const handleMenuClick = async ({ key }) => {
+    setActionDrawerVisible(false); // Close drawer after action
 
-  const handleAdd = () => {
-    setEditingData(null); // không có dữ liệu -> thêm mới
-    setModalOpen(true);
-  };
-
-  const handleEdit = (record) => {
-    setEditingData(record); // truyền dữ liệu -> chỉnh sửa
-    setModalOpen(true);
-  };
-
-  const handleSubmit = (values) => {
-    if (editingData) {
-      console.log("Cập nhật:", values);
-      // Gọi API update ở đây
-    } else {
-      fetchData(pagination.current, pagination.pageSize);
-      // Gọi API thêm mới ở đây
+    if (key === "edit") {
+      if (type) {
+        setEditingData({
+          ...data,
+          type: type,
+        });
+      } else {
+        setEditingData(data);
+      }
+      setIsModalOpen(true);
+    } else if (key === "attach") {
+      fileInputRef.current?.click();
+    } else if (key === "delete") {
+      try {
+        // let res = await deleteAssignmetSlip(data.id);
+        // if ((res && res.status === 200) || res.status === 204) {
+        //   Modal.success({
+        //     title: "Xóa thành công",
+        //     content: `Đã xóa thành công phiếu`,
+        //   });
+        //   navigator("/pl/phieu-giao-viec");
+        // }
+        console.log("Delete action");
+      } catch (error) {
+        Modal.error({
+          title: "Xóa thất bại",
+          content: `Đã có lỗi xãy ra. Vui lòng thử lại sau`,
+        });
+      }
     }
-    setModalOpen(false);
   };
 
-  // Xử lý chọn dòng
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (selectedKeys) => {
-      setSelectedRowKeys(selectedKeys);
-    },
+  const handleBack = () => {
+    navigator(-1);
   };
 
-  // Xử lý nút xóa
-  const handleDelete = () => {
-    if (selectedRowKeys.length === 0) {
-      Modal.warning({
-        title: "Chưa chọn dòng nào",
-        content: "Vui lòng chọn ít nhất một dòng để xóa.",
-      });
-      return;
-    }
-
-    Modal.confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa ${selectedRowKeys.length} dòng này không?`,
-      onOk: () => {
-        const newData = dataSource.filter(
-          (item) => !selectedRowKeys.includes(item.key)
-        );
-        setDataSource(newData);
-        setSelectedRowKeys([]);
-      },
-    });
+  const formatDate = (dateString) => {
+    if (!dateString) return "---";
+    return dayjs(dateString).format("DD/MM/YYYY HH:mm");
   };
 
-  const handleFilterChange = (field, value) => {
-    setFilters({ ...filters, [field]: value });
-  };
-
-  const handleSearch = () => {
-    fetchData(pagination.current, pagination.pageSize);
-  };
-
-  const handleReset = () => {
-    setFilters({
-      dateRange: null,
-      keyword: "",
-    });
-    fetchData(pagination.current, pagination.pageSize);
-  };
-
-  return (
-    <div style={{ padding: 5 }}>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Thông báo</h1>
-        <Space>
-          <Tooltip title="Tìm kiếm">
-            <Button
-              icon={<SearchOutlined />}
-              onClick={() => setShowFilters(!showFilters)}
-            />
-          </Tooltip>
-          <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} />
-          </Tooltip>
-        </Space>
-      </div>
-
-      {/* Bộ lọc tìm kiếm */}
-      {showFilters && (
-        <div
-          style={{
-            background: "#fafafa",
-            padding: 16,
-            marginBottom: 20,
-            borderRadius: 8,
-            border: "1px solid #eee",
-          }}
-        >
-          <Row gutter={16}>
-            <Col span={8}>
-              <label>Thời gian</label>
-              <RangePicker
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={filters.dateRange}
-                onChange={(value) => handleFilterChange("dateRange", value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>Nội dung</label>
-              <Input
-                placeholder="Nội dung"
-                value={filters.keyword}
-                onChange={(e) => handleFilterChange("keyword", e.target.value)}
-              />
-            </Col>
-          </Row>
-          <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Button
-              type="primary"
-              onClick={handleSearch}
-              style={{ marginRight: 8 }}
-            >
-              Lọc
-            </Button>
-            <Button onClick={handleReset}>Hủy</Button>
+  // Mobile Action Menu
+  const MobileActionMenu = () => (
+    <Drawer
+      title="Hoạt động"
+      placement="bottom"
+      height="auto"
+      onClose={() => setActionDrawerVisible(false)}
+      open={actionDrawerVisible}
+      bodyStyle={{ padding: 0 }}
+    >
+      <div style={{ padding: "8px 0" }}>
+        {items.map((item) => (
+          <div
+            key={item.key}
+            onClick={() => !item.disabled && handleMenuClick({ key: item.key })}
+            style={{
+              padding: "16px 20px",
+              borderBottom: "1px solid #f0f0f0",
+              cursor: item.disabled ? "not-allowed" : "pointer",
+              opacity: item.disabled ? 0.5 : 1,
+              backgroundColor: item.disabled ? "#fafafa" : "white",
+            }}
+          >
+            {item.label}
           </div>
+        ))}
+      </div>
+    </Drawer>
+  );
+
+  // Mobile Header Component
+  const MobileHeader = () => (
+    <div
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        backgroundColor: "white",
+        borderBottom: "1px solid #f0f0f0",
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+        <Button
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={handleBack}
+          style={{ marginRight: 8, padding: "4px 8px" }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            ellipsis={{ tooltip: "Chi tiết thông báo" }}
+            style={{
+              fontSize: "16px",
+              fontWeight: "600",
+              color: "#262626",
+            }}
+          >
+            Chi tiết thông báo
+          </Text>
         </div>
-      )}
-
-      {/* Bảng dữ liệu */}
-      <Table
-        rowSelection={rowSelection}
-        columns={columns}
-        dataSource={dataSource}
-        pagination={{ pageSize: 10 }}
-        bordered
-      />
-
-      {/* Modal */}
-      <AddNotificationModal
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onSubmit={handleSubmit}
-        initialValues={editingData}
+      </div>
+      <Button
+        type="text"
+        icon={<MoreOutlined />}
+        onClick={() => setActionDrawerVisible(true)}
+        style={{ padding: "4px 8px" }}
       />
     </div>
   );
+
+  // Desktop Header Component
+  const DesktopHeader = () => (
+    <div
+      style={{
+        backgroundColor: "white",
+        padding: "16px 20px",
+        borderRadius: "8px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 16,
+      }}
+    >
+      <Row justify="space-between" align="middle">
+        <Col flex={1}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBack}
+              style={{ marginRight: 8 }}
+            />
+            <BellOutlined style={{ fontSize: "20px", color: "#1890ff" }} />
+            <Title level={3} style={{ margin: 0 }}>
+              Chi tiết thông báo
+            </Title>
+          </div>
+        </Col>
+        <Col>
+          <Dropdown
+            menu={{ items, onClick: handleMenuClick }}
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button>
+              Hoạt động <DownOutlined />
+            </Button>
+          </Dropdown>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  // Mobile Card Layout
+  const MobileLayout = () => (
+    <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <MobileHeader />
+
+      <div style={{ padding: "8px" }}>
+        {/* Notification Info Card */}
+        <Card
+          title={
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <BellOutlined style={{ color: "#1890ff" }} />
+              <span>Thông tin thông báo</span>
+            </div>
+          }
+          style={{ marginBottom: 12, borderRadius: 8 }}
+          bodyStyle={{ padding: "16px" }}
+        >
+          {data && (
+            <div>
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ fontSize: "13px", color: "#666" }}>
+                  Tiêu đề:
+                </Text>
+                <div style={{ marginTop: 4 }}>
+                  <Text style={{ fontSize: "15px", lineHeight: "1.5" }}>
+                    {data.title || "---"}
+                  </Text>
+                </div>
+              </div>
+
+              <div>
+                <Text strong style={{ fontSize: "13px", color: "#666" }}>
+                  Nội dung:
+                </Text>
+                <div style={{ marginTop: 4 }}>
+                  <Paragraph
+                    style={{
+                      fontSize: "14px",
+                      lineHeight: "1.6",
+                      margin: 0,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {data.content || "---"}
+                  </Paragraph>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Attachment Card */}
+        <Card
+          title={
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <PaperClipOutlined style={{ color: "#1890ff" }} />
+              <span>Đính kèm</span>
+            </div>
+          }
+          style={{ marginBottom: 12, borderRadius: 8 }}
+          bodyStyle={{ padding: "16px" }}
+        >
+          <AttachmentSection
+            refId={data ? data.id : ""}
+            refType={"Notification"}
+            refreshTrigger={refreshFlag}
+          />
+        </Card>
+
+        {/* Notes Card */}
+        <Card
+          title={
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <EditOutlined style={{ color: "#1890ff" }} />
+              <span>Ghi chú</span>
+            </div>
+          }
+          style={{ marginBottom: 12, borderRadius: 8 }}
+          bodyStyle={{ padding: "16px" }}
+        >
+          <NoteSection
+            refId={data ? data.id : ""}
+            refType={"Notification"}
+            voucherNo={data ? data.id : ""}
+          />
+        </Card>
+      </div>
+
+      <MobileActionMenu />
+    </div>
+  );
+
+  // Desktop Layout
+  const DesktopLayout = () => (
+    <div
+      style={{
+        padding: "16px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <DesktopHeader />
+
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Collapse
+          activeKey={expandedPanels}
+          onChange={setExpandedPanels}
+          expandIconPosition="end"
+          ghost={false}
+          style={{ backgroundColor: "white" }}
+        >
+          <Panel
+            header={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <BellOutlined style={{ color: "#1890ff" }} />
+                <span style={{ fontWeight: "500" }}>Thông tin thông báo</span>
+              </div>
+            }
+            key="1"
+            style={{ borderBottom: "1px solid #f0f0f0" }}
+          >
+            {data && (
+              <div style={{ padding: "8px 0" }}>
+                <Descriptions
+                  column={1}
+                  size="middle"
+                  labelStyle={{
+                    fontWeight: "600",
+                    color: "#595959",
+                    width: "120px",
+                  }}
+                  contentStyle={{ color: "#262626" }}
+                >
+                  <Descriptions.Item label="Tiêu đề">
+                    {data.title || "---"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Nội dung">
+                    <Paragraph
+                      style={{
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      {data.content || "---"}
+                    </Paragraph>
+                  </Descriptions.Item>
+                </Descriptions>
+              </div>
+            )}
+          </Panel>
+
+          <Panel
+            header={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <PaperClipOutlined style={{ color: "#1890ff" }} />
+                <span style={{ fontWeight: "500" }}>Đính kèm</span>
+              </div>
+            }
+            key="3"
+            style={{ borderBottom: "1px solid #f0f0f0" }}
+          >
+            <div style={{ padding: "8px 0" }}>
+              <AttachmentSection
+                refId={data ? data.id : ""}
+                refType={"Notification"}
+                refreshTrigger={refreshFlag}
+              />
+            </div>
+          </Panel>
+
+          <Panel
+            header={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <EditOutlined style={{ color: "#1890ff" }} />
+                <span style={{ fontWeight: "500" }}>Ghi chú</span>
+              </div>
+            }
+            key="4"
+          >
+            <div style={{ padding: "8px 0" }}>
+              <NoteSection
+                refId={data ? data.id : ""}
+                refType={"Notification"}
+                voucherNo={data ? data.id : ""}
+              />
+            </div>
+          </Panel>
+        </Collapse>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {isMobile ? <MobileLayout /> : <DesktopLayout />}
+
+      {/* File Upload Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        multiple
+        onChange={async (e) => {
+          const files = e.target.files;
+          if (!files.length || !data?.id) return;
+
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("refId", data.id);
+            formData.append("refType", "Notification");
+
+            try {
+              const res = await addAttachments(formData, user.data.token);
+              message.success(`Đã upload file: ${file.name}`);
+            } catch (err) {
+              console.error(err);
+              message.error(`Upload thất bại: ${file.name}`);
+            }
+          }
+
+          e.target.value = "";
+          setRefreshFlag((prev) => prev + 1);
+        }}
+      />
+
+      {/* Mobile Floating Attachment Button */}
+      {isMobile && (
+        <FloatButton
+          icon={<PaperClipOutlined />}
+          tooltip="Thêm đính kèm"
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            right: 20,
+            bottom: 20,
+          }}
+        />
+      )}
+    </>
+  );
 };
 
-export default Notifications;
+export default NotificationDetail;

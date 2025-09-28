@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -38,6 +39,7 @@ import {
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const RiceReportDetail = () => {
   const { id } = useParams();
@@ -53,6 +55,11 @@ const RiceReportDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
   const fileInputRef = useRef(null);
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -134,18 +141,106 @@ const RiceReportDetail = () => {
     }
   };
 
-  return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết báo cơm</Title>
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+          </div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.voucherDate
+              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>SL Ban KT-VT-CN:</strong> {data.slKT || ""}
+          </div>
+          <div>
+            <strong>SL Ban CT-HC:</strong> {data.slCT || ""}
+          </div>
+          <div>
+            <strong>SL Ban TC-KT:</strong> {data.slTC || ""}
+          </div>
+          <div>
+            <strong>SL Ban KH-KD:</strong> {data.slKH || ""}
+          </div>
+          <div>
+            <strong>Tổng số lượng:</strong> {data.totalSL || ""}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            </div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.voucherDate
+                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+            <div>
+              <strong>SL Ban KT-VT-CN:</strong> {data.slKT || ""}
+            </div>
+            <div>
+              <strong>SL Ban CT-HC:</strong> {data.slCT || ""}
+            </div>
+          </Space>
         </Col>
-        <Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>SL Ban TC-KT:</strong> {data.slTC || ""}
+            </div>
+            <div>
+              <strong>SL Ban KH-KD:</strong> {data.slKH || ""}
+            </div>
+            <div>
+              <strong>Tổng số lượng:</strong> {data.totalSL || ""}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{
+              margin: 0,
+              fontSize: isMobile ? "18px" : undefined,
+            }}
+          >
+            Xem chi tiết báo cơm
+          </Title>
+        </Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button
+              style={{ width: isMobile ? "100%" : "auto" }}
+              size={isMobile ? "middle" : "middle"}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -156,40 +251,10 @@ const RiceReportDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
-        <Panel header="Thông tin phiếu yêu cầu công việc" key="1">
-          {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Số chứng từ: {data.voucherNo || ""}</div>
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.voucherDate
-                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                  <div>SL Ban KT-VT-CN: {data.slKT || ""}</div>
-                  <div>SL Ban CT-HC: {data.slCT || ""}</div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>SL Ban TC-KT: {data.slTC || ""}</div>
-                  <div>SL Ban KH-KD: {data.slKH || ""}</div>
-                  <div>Tổng số lượng: {data.totalSL || ""}</div>
-                </Space>
-              </Col>
-            </Row>
-          )}
+        <Panel header="Thông tin báo cơm" key="1">
+          {data && renderInfoSection()}
         </Panel>
 
         <Panel header="Đính kèm" key="3">
@@ -251,7 +316,7 @@ const RiceReportDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refId", data.id); // id của RiceReport
             formData.append("refType", "RiceReport");
 
             try {

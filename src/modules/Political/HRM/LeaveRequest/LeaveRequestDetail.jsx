@@ -7,10 +7,10 @@ import {
   Button,
   Dropdown,
   Collapse,
-  Table,
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -34,21 +34,28 @@ import {
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const LeaveRequestDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const type = queryParams.get("type");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [data, setData] = useState();
   const [approvals, setApproval] = useState();
   const [approvalNumber, setApprovalNumber] = useState();
   const [refreshFlag, setRefreshFlag] = useState(0);
+
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
   const fileInputRef = useRef(null);
+  const screens = useBreakpoint();
+
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -125,14 +132,14 @@ const LeaveRequestDetail = () => {
       if (type) {
         setEditingData({
           ...data,
-          type: type, // hoặc đơn giản: type
+          type: type,
         });
       } else {
         setEditingData(data);
       }
       setIsModalOpen(true);
     } else if (key === "attach") {
-      fileInputRef.current?.click(); // Mở hộp thoại chọn file
+      fileInputRef.current?.click();
     } else if (key === "delete") {
       try {
         let res = await deleteLeaveRequestByID(data.id);
@@ -146,24 +153,121 @@ const LeaveRequestDetail = () => {
       } catch (error) {
         Modal.error({
           title: "Xóa thất bại",
-          content: `Đã có lỗi xãy ra. Vui lòng thử lại sau`,
+          content: `Đã có lỗi xảy ra. Vui lòng thử lại sau`,
         });
       }
     }
   };
 
-  return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết đơn xin nghỉ phép</Title>
+  const renderInfoSection = () => {
+    if (!data) return null;
+
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Họ và tên:</strong> {data.fullName || ""}
+          </div>
+          <div>
+            <strong>Phòng ban:</strong> {data.department || ""}
+          </div>
+          <div>
+            <strong>Chức vụ:</strong> {data.position || ""}
+          </div>
+          <div>
+            <strong>Loại phép:</strong> {data.leaveType || ""}
+          </div>
+          <div>
+            <strong>Ngày bắt đầu:</strong>{" "}
+            {data.startDate
+              ? new Date(data.startDate).toLocaleString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Ngày kết thúc:</strong>{" "}
+            {data.endDate
+              ? new Date(data.endDate).toLocaleString("vi-VN")
+              : "---"}
+          </div>
+          <div>
+            <strong>Tổng ngày nghỉ:</strong> {data.totalDate || ""}
+          </div>
+          <div>
+            <strong>Lý do:</strong> {data.reason || ""}
+          </div>
+          <div>
+            <strong>Liên hệ:</strong> {data.emailOrPhone || ""}
+          </div>
+          <div>
+            <strong>Nơi nghỉ:</strong> {data.address || ""}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col span={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Họ và tên:</strong> {data.fullName || ""}
+            </div>
+            <div>
+              <strong>Phòng ban:</strong> {data.department || ""}
+            </div>
+            <div>
+              <strong>Chức vụ:</strong> {data.position || ""}
+            </div>
+            <div>
+              <strong>Loại phép:</strong> {data.leaveType || ""}
+            </div>
+            <div>
+              <strong>Ngày bắt đầu:</strong>{" "}
+              {data.startDate
+                ? new Date(data.startDate).toLocaleString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
         </Col>
-        <Col>
+        <Col span={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Ngày kết thúc:</strong>{" "}
+              {data.endDate
+                ? new Date(data.endDate).toLocaleString("vi-VN")
+                : "---"}
+            </div>
+            <div>
+              <strong>Tổng ngày nghỉ:</strong> {data.totalDate || ""}
+            </div>
+            <div>
+              <strong>Lý do:</strong> {data.reason || ""}
+            </div>
+            <div>
+              <strong>Liên hệ:</strong> {data.emailOrPhone || ""}
+            </div>
+            <div>
+              <strong>Nơi nghỉ:</strong> {data.address || ""}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  return (
+    <div style={{ padding: isMobile ? 8 : 16 }}>
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title level={isMobile ? 4 : 3}>Xem chi tiết đơn xin nghỉ phép</Title>
+        </Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button style={{ width: isMobile ? "100%" : "auto" }}>
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -176,110 +280,68 @@ const LeaveRequestDetail = () => {
         expandIconPosition="end"
       >
         <Panel header="Thông tin đơn xin nghỉ phép" key="1">
-          {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Họ và tên: {data.fullName || ""}</div>
-                  <div>Chức vụ: {data.position || ""}</div>
-                  <div>Phòng ban: {data.department || ""}</div>
-                  <div>Loại phép: {data.leaveType || ""}</div>
-                  <div>
-                    Ngày bắt đầu nghỉ:{" "}
-                    {data.startDate
-                      ? new Date(data.startDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                  <div>
-                    Ngày kết thúc nghỉ:{" "}
-                    {data.endDate
-                      ? new Date(data.endDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Tổng ngày nghỉ: {data.totalDate || ""}</div>
-                  <div>Lý do: {data.reason || ""}</div>
-                  <div>
-                    Số điện thoại/email liên hệ: {data.emailOrPhone || ""}
-                  </div>
-                  <div>Nơi nghỉ phép: {data.address || ""}</div>
-                </Space>
-              </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
+          {renderInfoSection()}
+          {approvals?.length > 0 && (
+            <Row gutter={[16, 16]} style={{ marginTop: 12 }}>
+              {approvals.map((item, idx) => (
+                <Col xs={24} md={12} key={idx}>
+                  <Space
+                    direction="vertical"
+                    size="small"
+                    style={{ width: "100%" }}
+                  >
+                    <div>
+                      <strong>Người duyệt {idx + 1}:</strong> {item.fullName}
+                    </div>
+                    <div>
+                      <strong>Trạng thái:</strong>
+                      {item.status === "rejected"
+                        ? "Từ chối"
+                        : item.status === "approved"
+                        ? "Đã duyệt"
+                        : "Chờ duyệt"}
+                    </div>
+                    <div>
+                      <strong>Ghi chú:</strong> {item.note || ""}
+                    </div>
+                  </Space>
+                </Col>
+              ))}
             </Row>
           )}
         </Panel>
 
-        <Panel header="Đính kèm" key="3">
+        <Panel header="Đính kèm" key="2">
           <AttachmentSection
-            refId={data ? data.id : ""}
-            refType={"LeaveRequest"}
+            refId={data?.id || ""}
+            refType="LeaveRequest"
             refreshTrigger={refreshFlag}
           />
         </Panel>
 
-        <Panel header="Ghi chú" key="4">
+        <Panel header="Ghi chú" key="3">
           <NoteSection
-            refId={data ? data.id : ""}
-            refType={"LeaveRequest"}
-            voucherNo={data ? data.fullName : ""}
+            refId={data?.id || ""}
+            refType="LeaveRequest"
+            voucherNo={data?.fullName || ""}
           />
         </Panel>
 
-        <Panel header="Hệ thống" key="5">
+        <Panel header="Hệ thống" key="4">
           {data && (
             <SystemSection
               systemInfo={{
-                createdBy: `${data.createdBy}`,
+                createdBy: data.createdBy,
                 createdAt: data.createdAt
                   ? dayjs(data.createdAt).format("DD/MM/YYYY HH:mm:ss")
                   : "",
-                updatedBy: `${data.updatedBy}`,
+                updatedBy: data.updatedBy,
                 updatedAt: data.updatedAt
                   ? dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm:ss")
                   : "",
               }}
               refId={data.id}
-              refType={"LeaveRequest"}
+              refType="LeaveRequest"
               voucherNo={data.fullName}
             />
           )}
@@ -309,21 +371,17 @@ const LeaveRequestDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refId", data.id);
             formData.append("refType", "LeaveRequest");
 
             try {
-              const res = await addAttachments(formData, user.data.token);
-
+              await addAttachments(formData, user.data.token);
               message.success(`Đã upload file: ${file.name}`);
-              // Có thể reload danh sách file nếu muốn
             } catch (err) {
               console.error(err);
               message.error(`Upload thất bại: ${file.name}`);
             }
           }
-
-          // Reset lại input để có thể chọn cùng file lần nữa nếu muốn
           e.target.value = "";
           setRefreshFlag((prev) => prev + 1);
         }}

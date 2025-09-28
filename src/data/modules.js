@@ -14,11 +14,11 @@ export const moduleData = {
         { key: 'tm-yeu-cau-cong-viec', label: 'A. Yêu cầu công việc', path: '/tm/yeu-cau-cong-viec' },
         { key: 'tm-du-tru-vat-tu', label: 'B. Dự trù vật tư', path: '/tm/du-tru-vat-tu' },
         { key: 'tm-task', label: 'C. Công việc', path: '/tm/task' },
-        // { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
-        //   { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },
-        //   { key: 'tm-phieu-xuat', label: '2. Phiếu xuất', path: '/tm/vat-tu/phieu-xuat' },
-        //   { key: 'tm-bien-ban-kiem-tra', label: '3. Biên bản kiểm tra VT', path: '/tm/vat-tu/bien-ban-kiem-tra-vt' },
-        // ] }, 
+        { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
+          { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },
+          { key: 'tm-phieu-xuat', label: '2. Phiếu xuất', path: '/tm/vat-tu/phieu-xuat' },
+          // { key: 'tm-bien-ban-kiem-tra', label: '3. Biên bản kiểm tra VT', path: '/tm/vat-tu/bien-ban-kiem-tra-vt' },
+        ] }, 
       ],
     },
     PL: { // Purchase Order
@@ -32,7 +32,7 @@ export const moduleData = {
           { key: 'pl-ke-hoach', label: '1. Kế hoạch', path: '/pl/ke-hoach/ke-hoach' },
           { key: 'pl-ke-hoach-chay-thu', label: '2. Kế hoạch chạy thử', path: '/pl/ke-hoach/ke-hoach-chay-thu' },
           { key: 'pl-ke-hoach-tau-vao-sua-chua', label: '3. Kế hoạch tàu vào', path: '/pl/ke-hoach/ke-hoach-tau-vao-sua-chua' },
-          { key: 'pl-ke-hoach-sua-chua', label: '4. Kế hoạch sửa chữa', path: '/pl/ke-hoach/ke-hoach-sua-chua' },
+          { key: 'pl-ke-hoach-sua-chua', label: '4. Tiến độ sửa chữa', path: '/pl/ke-hoach/ke-hoach-sua-chua' },
         ] },
         { key: 'pl-bien-ban', label: 'D. Biên bản', children: [
           { key: 'pl-bien-ban-tiep-nhan', label: '1. Biên bản tiếp nhận', path: '/pl/bien-ban/bien-ban-tiep-nhan' },
@@ -71,14 +71,14 @@ export const moduleData = {
           { key: 'pm-task', label: 'A. Công việc', path: '/pm/cong-viec' },
           { key: 'pm-bao-cao', label: 'B. Báo cáo', children: [
             { key: 'pm-bao-cao-kiem-ke', label: '1. Kiểm kê thiết bị', path: '/pm/bao-cao/kiem-ke-thiet-bi' },
-            { key: 'pm-quan-ly-thiet-bi', label: '2. QL thiết bị bằng QR', path: '/pm/bao-cao/quan-ly-thiet-bi' },
+            // { key: 'pm-quan-ly-thiet-bi', label: '2. QL thiết bị bằng QR', path: '/pm/bao-cao/quan-ly-thiet-bi' },
           ] },
           { key: 'pm-de-xuat', label: 'C. Đề xuất', children: [
             { key: 'pm-de-xuat-sua-chua', label: '1. Sửa chữa, thanh lý', path: '/pm/de-xuat/de-xuat-sua-chua-thanh-ly' },
             { key: 'pm-de-xuat-mua-vat-tu-ccdc', label: '2. Mua, cấp, sửa VT CCDC', path: '/pm/de-xuat/de-xuat-mua-cap-sua' },
           ] },
           { key: 'pm-so-kho', label: 'D. Sổ kho', path: '/pm/so-kho' },
-          { key: 'pm-tien-do', label: 'E. Tiến độ sửa chữa', path: '/pm/tien-do' },
+          // { key: 'pm-tien-do', label: 'E. Tiến độ sửa chữa', path: '/pm/tien-do' },
         ],
       },
     HS: { // Customer Relationship Management

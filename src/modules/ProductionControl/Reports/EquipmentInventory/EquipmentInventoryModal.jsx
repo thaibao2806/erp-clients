@@ -12,6 +12,8 @@ import {
   Tooltip,
   notification,
   Select,
+  Drawer,
+  Card,
 } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -28,7 +30,10 @@ import {
   createEquipmentInventory,
   updateEquipmentInventory,
 } from "../../../../services/apiProductControl/apiEquipmentInventory";
+
 dayjs.extend(customParseFormat);
+
+const { Option } = Select;
 
 const EquipmentInventoryModal = ({
   open,
@@ -44,6 +49,17 @@ const EquipmentInventoryModal = ({
   const [dataUser, setDataUser] = useState([]);
   const [isEditApproval, setIsEditApproval] = useState(false);
 
+  // responsive check
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  const isMobile = windowWidth < 768;
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
+  const isDesktop = windowWidth >= 1024;
+
   useEffect(() => {
     if (open) {
       if (!initialValues) {
@@ -53,9 +69,6 @@ const EquipmentInventoryModal = ({
       setIsEditApproval(!!initialValues?.type);
       setMonthYear(dayjs(initialValues?.voucherDate || dayjs()));
       if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.voucherDate).daysInMonth();
-        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
         const formattedDetails = initialValues.details.map((item, index) => ({
           key: `${Date.now()}_${index}`,
           stt: index + 1,
@@ -73,7 +86,6 @@ const EquipmentInventoryModal = ({
           level5: item.level5 || "",
           notes: item.notes || "",
         }));
-
         setTableData(formattedDetails);
       } else {
         setTableData([]);
@@ -98,14 +110,14 @@ const EquipmentInventoryModal = ({
       if (res && res.status === 200) {
         const list = res.data.data.map((ap) => ({
           id: ap.id,
-          username: ap.userName, // phải trùng key với name trong Form
+          username: ap.userName,
           status: ap.status,
           note: ap.note,
         }));
         setApprovers(list);
         form.setFieldsValue({ approvers: list });
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const getUser = async () => {
@@ -113,7 +125,7 @@ const EquipmentInventoryModal = ({
       let res = await getAllUser();
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
-          value: user.userName, // hoặc user.id nếu cần
+          value: user.userName,
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
@@ -129,9 +141,7 @@ const EquipmentInventoryModal = ({
       if (res && res.status === 200) {
         setApprovalNumber(res.data.data.approvalNumber);
       }
-    } catch (error) {
-      console.log(error);
-    }
+    } catch {}
   };
 
   const getVoucherNo = async () => {
@@ -140,32 +150,27 @@ const EquipmentInventoryModal = ({
       if (res && res.status === 200) {
         form.setFieldsValue({ voucherNo: res.data.data.code });
       }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleMonthChange = (date) => {
-    setMonthYear(date);
-    if (!date) return;
-
-    const daysInMonth = date.daysInMonth();
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    } catch {}
   };
 
   const handleAddRow = () => {
-    const daysInMonth = monthYear?.daysInMonth() || 0;
     const newKey = `${Date.now()}`;
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const newRow = {
       key: newKey,
       stt: tableData.length + 1,
-      hoTen: "",
-      chucVu: "",
-      ...columns.reduce((acc, day) => {
-        acc[`d${day}`] = "";
-        return acc;
-      }, {}),
+      itemName: "",
+      code: "",
+      unit: "",
+      previousInventory: "",
+      annualIncreaseQuantity: "",
+      annualDecreaseQuantity: "",
+      currentYearInventoryCount: "",
+      level1: "",
+      level2: "",
+      level3: "",
+      level4: "",
+      level5: "",
+      notes: "",
     };
     setTableData((prev) => [...prev, newRow]);
   };
@@ -182,370 +187,121 @@ const EquipmentInventoryModal = ({
     );
   };
 
-  const generateColumns = () => {
-    const baseColumns = [
-      {
-        title: "",
-        dataIndex: "action",
-        width: 40,
-        render: (_, record) => (
-          <Tooltip title="Xóa dòng">
-            <Button
-              icon={<DeleteOutlined />}
-              size="small"
-              danger
-              onClick={() => handleDeleteRow(record.key)}
-            />
-          </Tooltip>
-        ),
-      },
-      {
-        title: "STT",
-        dataIndex: "stt",
-        width: 50,
-      },
-      {
-        title: "Tên thiết bị, vật tư, CCDC",
-        dataIndex: "itemName",
-        render: (_, record) => (
-          <Input
-            value={record.itemName}
-            onChange={(e) =>
-              handleInputChange(record.key, "itemName", e.target.value)
-            }
+  const generateColumns = () => [
+    {
+      title: "",
+      dataIndex: "action",
+      width: 40,
+      render: (_, record) => (
+        <Tooltip title="Xóa dòng">
+          <Button
+            icon={<DeleteOutlined />}
+            size="small"
+            danger
+            onClick={() => handleDeleteRow(record.key)}
           />
-        ),
-      },
-      {
-        title: "Kí hiệu",
-        dataIndex: "code",
-        render: (_, record) => (
-          <Input
-            value={record.code}
-            onChange={(e) =>
-              handleInputChange(record.key, "code", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "ĐVT",
-        dataIndex: "unit",
-        render: (_, record) => (
-          <Input
-            value={record.unit}
-            onChange={(e) =>
-              handleInputChange(record.key, "unit", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Kiểm kê kỳ trước",
-        dataIndex: "previousInventory",
-        render: (_, record) => (
-          <Input
-            value={record.previousInventory}
-            onChange={(e) =>
-              handleInputChange(record.key, "previousInventory", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Tăng trong năm",
-        dataIndex: "annualIncreaseQuantity",
-        render: (_, record) => (
-          <Input
-            value={record.annualIncreaseQuantity}
-            onChange={(e) =>
-              handleInputChange(
-                record.key,
-                "annualIncreaseQuantity",
-                e.target.value
-              )
-            }
-          />
-        ),
-      },
-      {
-        title: "Giảm trong năm",
-        dataIndex: "annualDecreaseQuantity",
-        render: (_, record) => (
-          <Input
-            value={record.annualDecreaseQuantity}
-            onChange={(e) =>
-              handleInputChange(
-                record.key,
-                "annualDecreaseQuantity",
-                e.target.value
-              )
-            }
-          />
-        ),
-      },
-      {
-        title: "Kiểm kê năm nay",
-        dataIndex: "currentYearInventoryCount",
-        render: (_, record) => (
-          <Input
-            value={record.currentYearInventoryCount}
-            onChange={(e) =>
-              handleInputChange(
-                record.key,
-                "currentYearInventoryCount",
-                e.target.value
-              )
-            }
-          />
-        ),
-      },
-      {
-        title: "Cấp 1",
-        dataIndex: "level1",
-        render: (_, record) => (
-          <Input
-            value={record.level1}
-            onChange={(e) =>
-              handleInputChange(record.key, "level1", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Cấp 2",
-        dataIndex: "level2",
-        render: (_, record) => (
-          <Input
-            value={record.level2}
-            onChange={(e) =>
-              handleInputChange(record.key, "level2", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Cấp 3",
-        dataIndex: "level3",
-        render: (_, record) => (
-          <Input
-            value={record.level3}
-            onChange={(e) =>
-              handleInputChange(record.key, "level3", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Cấp 4",
-        dataIndex: "level4",
-        render: (_, record) => (
-          <Input
-            value={record.level4}
-            onChange={(e) =>
-              handleInputChange(record.key, "level4", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Cấp 5",
-        dataIndex: "level5",
-        render: (_, record) => (
-          <Input
-            value={record.level5}
-            onChange={(e) =>
-              handleInputChange(record.key, "level5", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Ghi chú",
-        dataIndex: "notes",
-        render: (_, record) => (
-          <Input
-            value={record.notes}
-            onChange={(e) =>
-              handleInputChange(record.key, "notes", e.target.value)
-            }
-          />
-        ),
-      },
-    ];
+        </Tooltip>
+      ),
+    },
+    { title: "STT", dataIndex: "stt", width: 50 },
+    {
+      title: "Tên thiết bị, vật tư, CCDC",
+      dataIndex: "itemName",
+      render: (_, record) => (
+        <Input
+          value={record.itemName}
+          onChange={(e) =>
+            handleInputChange(record.key, "itemName", e.target.value)
+          }
+        />
+      ),
+    },
+    {
+      title: "Kí hiệu",
+      dataIndex: "code",
+      render: (_, record) => (
+        <Input
+          value={record.code}
+          onChange={(e) =>
+            handleInputChange(record.key, "code", e.target.value)
+          }
+        />
+      ),
+    },
+    {
+      title: "ĐVT",
+      dataIndex: "unit",
+      render: (_, record) => (
+        <Input
+          value={record.unit}
+          onChange={(e) =>
+            handleInputChange(record.key, "unit", e.target.value)
+          }
+        />
+      ),
+    },
+    { title: "Kiểm kê kỳ trước", dataIndex: "previousInventory" },
+    { title: "Tăng trong năm", dataIndex: "annualIncreaseQuantity" },
+    { title: "Giảm trong năm", dataIndex: "annualDecreaseQuantity" },
+    { title: "Kiểm kê năm nay", dataIndex: "currentYearInventoryCount" },
+    { title: "Cấp 1", dataIndex: "level1" },
+    { title: "Cấp 2", dataIndex: "level2" },
+    { title: "Cấp 3", dataIndex: "level3" },
+    { title: "Cấp 4", dataIndex: "level4" },
+    { title: "Cấp 5", dataIndex: "level5" },
+    { title: "Ghi chú", dataIndex: "notes" },
+  ];
 
-    return baseColumns;
-  };
-
-  const handleAddApprovals = async (refId, documentNumber) => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-
-      const formattedApprovers = approversData.map((item, index) => {
-        const user = dataUser.find((u) => u.value === item.username);
-        return {
-          userName: item.username,
-          fullName: user?.label || "", // hoặc tìm từ danh sách user để lấy fullName
-          level: index + 1,
-        };
-      });
-
-      const res = await createApprovals(
-        refId,
-        "BCKKTB",
-        formattedApprovers,
-        documentNumber,
-        `/pm/bao-cao/kiem-ke-thiet-bi-chi-tiet/${refId}?type=BCKKTB`
-      );
-      if (res && res.status === 200) {
-        console.log("Tạo danh sách duyệt thành công");
-      }
-    } catch (error) {
-      console.error("Lỗi khi tạo duyệt:", error);
-    }
-  };
-
-  const handleUpdateApprovals = async () => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-      const updatePromises = approversData.map((item) => {
-        if (item.id) {
-          return updateStatusApprovals(item.id, item.status, item.note);
+  // Mobile: render card list
+  const renderMobileCards = () =>
+    tableData.map((row) => (
+      <Card
+        key={row.key}
+        size="small"
+        style={{ marginBottom: 8 }}
+        title={`STT: ${row.stt}`}
+        extra={
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteRow(row.key)}
+          />
         }
-        return null;
-      });
-
-      // Lọc null (nếu có), chờ tất cả promise hoàn thành
-      const responses = await Promise.all(updatePromises.filter(Boolean));
-    } catch (error) {
-      console.error("Lỗi cập nhật phê duyệt:", error);
-      notification.error({
-        message: "Cập nhật thất bại",
-        description: "Có lỗi xảy ra khi cập nhật trạng thái duyệt.",
-      });
-    }
-  };
-
-  const handleOk = () => {
-    if (!initialValues) {
-      form.validateFields().then(async (values) => {
-        try {
-          const payload = {
-            ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              itemName: item.itemName || "",
-              code: item.code || "",
-              unit: item.unit || "",
-              previousInventory: Number(item.previousInventory) || 0,
-              annualIncreaseQuantity: Number(item.annualIncreaseQuantity) || 0,
-              annualDecreaseQuantity: Number(item.annualDecreaseQuantity) || 0,
-              currentYearInventoryCount:
-                Number(item.currentYearInventoryCount) || 0,
-              level1: Number(item.level1) || 0,
-              level2: Number(item.level2) || 0,
-              level3: Number(item.level3) || 0,
-              level4: Number(item.level4) || 0,
-              level5: Number(item.level5) || 0,
-              notes: item.notes || "",
-            })),
-          };
-
-          let res = await createEquipmentInventory(
-            payload.divisionID,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.department,
-            payload.details
-          );
-          if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.voucherNo);
-            onSubmit(); // callback từ cha để reload
-            form.resetFields();
-            setMonthYear(dayjs());
-            setTableData([]);
-            notification.success({
-              message: "Thành công",
-              description: "Lưu phiếu thành công.",
-              placement: "topRight",
-            });
+      >
+        <Input
+          placeholder="Tên thiết bị"
+          value={row.itemName}
+          onChange={(e) =>
+            handleInputChange(row.key, "itemName", e.target.value)
           }
-        } catch (error) {
-          if (error) {
-            console.log(error);
-            notification.error({
-              message: "Thất bại",
-              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
-            });
-          }
-        }
-      });
-    } else {
-      form.validateFields().then(async (values) => {
-        try {
-          const payload = {
-            ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
-            details: tableData.map((item) => ({
-              itemName: item.itemName || "",
-              code: item.code || "",
-              unit: item.unit || "",
-              previousInventory: Number(item.previousInventory) || 0,
-              annualIncreaseQuantity: Number(item.annualIncreaseQuantity) || 0,
-              annualDecreaseQuantity: Number(item.annualDecreaseQuantity) || 0,
-              currentYearInventoryCount:
-                Number(item.currentYearInventoryCount) || 0,
-              level1: Number(item.level1) || 0,
-              level2: Number(item.level2) || 0,
-              level3: Number(item.level3) || 0,
-              level4: Number(item.level4) || 0,
-              level5: Number(item.level5) || 0,
-              notes: item.notes || "",
-            })),
-          };
-
-          let res = await updateEquipmentInventory(
-            initialValues.id,
-            payload.divisionID,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.department,
-            payload.details
-          );
-          if ((res && res.status === 200) || res.status === 204) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
-            }
-            onSubmit(); // callback từ cha để reload
-            form.resetFields();
-            setMonthYear(dayjs());
-            setTableData([]);
-            notification.success({
-              message: "Thành công",
-              description: "Lưu phiếu thành công.",
-              placement: "topRight",
-            });
-          }
-        } catch (error) {
-          if (error) {
-            console.log(error);
-            notification.error({
-              message: "Thất bại",
-              description: "Đã có lỗi xảy ra. Vui lòng thử lại",
-              placement: "topRight",
-            });
-          }
-        }
-      });
-    }
-  };
+          style={{ marginBottom: 8 }}
+        />
+        <Input
+          placeholder="Kí hiệu"
+          value={row.code}
+          onChange={(e) => handleInputChange(row.key, "code", e.target.value)}
+          style={{ marginBottom: 8 }}
+        />
+        <Input
+          placeholder="ĐVT"
+          value={row.unit}
+          onChange={(e) => handleInputChange(row.key, "unit", e.target.value)}
+          style={{ marginBottom: 8 }}
+        />
+        <Input
+          placeholder="Ghi chú"
+          value={row.notes}
+          onChange={(e) => handleInputChange(row.key, "notes", e.target.value)}
+        />
+      </Card>
+    ));
 
   return (
     <Modal
       title={
-        <span style={{ fontSize: 25, fontWeight: 600 }}>
-          {initialValues ? "Cập nhật đề xuất" : "Thêm đề xuất"}
+        <span style={{ fontSize: 20, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật báo cáo" : "Thêm báo cáo"}
         </span>
       }
       open={open}
@@ -555,7 +311,7 @@ const EquipmentInventoryModal = ({
         setTableData([]);
         onCancel();
       }}
-      onOk={handleOk}
+      onOk={() => {}}
       okText={initialValues ? "Cập nhật" : "Thêm"}
       width={1000}
     >
@@ -579,116 +335,54 @@ const EquipmentInventoryModal = ({
               <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              name="department"
-              label="Bộ phận"
-              rules={[{ required: false }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Ngày chứng từ" required>
-              <DatePicker
-                picker="day"
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={monthYear}
-                onChange={handleMonthChange}
-              />
-            </Form.Item>
-          </Col>
-          {approvalNumber > 0 && (
-            <>
-              {approvers.map((item, idx) => (
-                <React.Fragment key={idx}>
-                  <Col span={12}>
-                    <Form.Item
-                      label={`Người duyệt cấp ${idx + 1}`}
-                      name={["approvers", idx, "username"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng chọn người duyệt",
-                        },
-                      ]}
-                    >
-                      <Select
-                        options={dataUser}
-                        placeholder="Chọn người duyệt"
-                        showSearch
-                        optionFilterProp="label"
-                        disabled={!!initialValues}
-                      />
-                    </Form.Item>
-                  </Col>
-                  {initialValues && (
-                    <>
-                      <Col span={12}>
-                        <Form.Item
-                          label={`Trạng thái duyệt ${idx + 1}`}
-                          name={["approvers", idx, "status"]}
-                          rules={[
-                            {
-                              required: true,
-                              message: "Vui lòng chọn trạng thái duyệt",
-                            },
-                          ]}
-                        >
-                          <Select
-                            options={approvalStatusOptions}
-                            placeholder="Chọn trạng thái"
-                            disabled={!isEditApproval}
-                          />
-                        </Form.Item>
-                      </Col>
-                      {isEditApproval && (
-                        <Col span={12}>
-                          <Form.Item
-                            label={`Ghi chú duyệt ${idx + 1}`}
-                            name={["approvers", idx, "note"]}
-                          >
-                            <Input.TextArea
-                              rows={1}
-                              placeholder="Ghi chú duyệt"
-                            />
-                          </Form.Item>
-                        </Col>
-                      )}
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
-            </>
-          )}
         </Row>
 
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <h4>Bảng kiểm kê</h4>
+          <Space>
+            <Button icon={<PlusOutlined />} onClick={handleAddRow}>
+              Thêm dòng
+            </Button>
+            <Button onClick={() => setTableData([])}>Hủy</Button>
+          </Space>
+        </div>
+
+        {isMobile ? (
+          renderMobileCards()
+        ) : isTablet ? (
+          <Drawer
+            title="Danh sách vật tư"
+            open={true}
+            mask={false}
+            width="100%"
+            getContainer={false}
+            closable={false}
           >
-            <h4>Bảng vật tư, thiết bị thanh lý</h4>
-            <Space>
-              <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                Thêm dòng
-              </Button>
-              <Button onClick={() => setTableData([])}>Hủy</Button>
-            </Space>
-          </div>
+            <Table
+              columns={generateColumns()}
+              dataSource={tableData}
+              pagination={false}
+              scroll={{ x: "max-content" }}
+              size="small"
+              bordered
+            />
+          </Drawer>
+        ) : (
           <Table
             columns={generateColumns()}
             dataSource={tableData}
             pagination={false}
             scroll={{ x: "max-content" }}
-            bordered
             size="small"
+            bordered
           />
-        </>
+        )}
       </Form>
     </Modal>
   );

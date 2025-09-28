@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Modal,
+  Grid,
 } from "antd";
 import {
   DownOutlined,
@@ -34,6 +35,7 @@ import dayjs from "dayjs";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
+const { useBreakpoint } = Grid;
 
 const WareHousePCDetail = () => {
   const { id } = useParams();
@@ -49,6 +51,11 @@ const WareHousePCDetail = () => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const navigator = useNavigate();
   const fileInputRef = useRef(null);
+  const screens = useBreakpoint();
+
+  // Determine if mobile/tablet view
+  const isMobile = !screens.md;
+  const isTablet = screens.md && !screens.lg;
 
   useEffect(() => {
     getData();
@@ -152,53 +159,226 @@ const WareHousePCDetail = () => {
     }
   };
 
-  const columns = [
-    { title: "STT", dataIndex: "stt", width: 50 },
-    { title: "Tên vật tư, thiết bị", dataIndex: "materialName" },
-    {
-      title: "Ngày nhập",
-      dataIndex: "importDate",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
-    },
-    { title: "SL nhập", dataIndex: "importQuantity" },
-    {
-      title: "Ngày xuất",
-      dataIndex: "exportDate",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
-    },
-    { title: "SL xuất", dataIndex: "exportQuantity" },
-    { title: "SL tồn", dataIndex: "stockBalance" },
-    { title: "Ghi chú", dataIndex: "notes" },
-  ];
+  // Responsive columns for table
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        title: "STT",
+        dataIndex: "stt",
+        width: isMobile ? 50 : 60,
+        fixed: isMobile ? "left" : false,
+      },
+      {
+        title: "Tên vật tư, thiết bị",
+        dataIndex: "materialName",
+        width: isMobile ? 180 : undefined,
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 180 : 250,
+          },
+        }),
+      },
+      {
+        title: "Ngày nhập",
+        dataIndex: "importDate",
+        width: isMobile ? 100 : undefined,
+        render: (date) =>
+          date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+      },
+      {
+        title: "SL nhập",
+        dataIndex: "importQuantity",
+        width: isMobile ? 80 : undefined,
+      },
+      {
+        title: "Ngày xuất",
+        dataIndex: "exportDate",
+        width: isMobile ? 100 : undefined,
+        render: (date) =>
+          date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+      },
+      {
+        title: "SL xuất",
+        dataIndex: "exportQuantity",
+        width: isMobile ? 80 : undefined,
+      },
+      {
+        title: "SL tồn",
+        dataIndex: "stockBalance",
+        width: isMobile ? 80 : undefined,
+      },
+      {
+        title: "Ghi chú",
+        dataIndex: "notes",
+        width: isMobile ? 150 : undefined,
+        onCell: () => ({
+          style: {
+            whiteSpace: "normal",
+            wordWrap: "break-word",
+            maxWidth: isMobile ? 150 : 200,
+          },
+        }),
+      },
+    ];
 
-  const timekeepingData = [
-    {
-      key: "1",
-      stt: 1,
-      vattuthietbi: "Máy hàn",
-      ngaynhap: "12/04/2025",
-      slnhap: "5",
-      ngayxuat: "12/04/2025",
-      slxuat: "5",
-      slton: "0",
-      ghichu: "đã giao",
-    },
-  ];
+    return baseColumns;
+  };
+
+  // Responsive info rendering
+  const renderInfoSection = () => {
+    if (isMobile) {
+      return (
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <div>
+            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+          </div>
+          <div>
+            <strong>Loại vật tư:</strong> {data.typeOfSupplies || ""}
+          </div>
+          <div>
+            <strong>Đơn vị:</strong> {data.division || ""}
+          </div>
+          <div>
+            <strong>Ngày chứng từ:</strong>{" "}
+            {data.voucherDate
+              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+        </Space>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            </div>
+            <div>
+              <strong>Loại vật tư:</strong> {data.typeOfSupplies || ""}
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Đơn vị:</strong> {data.division || ""}
+            </div>
+            <div>
+              <strong>Ngày chứng từ:</strong>{" "}
+              {data.voucherDate
+                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+                : "---"}
+            </div>
+          </Space>
+        </Col>
+      </Row>
+    );
+  };
+
+  // Responsive approval section
+  const renderApprovalSection = () => {
+    if (!approvals?.length) return null;
+
+    if (isMobile) {
+      return (
+        <div style={{ marginTop: 16 }}>
+          {approvals.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                border: "1px solid #d9d9d9",
+                borderRadius: 6,
+              }}
+            >
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
+                <div>
+                  <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+                </div>
+                <div>
+                  <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                  {item.status === "rejected"
+                    ? "Từ chối"
+                    : item.status === "approved"
+                    ? "Đã duyệt"
+                    : "Chờ duyệt"}
+                </div>
+                <div>
+                  <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                  {item.note || ""}
+                </div>
+              </Space>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {approvals.map((item, index) => (
+          <Col xs={24} sm={24} md={12} lg={12} xl={12} key={index}>
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <div>
+                <strong>Người duyệt {index + 1}:</strong> {item.fullName}
+              </div>
+              <div>
+                <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
+                {item.status === "rejected"
+                  ? "Từ chối"
+                  : item.status === "approved"
+                  ? "Đã duyệt"
+                  : "Chờ duyệt"}
+              </div>
+              <div>
+                <strong>Ghi chú người duyệt {index + 1}:</strong>{" "}
+                {item.note || ""}
+              </div>
+            </Space>
+          </Col>
+        ))}
+      </Row>
+    );
+  };
 
   return (
-    <div style={{ padding: 10 }}>
-      <Row justify="space-between" align="middle">
-        <Col>
-          <Title level={3}>Xem chi tiết sổ kho</Title>
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
+      <Row justify="space-between" align="middle" gutter={[16, 16]}>
+        <Col xs={24} sm={16} md={18} lg={20}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{
+              margin: 0,
+              fontSize: isMobile ? "18px" : undefined,
+            }}
+          >
+            Xem chi tiết sổ kho
+          </Title>
         </Col>
-        <Col>
+        <Col xs={24} sm={8} md={6} lg={4}>
           <Dropdown
             menu={{ items, onClick: handleMenuClick }}
             trigger={["click"]}
+            placement={isMobile ? "bottomRight" : "bottom"}
           >
-            <Button>
+            <Button
+              style={{ width: isMobile ? "100%" : "auto" }}
+              size={isMobile ? "middle" : "middle"}
+            >
               Hoạt động <DownOutlined />
             </Button>
           </Dropdown>
@@ -209,95 +389,53 @@ const WareHousePCDetail = () => {
         defaultActiveKey={["1"]}
         style={{ marginTop: 16 }}
         expandIconPosition="end"
+        size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin sổ kho" key="1">
           {data && (
-            <Row gutter={16}>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Số chứng từ: {data.voucherNo || ""}</div>
-                  <div>Loại vật tư: {data.typeOfSupplies || ""}</div>
-                </Space>
-              </Col>
-              <Col span={12}>
-                <Space
-                  direction="vertical"
-                  size="small"
-                  style={{ width: "100%" }}
-                >
-                  <div>Đơn bị: {data.division || ""}</div>
-                  <div>
-                    Ngày chứng từ:{" "}
-                    {data.voucherDate
-                      ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
-                      : "---"}
-                  </div>
-                </Space>
-              </Col>
-              {approvals?.length > 0 && (
-                <>
-                  {approvals.map((item, index) => (
-                    <Col span={12}>
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%", paddingTop: "10px" }}
-                        key={index}
-                      >
-                        <div>
-                          Người duyệt {index + 1}: {item.fullName}
-                        </div>
-                        <div>
-                          Trạng thái duyệt {index + 1}:{" "}
-                          {item.status === "rejected"
-                            ? "Từ chối"
-                            : item.status === "approved"
-                            ? "Đã duyệt"
-                            : "Chờ duyệt"}
-                        </div>
-                        <div>
-                          Ghi chú người duyệt {index + 1}: {item.note || ""}
-                        </div>
-                      </Space>
-                    </Col>
-                  ))}
-                </>
-              )}
-            </Row>
+            <>
+              {renderInfoSection()}
+              {renderApprovalSection()}
+            </>
           )}
         </Panel>
 
         <Panel header="Bảng vật tư, thiết bị" key="2">
           {data && (
-            <Table
-              columns={columns}
-              dataSource={data.details?.map((item, index) => ({
-                ...item,
-                stt: index + 1,
-              }))}
-              scroll={{ x: "max-content" }}
-              size="small"
-              bordered
-              pagination={false}
-              components={{
-                header: {
-                  cell: (props) => (
-                    <th
-                      {...props}
-                      style={{
-                        backgroundColor: "#e6f4fb",
-                        color: "#0700ad",
-                        fontWeight: "600",
-                      }}
-                    />
-                  ),
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={getColumns()}
+                dataSource={data.details?.map((item, index) => ({
+                  ...item,
+                  stt: index + 1,
+                }))}
+                scroll={{
+                  x: isMobile ? 800 : "max-content",
+                  y: isMobile ? 300 : undefined,
+                }}
+                size="small"
+                bordered
+                pagination={false}
+                components={{
+                  header: {
+                    cell: (props) => (
+                      <th
+                        {...props}
+                        style={{
+                          backgroundColor: "#e6f4fb",
+                          color: "#0700ad",
+                          fontWeight: "600",
+                          fontSize: isMobile ? "12px" : "14px",
+                        }}
+                      />
+                    ),
                   },
-              }}
-            />
+                }}
+                style={{
+                  fontSize: isMobile ? "12px" : "14px",
+                }}
+              />
+            </div>
           )}
         </Panel>
 
@@ -361,7 +499,7 @@ const WareHousePCDetail = () => {
           for (const file of files) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("refId", data.id); // id của AssignmentSlip
+            formData.append("refId", data.id); // id của WareHousePC
             formData.append("refType", "WareHousePC");
 
             try {

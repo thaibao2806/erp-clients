@@ -3,38 +3,59 @@ import {
   Table,
   Button,
   Input,
-  DatePicker,
   Row,
   Col,
   Space,
   Tooltip,
   Modal,
+  Drawer,
+  Card,
+  Dropdown,
+  Menu,
+  Typography,
 } from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
   DeleteOutlined,
-  PrinterOutlined,
   FileExcelOutlined,
-  ImportOutlined,
+  FilterOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
-import EmployeeModal from "./EmployeeModal";
 import { Link } from "react-router-dom";
-// import {
-//   deleteAssignmetSlip,
-//   exportExcel,
-//   fillterAssignmentSlip,
-// } from "../../../services/apiPlan/apiAssignmentSlip";
-import { saveAs } from "file-saver";
 import {
   deleteEmployees,
   filterEmployees,
 } from "../../../../services/apiPolitical/apiEmployee";
+import EmployeeModal from "./EmployeeModal";
 
-const { RangePicker } = DatePicker;
+const { Text } = Typography;
+
+// Hook theo dõi kích thước màn hình
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return windowSize;
+};
 
 const Employees = () => {
-  const [showFilters, setShowFilters] = useState(false);
+  const { width } = useWindowSize();
+  const isMobile = width <= 768;
+  const isTablet = width > 768 && width <= 1024;
+
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,6 +64,15 @@ const Employees = () => {
     pageSize: 10,
     total: 0,
   });
+  const [filters, setFilters] = useState({
+    fullName: "",
+    department: "",
+  });
+  const [filterDrawerVisible, setFilterDrawerVisible] = useState(false);
+
+  // ✅ State cho modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
 
   useEffect(() => {
     fetchData(pagination.current, pagination.pageSize);
@@ -51,35 +81,24 @@ const Employees = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        fullName,
-        gender,
-        department,
-        identityNumber,
-        laborType,
-        status,
-      } = filters;
       let res = await filterEmployees(
-        fullName,
-        gender,
-        department,
-        identityNumber,
-        laborType,
-        status,
+        filters.fullName,
+        "",
+        filters.department,
+        "",
+        "",
+        "",
         "",
         page,
         pageSize
       );
       if (res && res.status === 200) {
         let { items, totalCount } = res.data.data;
-
-        // Thêm STT và key
         let dataWithStt = items.map((item, index) => ({
           ...item,
           key: item.id,
           stt: (page - 1) * pageSize + index + 1,
         }));
-
         setDataSource(dataWithStt);
         setPagination({ current: page, pageSize, total: totalCount });
       }
@@ -90,143 +109,42 @@ const Employees = () => {
     }
   };
 
-  const [filters, setFilters] = useState({
-    fullName: "",
-    gender: "",
-    department: "",
-    identityNumber: "",
-    laborType: "",
-    status: "",
-  });
-
-  const columns = [
-    {
-      title: "STT",
-      dataIndex: "stt",
-      width: 60,
-    },
-    {
-      title: "Họ và tên",
-      dataIndex: "fullName",
-      render: (text, record) => (
-        <Link to={`/pt/nhan-su/ho-so-nhan-vien-chi-tiet/${record.id}`}>
-          {text}
-        </Link> // ✅ THAY ĐOẠN NÀY
-      ),
-    },
-    {
-      title: "Giới tính",
-      dataIndex: "gender",
-    },
-    {
-      title: "SĐT",
-      dataIndex: "phoneNumber",
-    },
-    {
-      title: "Chức vụ",
-      dataIndex: "position",
-    },
-    {
-      title: "Loại lao động",
-      dataIndex: "laborType",
-    },
-    {
-      title: "Ngày vào làm",
-      dataIndex: "startDate",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
-    },
-    {
-      title: "Trạng thái làm",
-      dataIndex: "status",
-    },
-  ];
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingData, setEditingData] = useState(null);
-
-  const handleAdd = () => {
-    setEditingData(null); // không có dữ liệu -> thêm mới
-    setModalOpen(true);
-  };
-
-  const handleEdit = (record) => {
-    setEditingData(record); // truyền dữ liệu -> chỉnh sửa
-    setModalOpen(true);
-  };
-
-  const handleSubmit = (values) => {
-    if (editingData) {
-      console.log("Cập nhật:", values);
-      // Gọi API update ở đây
-    } else {
-      fetchData(pagination.current, pagination.pageSize);
-    }
-    setModalOpen(false);
-  };
-
   // Xử lý chọn dòng
   const rowSelection = {
     selectedRowKeys,
-    onChange: (selectedKeys) => {
-      setSelectedRowKeys(selectedKeys);
-    },
+    onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
   };
 
-  // Xử lý nút xóa
+  // Xử lý xóa
   const handleDelete = () => {
     if (selectedRowKeys.length === 0) {
       Modal.warning({
-        title: "Chưa chọn dòng nào",
-        content: "Vui lòng chọn ít nhất một dòng để xóa.",
+        title: "Chưa chọn nhân viên nào",
+        content: "Vui lòng chọn ít nhất một nhân viên để xóa.",
       });
       return;
     }
-
-    const selectedRows = dataSource.filter((item) =>
-      selectedRowKeys.includes(item.key)
-    );
-
-    const approvedRows = selectedRows.filter(
-      (item) => item.approvalStatus === "approved"
-    );
-
-    if (approvedRows.length > 0) {
-      Modal.warning({
-        title: "Không thể xóa phiếu đã duyệt",
-        content: `Có ${approvedRows.length} phiếu đã được duyệt. Vui lòng bỏ chọn chúng trước khi xóa.`,
-      });
-      return;
-    }
-
     Modal.confirm({
       title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa ${selectedRowKeys.length} dòng này không?`,
+      content: `Bạn có chắc muốn xóa ${selectedRowKeys.length} nhân viên không?`,
       okText: "Xóa",
       cancelText: "Hủy",
       onOk: async () => {
         try {
-          setLoading(true); // bật loading cho Table
-
-          // Gọi API xóa từng ID
+          setLoading(true);
           await Promise.all(selectedRowKeys.map((id) => deleteEmployees(id)));
-
-          // Sau khi xóa thành công, cập nhật lại danh sách
-          const remainingData = dataSource.filter(
-            (item) => !selectedRowKeys.includes(item.key)
+          setDataSource((prev) =>
+            prev.filter((item) => !selectedRowKeys.includes(item.key))
           );
-
-          setDataSource(remainingData);
           setSelectedRowKeys([]);
           Modal.success({
             title: "Xóa thành công",
-            content: `${selectedRowKeys.length} dòng đã được xóa.`,
+            content: `${selectedRowKeys.length} nhân viên đã được xóa.`,
           });
-        } catch (error) {
-          console.error("Lỗi khi xóa:", error);
+        } catch (err) {
           Modal.error({
             title: "Lỗi",
-            content: "Đã xảy ra lỗi khi xóa. Vui lòng thử lại.",
+            content: "Không thể xóa nhân viên, vui lòng thử lại.",
           });
         } finally {
           setLoading(false);
@@ -235,218 +153,266 @@ const Employees = () => {
     });
   };
 
-  const handleExportExcel = async () => {
-    if (selectedRowKeys.length === 0) {
-      Modal.warning({
-        title: "Chưa chọn dòng nào",
-        content: "Vui lòng chọn ít nhất một dòng để xóa.",
-      });
-      return;
-    }
-    try {
-      for (const id of selectedRowKeys) {
-        const matchedItem = dataSource.find((item) => item.id === id);
-        const fileName = matchedItem?.documentNumber
-          ? `PhieuGiaoViec_${matchedItem.documentNumber}.xlsx`
-          : `PhieuGiaoViec_${id}.xlsx`;
-        try {
-          let res = await exportExcel(id);
-          const blob = new Blob([res.data], {
-            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          });
+  // Cột cho desktop/tablet
+  const columns = [
+    { title: "STT", dataIndex: "stt", width: 60 },
+    {
+      title: "Họ và tên",
+      dataIndex: "fullName",
+      render: (text, record) => (
+        <Link to={`/pt/nhan-su/ho-so-nhan-vien-chi-tiet/${record.id}`}>
+          {text}
+        </Link>
+      ),
+    },
+    { title: "Giới tính", dataIndex: "gender", width: 90 },
+    { title: "SĐT", dataIndex: "phoneNumber", width: 120 },
+    { title: "Chức vụ", dataIndex: "position" },
+    { title: "Loại LĐ", dataIndex: "laborType" },
+    {
+      title: "Ngày vào",
+      dataIndex: "startDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+    },
+  ];
 
-          saveAs(blob, fileName);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    } catch (error) {
-      Modal.error({
-        title: "Lỗi xuất file",
-        content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Card cho mobile
+  const renderMobileCards = () => (
+    <div style={{ padding: "0 8px" }}>
+      {dataSource.map((item) => (
+        <Card
+          key={item.key}
+          size="small"
+          style={{
+            marginBottom: 12,
+            border: selectedRowKeys.includes(item.key)
+              ? "2px solid #1890ff"
+              : "1px solid #f0f0f0",
+          }}
+          bodyStyle={{ padding: 12 }}
+          onClick={() => {
+            const newSelection = selectedRowKeys.includes(item.key)
+              ? selectedRowKeys.filter((key) => key !== item.key)
+              : [...selectedRowKeys, item.key];
+            setSelectedRowKeys(newSelection);
+          }}
+        >
+          <div style={{ marginBottom: 4 }}>
+            <Link
+              to={`/pt/nhan-su/ho-so-nhan-vien-chi-tiet/${item.id}`}
+              style={{ fontWeight: 600, fontSize: 14 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {item.fullName}
+            </Link>
+          </div>
+          <div style={{ fontSize: 12, color: "#666" }}>
+            <strong>SĐT:</strong> {item.phoneNumber}
+          </div>
+          <div style={{ fontSize: 12, color: "#666" }}>
+            <strong>Chức vụ:</strong> {item.position}
+          </div>
+          <div style={{ fontSize: 12, color: "#666" }}>
+            <strong>Loại LĐ:</strong> {item.laborType}
+          </div>
+          <div style={{ fontSize: 12, color: "#666" }}>
+            <strong>Ngày vào:</strong>{" "}
+            {item.startDate
+              ? new Date(item.startDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
 
-  const handleFilterChange = (field, value) => {
-    setFilters({ ...filters, [field]: value });
-  };
-
-  const handleSearch = () => {
-    fetchData(1, pagination.pageSize); // luôn reset về trang 1
-  };
-
-  const handleReset = () => {
-    setFilters({
-      fullName: "",
-      gender: "",
-      department: "",
-      identityNumber: "",
-      laborType: "",
-      status: "",
-    });
-    fetchData(pagination.current, pagination.pageSize);
-  };
+  // Menu thao tác cho mobile
+  const actionMenu = (
+    <Menu>
+      <Menu.Item
+        key="add"
+        icon={<PlusOutlined />}
+        onClick={() => {
+          setEditingData(null);
+          setModalOpen(true);
+        }}
+      >
+        Thêm mới
+      </Menu.Item>
+      <Menu.Item
+        key="delete"
+        icon={<DeleteOutlined />}
+        onClick={handleDelete}
+        disabled={selectedRowKeys.length === 0}
+        danger
+      >
+        Xóa ({selectedRowKeys.length})
+      </Menu.Item>
+      <Menu.Item
+        key="export"
+        icon={<FileExcelOutlined />}
+        disabled={selectedRowKeys.length === 0}
+      >
+        Xuất Excel ({selectedRowKeys.length})
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
-    <div style={{ padding: 5 }}>
+    <div style={{ padding: isMobile ? 8 : 16 }}>
       {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Hồ sơ nhân viên</h1>
-        <Space>
-          <Tooltip title="Tìm kiếm">
+        <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
+          Hồ sơ nhân viên
+        </h1>
+        {isMobile ? (
+          <Space size="small">
             <Button
-              icon={<SearchOutlined />}
-              onClick={() => setShowFilters(!showFilters)}
-              style={{ background:"#e6f4fb", color:"#0700ad" }}
+              icon={<FilterOutlined />}
+              onClick={() => setFilterDrawerVisible(true)}
+              size="small"
+              style={{ background: "#e6f4fb", color: "#0700ad" }}
             />
-          </Tooltip>
-          <Tooltip title="Thêm">
-            <Button onClick={handleAdd} icon={<PlusOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={handleDelete}
-              disabled={selectedRowKeys.length === 0}
-            />
-          </Tooltip>
-          <Tooltip title="Xuất excel">
-            <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
-          </Tooltip>
-          <Tooltip title="Import file">
-            <Button icon={<ImportOutlined />} style={{ background:"#e6f4fb", color:"#0700ad" }}/>
-          </Tooltip>
-        </Space>
+            <Dropdown overlay={actionMenu} trigger={["click"]}>
+              <Button icon={<MoreOutlined />} size="small" />
+            </Dropdown>
+          </Space>
+        ) : (
+          <Space>
+            <Tooltip title="Tìm kiếm">
+              <Button
+                icon={<SearchOutlined />}
+                onClick={() => setFilterDrawerVisible(true)}
+                style={{ background: "#e6f4fb", color: "#0700ad" }}
+              />
+            </Tooltip>
+            <Tooltip title="Thêm">
+              <Button
+                icon={<PlusOutlined />}
+                style={{ background: "#e6f4fb", color: "#0700ad" }}
+                onClick={() => {
+                  setEditingData(null);
+                  setModalOpen(true);
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <Button
+                icon={<DeleteOutlined />}
+                danger
+                disabled={selectedRowKeys.length === 0}
+                onClick={handleDelete}
+              />
+            </Tooltip>
+            <Tooltip title="Xuất excel">
+              <Button
+                icon={<FileExcelOutlined />}
+                style={{ background: "#e6f4fb", color: "#0700ad" }}
+                disabled={selectedRowKeys.length === 0}
+              />
+            </Tooltip>
+          </Space>
+        )}
       </div>
 
-      {/* Bộ lọc tìm kiếm */}
-      {showFilters && (
-        <div
-          style={{
-            background: "#fafafa",
-            padding: 16,
-            marginBottom: 20,
-            borderRadius: 8,
-            border: "1px solid #eee",
+      {/* Danh sách */}
+      {isMobile ? (
+        renderMobileCards()
+      ) : (
+        <Table
+          rowSelection={rowSelection}
+          columns={columns}
+          dataSource={dataSource}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: !isTablet,
+            showQuickJumper: !isTablet,
+            size: isTablet ? "small" : "default",
           }}
-        >
-          <Row gutter={16}>
-            <Col span={8}>
-              <label>Họ và tên</label>
-              <Input
-                placeholder="Họ và tên"
-                value={filters.fullName}
-                onChange={(e) => handleFilterChange("fullName", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>Giới tính</label>
-              <Input
-                placeholder="Giới tính"
-                value={filters.gender}
-                onChange={(e) => handleFilterChange("gender", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>CCCD</label>
-              <Input
-                placeholder="CCCD"
-                value={filters.department}
-                onChange={(e) =>
-                  handleFilterChange("department", e.target.value)
-                }
-              />
-            </Col>
-            <Col span={8}>
-              <label>Loại lao động</label>
-              <Input
-                placeholder="Loại lao động"
-                value={filters.laborType}
-                onChange={(e) =>
-                  handleFilterChange("laborType", e.target.value)
-                }
-              />
-            </Col>
-            <Col span={8}>
-              <label>Trạng thái</label>
-              <Input
-                placeholder="Trạng thái"
-                value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-              />
-            </Col>
-            <Col span={8}>
-              <label>Chức vụ</label>
-              <Input
-                placeholder="Chức vụ"
-                value={filters.department}
-                onChange={(e) =>
-                  handleFilterChange("department", e.target.value)
-                }
-              />
-            </Col>
-          </Row>
-          <div style={{ marginTop: 16, textAlign: "right" }}>
+          onChange={(pagination) =>
+            fetchData(pagination.current, pagination.pageSize)
+          }
+          bordered
+          size={isTablet ? "small" : "default"}
+          scroll={{ x: isTablet ? 800 : "max-content" }}
+          components={{
+            header: {
+              cell: (props) => (
+                <th
+                  {...props}
+                  style={{
+                    backgroundColor: "#e6f4fb",
+                    color: "#0700ad",
+                    fontWeight: "600",
+                    fontSize: isMobile ? 12 : 14,
+                  }}
+                />
+              ),
+            },
+          }}
+        />
+      )}
+
+      {/* Drawer lọc */}
+      <Drawer
+        title="Lọc tìm kiếm"
+        placement="bottom"
+        onClose={() => setFilterDrawerVisible(false)}
+        open={filterDrawerVisible}
+        height="60%"
+      >
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            <Input
+              placeholder="Tên nhân viên"
+              value={filters.fullName}
+              onChange={(e) =>
+                setFilters({ ...filters, fullName: e.target.value })
+              }
+            />
+          </Col>
+          <Col span={24}>
+            <Input
+              placeholder="Bộ phận"
+              value={filters.department}
+              onChange={(e) =>
+                setFilters({ ...filters, department: e.target.value })
+              }
+            />
+          </Col>
+          <Col span={24}>
             <Button
               type="primary"
-              onClick={handleSearch}
-              style={{ marginRight: 8 }}
+              onClick={() => {
+                fetchData(1, pagination.pageSize);
+                setFilterDrawerVisible(false);
+              }}
             >
               Lọc
             </Button>
-            <Button onClick={handleReset}>Hủy</Button>
-          </div>
-        </div>
-      )}
+          </Col>
+        </Row>
+      </Drawer>
 
-      {/* Bảng dữ liệu */}
-      <Table
-        rowSelection={rowSelection}
-        columns={columns}
-        dataSource={dataSource}
-        loading={loading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
-        onChange={(pagination) => {
-          fetchData(pagination.current, pagination.pageSize);
-        }}
-        bordered
-        components={{
-                header: {
-                  cell: (props) => (
-                    <th
-                      {...props}
-                      style={{
-                        backgroundColor: "#e6f4fb",
-                        color: "#0700ad",
-                        fontWeight: "600",
-                      }}
-                    />
-                  ),
-                  },
-              }}
-      />
-
-      {/* Modal */}
+      {/* Modal thêm/sửa nhân viên */}
       <EmployeeModal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
-        onSubmit={handleSubmit}
+        onSubmit={() => {
+          fetchData(pagination.current, pagination.pageSize);
+          setModalOpen(false);
+        }}
         initialValues={editingData}
       />
     </div>
