@@ -14,7 +14,7 @@ export const moduleData = {
         { key: 'tm-yeu-cau-cong-viec', label: 'A. Yêu cầu công việc', path: '/tm/yeu-cau-cong-viec' },
         { key: 'tm-du-tru-vat-tu', label: 'B. Dự trù vật tư', path: '/tm/du-tru-vat-tu' },
         { key: 'tm-task', label: 'C. Công việc', path: '/tm/task' },
-        { key: 'tm-vat-tu', label: 'C. Vật tư', children: [
+        { key: 'tm-vat-tu', label: 'D. Vật tư', children: [
           { key: 'tm-phieu-nhap', label: '1. Phiếu nhập', path: '/tm/vat-tu/phieu-nhap' },
           { key: 'tm-phieu-xuat', label: '2. Phiếu xuất', path: '/tm/vat-tu/phieu-xuat' },
           { key: 'tm-quan-ly-vat-tu', label: '3. Quản lý vật tư', path: '/tm/vat-tu/quan-ly-vat-tu' },

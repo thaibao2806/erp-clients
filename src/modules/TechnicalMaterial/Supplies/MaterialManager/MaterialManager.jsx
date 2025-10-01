@@ -34,6 +34,8 @@ import {
   exportExcelJR,
   filterJobRequirements,
 } from "../../../../services/apiTechnicalMaterial/apiJobRequirement";
+import { filterInventoryTransaction } from "../../../../config/config";
+import { getStockOnHandReport } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const { RangePicker } = DatePicker;
 
@@ -74,6 +76,9 @@ const MaterialManager = () => {
     pageSize: 10,
     total: 0,
   });
+  const today = new Date();
+const currentMonth = today.getMonth() + 1; // getMonth trả về 0-11
+const currentYear = today.getFullYear();
 
   const { width } = useWindowSize();
 
@@ -90,38 +95,25 @@ const MaterialManager = () => {
     try {
       setLoading(true);
       const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-        repairOrderCode,
+        warehouseCode,
+        year,
+        month,
       } = filters;
-      const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
-      const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
-        fromDate,
-        toDate,
-        "",
-        page,
-        pageSize
+      let res = await getStockOnHandReport(
+        warehouseCode, year, month
       );
       if (res && res.status === 200) {
         let { items, totalCount } = res.data.data;
 
         // Thêm STT và key
-        let dataWithStt = items.map((item, index) => ({
-          ...item,
-          key: item.id,
-          stt: (page - 1) * pageSize + index + 1,
-        }));
-
+        // Dữ liệu trả về là array nên map trực tiếp
+      let dataWithStt = res.data.data.map((item, index) => ({
+        ...item,
+        key: item.materialCode, // dùng mã vật tư làm key
+        stt: (page - 1) * pageSize + index + 1,
+      }));
+      
         setDataSource(dataWithStt);
         setPagination({ current: page, pageSize, total: totalCount });
       }
@@ -133,13 +125,10 @@ const MaterialManager = () => {
   };
 
   const [filters, setFilters] = useState({
-    dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
-    department: "",
-    repairOrderCode: "",
-  });
+  warehouseCode: "Q7",   // mặc định kho Q7
+  month: currentMonth.toString(),   // mặc định tháng hiện tại
+  year: currentYear.toString(),
+});
 
   const columns = [
     {
@@ -166,22 +155,22 @@ const MaterialManager = () => {
     {
       title: "Tồn đầu kỳ",
       width: isMobile ? 80 : 120,
-      dataIndex: "beginningInventory",
+      dataIndex: "openingBalance",
     },
     {
       title: "Nhập kho",
       width: isMobile ? 80 : 120,
-      dataIndex: "imported",
+      dataIndex: "inQty",
     },
     {
       title: "Xuất kho",
       width: isMobile ? 80 : 120,
-      dataIndex: "exported",
+      dataIndex: "outQty",
     },
     {
       title: "Tồn cuối kỳ",
       width: isMobile ? 80 : 120,
-      dataIndex: "endingInventory",
+      dataIndex: "closingBalance",
     },
     // {
     //   title: "Trạng thái duyệt",
@@ -226,16 +215,16 @@ const MaterialManager = () => {
             {record.unit}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.beginningInventory}
+            {record.openingBalance}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.imported}
+            {record.inQty}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.exported}
+            {record.outQty}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.endingInventory}
+            {record.closingBalance}
           </div>
         </div>
       ),
@@ -410,11 +399,9 @@ const MaterialManager = () => {
 
   const handleReset = () => {
     setFilters({
-      dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+      warehouseCode: "Q7",   // mặc định kho Q7
+  month: currentMonth.toString(),   // mặc định tháng hiện tại
+  year: currentYear.toString(),
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -452,7 +439,7 @@ const MaterialManager = () => {
   const renderFilterForm = () => (
     <div style={{ padding: isMobile ? 12 : 16 }}>
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={8}>
+        {/* <Col xs={24} sm={12} md={8}>
           <label
             style={{
               display: "block",
@@ -469,7 +456,7 @@ const MaterialManager = () => {
             onChange={(value) => handleFilterChange("dateRange", value)}
             size={isMobile ? "small" : "default"}
           />
-        </Col>
+        </Col> */}
         <Col xs={24} sm={12} md={8}>
           <label
             style={{
@@ -478,12 +465,12 @@ const MaterialManager = () => {
               fontSize: isMobile ? 12 : 14,
             }}
           >
-            Mã vật tư
+            Kho
           </label>
           <Input
-            placeholder="Mã vật tư"
-            value={filters.materialCode}
-            onChange={(e) => handleFilterChange("materialCode", e.target.value)}
+            placeholder="Kho"
+            value={filters.warehouseCode}
+            onChange={(e) => handleFilterChange("warehouseCode", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
@@ -495,12 +482,29 @@ const MaterialManager = () => {
               fontSize: isMobile ? 12 : 14,
             }}
           >
-            Tên vật tư
+            Tháng
           </label>
           <Input
-            placeholder="Tên vật tư"
-            value={filters.materialName}
-            onChange={(e) => handleFilterChange("materialName", e.target.value)}
+            placeholder="Tháng"
+            value={filters.month}
+            onChange={(e) => handleFilterChange("month", e.target.value)}
+            size={isMobile ? "small" : "default"}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
+            Năm
+          </label>
+          <Input
+            placeholder="Năm"
+            value={filters.year}
+            onChange={(e) => handleFilterChange("year", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
@@ -574,17 +578,17 @@ const MaterialManager = () => {
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Tồn đầu kỳ:</strong> {item.beginningInventory}
+                <strong>Tồn đầu kỳ:</strong> {item.openingBalance}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Nhập kho:</strong> {item.imported}
+                <strong>Nhập kho:</strong> {item.inQty}
               </div>
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Xuất kho:</strong> {item.exported}
+                <strong>Xuất kho:</strong> {item.outQty}
               </div>
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Tồn cuối kỳ:</strong> {item.endingInventory}
+                <strong>Tồn cuối kỳ:</strong> {item.closingBalance}
               </div>
             </div>
 

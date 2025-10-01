@@ -32,6 +32,8 @@ import {
 import { useSelector } from "react-redux";
 import { addFollower } from "../../../../services/apiFollower";
 dayjs.extend(customParseFormat);
+import { v4 as uuidv4 } from "uuid";
+import { createImportAnExportWareHouse, updateImportAnExportWareHouse } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const approvalStatusOptions = [
   { value: "pending", label: "Chờ duyệt" },
@@ -171,9 +173,9 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   const getVoucherNo = async () => {
     try {
-      let res = await getDocumentNumber("YCCV");
+      let res = await getDocumentNumber("NK");
       if (res && res.status === 200) {
-        form.setFieldsValue({ voucherNo: res.data.data.code });
+        form.setFieldsValue({ transactionNo: res.data.data.code });
       }
     } catch (error) {
       console.log(error);
@@ -242,13 +244,13 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Mã vật tư",
         width: isMobile ? 150 : 200,
-        dataIndex: "materialCode",
+        dataIndex: "productCode",
         render: (_, record) => (
           <Input
             value={record.materialCode}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "materialCode", e.target.value)
+              handleInputChange(record.key, "productCode", e.target.value)
             }
           />
         ),
@@ -256,13 +258,13 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Tên vật tư",
         width: isMobile ? 150 : 200,
-        dataIndex: "materialName",
+        dataIndex: "productName",
         render: (_, record) => (
           <Input
             value={record.materialName}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "materialName", e.target.value)
+              handleInputChange(record.key, "productName", e.target.value)
             }
           />
         ),
@@ -392,40 +394,44 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
+    let id = uuidv4();
     if (!initialValues) {
       form.validateFields().then(async (values) => {
         try {
           setLoading(true);
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
+            transactionDate: monthYear.toISOString(), // ISO định dạng
             details: tableData.map((item) => ({
-              content: item.content || "",
+              productCode: item.productCode || "",
+              productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              unitPrice: Number(item.workDay) || 0,
               note: item.note || "",
             })),
           };
 
-          let res = await createJobRequirements(
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
+          let res = await createImportAnExportWareHouse(
+            id,
+            payload.transactionNo,
+            payload.transactionDate,
+            "IN",
+            payload.warehouseCode,
+            payload.partner,
+            payload.address,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.voucherNo);
+            // await handleAddApprovals(res.data.data, payload.transactionNo);
             const newFollowers = dataUser.find(
               (u) => u.value === user.data.userName
             );
             await addFollower(
               res.data.data,
               "ImportWareHouse",
-              payload.voucherNo,
+              payload.transactionNo,
               [
                 {
                   userId: newFollowers.id, // bạn đã đặt id = user.apk trong getUser
@@ -462,24 +468,26 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
+            transactionDate: monthYear.toISOString(), // ISO định dạng
             details: tableData.map((item) => ({
-              content: item.content || "",
+              productCode: item.productCode || "",
+              productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              unitPrice: Number(item.workDay) || 0,
               note: item.note || "",
             })),
           };
 
-          let res = await updateJobRequirements(
+          let res = await updateImportAnExportWareHouse(
             initialValues.id,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
+            payload.transactionNo,
+            payload.transactionDate,
+            "IN",
+            payload.warehouseCode,
+            payload.partner,
+            payload.address,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {
@@ -583,13 +591,13 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     Mã vật tư:
                   </label>
                   <Input
-                    value={record.materialCode}
+                    value={record.productCode}
                     size="small"
                     placeholder="Mã vật tư"
                     onChange={(e) =>
                       handleInputChange(
                         record.key,
-                        "materialCode",
+                        "productCode",
                         e.target.value
                       )
                     }
@@ -600,13 +608,13 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     Tên vật tư:
                   </label>
                   <Input
-                    value={record.materialName}
+                    value={record.productName}
                     size="small"
                     placeholder="Tên vật tư"
                     onChange={(e) =>
                       handleInputChange(
                         record.key,
-                        "materialName",
+                        "productName",
                         e.target.value
                       )
                     }
@@ -744,7 +752,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           <Row gutter={isMobile ? [8, 8] : [16, 16]}>
             <Col span={colSpans.half}>
               <Form.Item
-                name="voucherNo"
+                name="transactionNo"
                 label="Số chứng từ"
                 rules={[{ required: true }]}
               >
@@ -753,7 +761,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Col>
             <Col span={colSpans.half}>
               <Form.Item
-                name="objectName"
+                name="partner"
                 label="Đối tượng"
                 rules={[{ required: true }]}
               >
@@ -771,7 +779,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={colSpans.half}>
+            {/* <Col span={colSpans.half}>
               <Form.Item
                 name="goodsTypeName"
                 label="Loại hàng"
@@ -779,10 +787,10 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
               >
                 <Input />
               </Form.Item>
-            </Col>
+            </Col> */}
             <Col span={colSpans.half}>
               <Form.Item
-                name="warehouseName"
+                name="warehouseCode"
                 label="Kho nhập"
                 rules={[{ required: true }]}
               >
@@ -790,7 +798,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
               </Form.Item>
             </Col>
             <Col span={colSpans.half}>
-              <Form.Item name="warehouseAddress" label="Địa chỉ kho">
+              <Form.Item name="address" label="Địa chỉ kho">
                 <Input />
               </Form.Item>
             </Col>

@@ -190,3 +190,15 @@ export const updateMaterialEstimate = "/api/v1/MaterialEstimate/"
 export const deleteMaterialEstimate = "/api/v1/MaterialEstimate/"
 export const filterMaterialEstimate = "/api/v1/MaterialEstimate/filter"
 export const exportExcelMaterialEstimate = "/api/v1/MaterialEstimate/export-excel/"
+
+//importWarehouse and exportWarehouse
+export const addInventoryTransaction = "/api/v1/InventoryTransaction"
+export const getAllInventoryTransaction = "/api/v1/InventoryTransaction"
+export const updateInventoryTransaction = "/api/v1/InventoryTransaction/"
+export const getInventoryTransactionByID = "/api/v1/InventoryTransaction/"
+export const deleteInventoryTransaction = "/api/v1/InventoryTransaction/"
+export const filterInventoryTransaction = "/api/v1/InventoryTransaction/filter"
+
+//stockonHand
+export const getStockOnHand = "/api/v1/Stock/report"
+

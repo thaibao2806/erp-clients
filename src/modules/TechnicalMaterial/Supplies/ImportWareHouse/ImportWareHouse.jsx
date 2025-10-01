@@ -34,6 +34,8 @@ import {
   exportExcelJR,
   filterJobRequirements,
 } from "../../../../services/apiTechnicalMaterial/apiJobRequirement";
+import { deleteInventoryTransaction, filterInventoryTransaction } from "../../../../config/config";
+import { deleteImportAnExportWareHouse, filterImportAnExportWareHouse } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const { RangePicker } = DatePicker;
 
@@ -90,22 +92,18 @@ const ImportWareHouse = () => {
     try {
       setLoading(true);
       const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
+        transactionNo,
+        transactionType,
+        warehouseCode,
         dateRange,
-        repairOrderCode,
       } = filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
+      let res = await filterImportAnExportWareHouse(
+        transactionNo,
+        transactionType,
+        warehouseCode,
         fromDate,
         toDate,
         "",
@@ -134,11 +132,9 @@ const ImportWareHouse = () => {
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
-    department: "",
-    repairOrderCode: "",
+    transactionNo: "",
+    transactionType: "",
+    warehouseCode: "",
   });
 
   const columns = [
@@ -150,44 +146,44 @@ const ImportWareHouse = () => {
     },
     {
       title: "Số chứng từ",
-      dataIndex: "voucherNo",
+      dataIndex: "transactionNo",
       width: isMobile ? 150 : 200,
       render: (text, record) => (
-        <Link to={`/tm/yeu-cau-cong-viec-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
+        <Link to={`/tm/vat-tu/phieu-nhap-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
       ),
     },
     {
       title: "Ngày chứng từ",
       width: isMobile ? 120 : 150,
-      dataIndex: "voucherDate",
+      dataIndex: "transactionDate",
       render: (date) =>
         date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Đối tượng",
       width: isMobile ? 150 : 200,
-      dataIndex: "objectName",
+      dataIndex: "partner",
     },
     {
       title: "Kho nhập",
       width: isMobile ? 120 : 150,
-      dataIndex: "warehouseName",
+      dataIndex: "warehouseCode",
     },
     {
       title: "Địa chỉ kho",
       width: isMobile ? 120 : 150,
-      dataIndex: "warehouseAddress",
+      dataIndex: "address",
     },
-    {
-      title: "Loại hàng",
-      width: isMobile ? 120 : 150,
-      dataIndex: "goodsTypeName",
-    },
-    {
-      title: "Người lập",
-      width: isMobile ? 120 : 150,
-      dataIndex: "createdByName",
-    },
+    // {
+    //   title: "Loại hàng",
+    //   width: isMobile ? 120 : 150,
+    //   dataIndex: "goodsTypeName",
+    // },
+    // {
+    //   title: "Người lập",
+    //   width: isMobile ? 120 : 150,
+    //   dataIndex: "createdByName",
+    // },
     {
       title: "Ghi chú",
       width: isMobile ? 120 : 150,
@@ -221,7 +217,7 @@ const ImportWareHouse = () => {
     },
     {
       title: "Thông tin",
-      dataIndex: "voucherNo",
+      dataIndex: "transactionNo",
       fixed: "left",
       width: 200,
       render: (_, record) => (
@@ -230,27 +226,21 @@ const ImportWareHouse = () => {
             to={`/tm/vat-tu/phieu-nhap-chi-tiet/${record.id}`}
             style={{ fontWeight: 600, fontSize: 14 }}
           >
-            {record.voucherNo}
+            {record.transactionNo}
           </Link>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.voucherDate
-              ? new Date(record.voucherDate).toLocaleDateString("vi-VN")
+            {record.transactionDate
+              ? new Date(record.transactionDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.objectName}
+            {record.partner}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.warehouseName}
+            {record.warehouseCode}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.warehouseAddress}
-          </div>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.goodsTypeName}
-          </div>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.createdByName}
+            {record.address}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
             {record.note}
@@ -350,7 +340,7 @@ const ImportWareHouse = () => {
 
           // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteJobRequirements(id))
+            selectedRowKeys.map((id) => deleteImportAnExportWareHouse(id))
           );
 
           // Sau khi xóa thành công, cập nhật lại danh sách
@@ -428,11 +418,10 @@ const ImportWareHouse = () => {
 
   const handleReset = () => {
     setFilters({
-      dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+       dateRange: null,
+    transactionNo: "",
+    transactionType: "",
+    warehouseCode: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -500,8 +489,8 @@ const ImportWareHouse = () => {
           </label>
           <Input
             placeholder="Số chứng từ"
-            value={filters.voucherNo}
-            onChange={(e) => handleFilterChange("voucherNo", e.target.value)}
+            value={filters.transactionNo}
+            onChange={(e) => handleFilterChange("transactionNo", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
@@ -517,12 +506,12 @@ const ImportWareHouse = () => {
           </label>
           <Input
             placeholder="Đối tượng"
-            value={filters.objectName}
-            onChange={(e) => handleFilterChange("objectName", e.target.value)}
+            value={filters.partner}
+            onChange={(e) => handleFilterChange("partner", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8}>
+        {/* <Col xs={24} sm={12} md={8}>
           <label
             style={{
               display: "block",
@@ -540,7 +529,7 @@ const ImportWareHouse = () => {
             }
             size={isMobile ? "small" : "default"}
           />
-        </Col>
+        </Col> */}
         <Col xs={24} sm={12} md={8}>
           <label
             style={{
@@ -553,9 +542,9 @@ const ImportWareHouse = () => {
           </label>
           <Input
             placeholder="Kho nhập"
-            value={filters.warehouseName}
+            value={filters.warehouseCode}
             onChange={(e) =>
-              handleFilterChange("warehouseName", e.target.value)
+              handleFilterChange("warehouseCode", e.target.value)
             }
             size={isMobile ? "small" : "default"}
           />
@@ -640,30 +629,26 @@ const ImportWareHouse = () => {
                   style={{ fontWeight: 600, fontSize: 14 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {item.voucherNo}
+                  {item.transactionNo}
                 </Link>
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
                 <strong>Ngày:</strong>{" "}
-                {item.voucherDate
-                  ? new Date(item.voucherDate).toLocaleDateString("vi-VN")
+                {item.transactionDate
+                  ? new Date(item.transactionDate).toLocaleDateString("vi-VN")
                   : "---"}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Đối tượng:</strong> {item.objectName}
+                <strong>Đối tượng:</strong> {item.partner}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Loại hàng:</strong> {item.goodsTypeName}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Kho nhập:</strong> {item.warehouseName}
+                <strong>Kho nhập:</strong> {item.warehouseCode}
               </div>
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Địa chỉ kho:</strong> {item.warehouseAddress}
+                <strong>Địa chỉ kho:</strong> {item.address}
               </div>
 
               {item.note && (
