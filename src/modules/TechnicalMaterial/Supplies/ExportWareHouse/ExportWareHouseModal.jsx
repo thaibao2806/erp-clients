@@ -17,10 +17,6 @@ import {
 import { DeleteOutlined, PlusOutlined, TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import {
-  addAssignmentSlip,
-  updateAssignmentSlip,
-} from "../../../../services/apiPlan/apiAssignmentSlip";
 import { getDocumentNumber } from "../../../../services/apiAutoNumbering";
 import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import { getAllUser } from "../../../../services/apiAuth";
@@ -36,6 +32,11 @@ import {
 import { useSelector } from "react-redux";
 import { addFollower } from "../../../../services/apiFollower";
 dayjs.extend(customParseFormat);
+import { v4 as uuidv4 } from "uuid";
+import {
+  createImportAnExportWareHouse,
+  updateImportAnExportWareHouse,
+} from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const approvalStatusOptions = [
   { value: "pending", label: "Chờ duyệt" },
@@ -91,20 +92,23 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         getVoucherNo();
       }
 
+      console.log("Initial Values:", initialValues);
+
       form.setFieldsValue(initialValues || {});
       setIsEditApproval(!!initialValues?.type);
-      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      setMonthYear(dayjs(initialValues?.transactionDate || dayjs()));
       if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const daysInMonth = dayjs(initialValues.transactionDate).daysInMonth();
         const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
         const formattedDetails = initialValues.details.map((item, index) => ({
           key: `${Date.now()}_${index}`,
           stt: index + 1,
-          content: item.content || "",
+          productCode: item.productCode || "",
+          productName: item.productName || "",
           unit: item.unit || "",
-          quantity: item.quantity || "",
-          workDay: item.workDay || "",
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
           note: item.note || "",
           ...columns.reduce((acc, day) => {
             acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
@@ -116,11 +120,10 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       } else {
         setTableData([]);
       }
-      getApprovalByModulePage();
       getUser();
-      if (initialValues) {
-        getApprovals(initialValues.id);
-      }
+      // if (initialValues) {
+      //   getApprovals(initialValues.id);
+      // }
     }
   }, [open, initialValues, form]);
 
@@ -129,22 +132,6 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       setApprovers(Array(approvalNumber).fill({ userName: null }));
     }
   }, [approvalNumber, open, initialValues]);
-
-  const getApprovals = async (refId) => {
-    try {
-      let res = await getApprovalsByRef(refId, "YCCV");
-      if (res && res.status === 200) {
-        const list = res.data.data.map((ap) => ({
-          id: ap.id,
-          username: ap.userName, // phải trùng key với name trong Form
-          status: ap.status,
-          note: ap.note,
-        }));
-        setApprovers(list);
-        form.setFieldsValue({ approvers: list });
-      }
-    } catch (error) {}
-  };
 
   const getUser = async () => {
     try {
@@ -162,22 +149,11 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("TM", "tm-yeu-cau-cong-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const getVoucherNo = async () => {
     try {
-      let res = await getDocumentNumber("YCCV");
+      let res = await getDocumentNumber("NK");
       if (res && res.status === 200) {
-        form.setFieldsValue({ voucherNo: res.data.data.code });
+        form.setFieldsValue({ transactionNo: res.data.data.code });
       }
     } catch (error) {
       console.log(error);
@@ -246,13 +222,13 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Mã vật tư",
         width: isMobile ? 150 : 200,
-        dataIndex: "materialCode",
+        dataIndex: "productCode",
         render: (_, record) => (
           <Input
-            value={record.materialCode}
+            value={record.productCode}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "materialCode", e.target.value)
+              handleInputChange(record.key, "productCode", e.target.value)
             }
           />
         ),
@@ -260,13 +236,13 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       {
         title: "Tên vật tư",
         width: isMobile ? 150 : 200,
-        dataIndex: "materialName",
+        dataIndex: "productName",
         render: (_, record) => (
           <Input
-            value={record.materialName}
+            value={record.productName}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "materialName", e.target.value)
+              handleInputChange(record.key, "productName", e.target.value)
             }
           />
         ),
@@ -317,15 +293,11 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         title: "Thành tiền",
         width: isMobile ? 80 : 100,
         dataIndex: "totalPrice",
-        render: (_, record) => (
-          <Input
-            value={record.totalPrice}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "totalPrice", e.target.value)
-            }
-          />
-        ),
+        render: (_, record) => {
+          const total =
+            (Number(record.quantity) || 0) * (Number(record.unitPrice) || 0);
+          return <span>{total.toLocaleString()}</span>; // hiển thị dạng số đẹp
+        },
       },
       {
         title: "Ghi chú",
@@ -364,7 +336,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         "YCCV",
         formattedApprovers,
         documentNumber,
-        `/tm/vat-tu/phieu-xuat-chi-tiet/${refId}?type=PGV`
+        `/tm/vat-tu/phieu-nhap-chi-tiet/${refId}?type=PGV`
       );
       if (res && res.status === 200) {
         console.log("Tạo danh sách duyệt thành công");
@@ -396,40 +368,45 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
+    const id = uuidv4();
     if (!initialValues) {
       form.validateFields().then(async (values) => {
         try {
           setLoading(true);
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
+            transactionDate: monthYear.toISOString(), // ISO định dạng
             details: tableData.map((item) => ({
-              content: item.content || "",
+              productCode: item.productCode || "",
+              productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              unitPrice: Number(item.unitPrice) || 0,
               note: item.note || "",
             })),
           };
 
-          let res = await createJobRequirements(
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
+          let res = await createImportAnExportWareHouse(
+            id,
+            payload.transactionNo,
+            payload.transactionDate,
+            "OUT",
+            payload.warehouseCode,
+            payload.partner,
+            payload.address,
+            payload.note,
             payload.details
           );
           if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.voucherNo);
+            console.log("Tạo phiếu nhập kho thành công:", res.data.data);
+            // await handleAddApprovals(res.data.data, payload.transactionNo);
             const newFollowers = dataUser.find(
               (u) => u.value === user.data.userName
             );
             await addFollower(
-              res.data.data,
-              "JobRequirement",
-              payload.voucherNo,
+              res.data.data.id,
+              "InventoryTransaction",
+              payload.transactionNo,
               [
                 {
                   userId: newFollowers.id, // bạn đã đặt id = user.apk trong getUser
@@ -466,30 +443,31 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            voucherDate: monthYear.toISOString(), // ISO định dạng
+            transactionDate: monthYear.toISOString(), // ISO định dạng
             details: tableData.map((item) => ({
-              content: item.content || "",
+              productCode: item.productCode || "",
+              productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              unitPrice: Number(item.unitPrice) || 0,
               note: item.note || "",
             })),
           };
 
-          let res = await updateJobRequirements(
+          let res = await updateImportAnExportWareHouse(
             initialValues.id,
-            payload.voucherNo,
-            payload.voucherDate,
-            payload.productName,
-            payload.repairOrderCode,
-            payload.department,
-            payload.managementUnit,
+            payload.transactionNo,
+            payload.transactionDate,
+            "OUT",
+            payload.warehouseCode,
+            payload.partner,
+            payload.address,
+            payload.note,
             payload.details
           );
-          if (res && res.status === 200) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
-            }
+
+          console.log("Cập nhật phiếu nhập kho thành công:", res.status);
+          if ((res && res.status === 200) || res.status === 204) {
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -502,6 +480,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           }
         } catch (error) {
           if (error) {
+            console.error("Lỗi khi cập nhật phiếu:", error);
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
@@ -527,7 +506,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         }}
       >
         <h4 style={{ margin: 0, fontSize: 14 }}>
-          Nội dung phiếu xuất ({tableData.length})
+          Nội dung phiếu nhập kho ({tableData.length})
         </h4>
         <Space size="small">
           <Button icon={<PlusOutlined />} size="small" onClick={handleAddRow}>
@@ -587,31 +566,30 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     Mã vật tư:
                   </label>
                   <Input
-                    value={record.materialCode}
+                    value={record.productCode}
                     size="small"
                     placeholder="Mã vật tư"
                     onChange={(e) =>
                       handleInputChange(
                         record.key,
-                        "materialCode",
+                        "productCode",
                         e.target.value
                       )
                     }
                   />
                 </div>
-
                 <div>
                   <label style={{ fontSize: 11, color: "#666" }}>
                     Tên vật tư:
                   </label>
                   <Input
-                    value={record.materialName}
+                    value={record.productName}
                     size="small"
                     placeholder="Tên vật tư"
                     onChange={(e) =>
                       handleInputChange(
                         record.key,
-                        "materialName",
+                        "productName",
                         e.target.value
                       )
                     }
@@ -671,7 +649,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     <Input
                       value={record.totalPrice}
                       size="small"
-                      placeholder="Thanh tiền"
+                      placeholder="Thành tiền"
                       onChange={(e) =>
                         handleInputChange(
                           record.key,
@@ -723,7 +701,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       <Modal
         title={
           <span style={{ fontSize: isMobile ? 18 : 25, fontWeight: 600 }}>
-            {initialValues ? "Cập nhật phiếu xuất kho" : "Thêm phiếu xuất kho"}
+            {initialValues ? "Cập nhật phiếu nhập kho" : "Thêm phiếu nhập kho"}
           </span>
         }
         open={open}
@@ -749,7 +727,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           <Row gutter={isMobile ? [8, 8] : [16, 16]}>
             <Col span={colSpans.half}>
               <Form.Item
-                name="voucherNo"
+                name="transactionNo"
                 label="Số chứng từ"
                 rules={[{ required: true }]}
               >
@@ -758,7 +736,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
             </Col>
             <Col span={colSpans.half}>
               <Form.Item
-                name="objectName"
+                name="partner"
                 label="Đối tượng"
                 rules={[{ required: true }]}
               >
@@ -776,9 +754,18 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                 />
               </Form.Item>
             </Col>
+            {/* <Col span={colSpans.half}>
+              <Form.Item
+                name="goodsTypeName"
+                label="Loại hàng"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col> */}
             <Col span={colSpans.half}>
               <Form.Item
-                name="wareHouseName"
+                name="warehouseCode"
                 label="Kho xuất"
                 rules={[{ required: true }]}
               >
@@ -786,16 +773,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
               </Form.Item>
             </Col>
             <Col span={colSpans.half}>
-              <Form.Item
-                name="goodTypeName"
-                label="Loại hàng"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item name="deliveryAddress" label="Địa chỉ giao hàng">
+              <Form.Item name="address" label="Địa chỉ giao hàng">
                 <Input />
               </Form.Item>
             </Col>
@@ -888,7 +866,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   alignItems: "center",
                 }}
               >
-                <h4 style={{ margin: 0 }}>Nội dung phiếu xuất</h4>
+                <h4 style={{ margin: 0 }}>Nội dung phiếu nhập kho</h4>
                 {isTablet && (
                   <Button
                     icon={<TableOutlined />}
@@ -939,7 +917,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         </Form>
       </Modal>
       <Drawer
-        title="Nội dung phiếu xuất"
+        title="Nội dung phiếu nhập kho"
         width="90%"
         onClose={() => setTableDrawerVisible(false)}
         open={tableDrawerVisible}

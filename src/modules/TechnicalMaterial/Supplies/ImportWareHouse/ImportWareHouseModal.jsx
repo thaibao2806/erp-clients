@@ -33,7 +33,10 @@ import { useSelector } from "react-redux";
 import { addFollower } from "../../../../services/apiFollower";
 dayjs.extend(customParseFormat);
 import { v4 as uuidv4 } from "uuid";
-import { createImportAnExportWareHouse, updateImportAnExportWareHouse } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
+import {
+  createImportAnExportWareHouse,
+  updateImportAnExportWareHouse,
+} from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const approvalStatusOptions = [
   { value: "pending", label: "Chờ duyệt" },
@@ -89,20 +92,23 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         getVoucherNo();
       }
 
+      console.log("Initial Values:", initialValues);
+
       form.setFieldsValue(initialValues || {});
       setIsEditApproval(!!initialValues?.type);
-      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      setMonthYear(dayjs(initialValues?.transactionDate || dayjs()));
       if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const daysInMonth = dayjs(initialValues.transactionDate).daysInMonth();
         const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
         const formattedDetails = initialValues.details.map((item, index) => ({
           key: `${Date.now()}_${index}`,
           stt: index + 1,
-          content: item.content || "",
+          productCode: item.productCode || "",
+          productName: item.productName || "",
           unit: item.unit || "",
-          quantity: item.quantity || "",
-          workDay: item.workDay || "",
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
           note: item.note || "",
           ...columns.reduce((acc, day) => {
             acc[`d${day}`] = item[`d${day}`] || ""; // Nếu dữ liệu có d1, d2,...
@@ -114,11 +120,10 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       } else {
         setTableData([]);
       }
-      getApprovalByModulePage();
       getUser();
-      if (initialValues) {
-        getApprovals(initialValues.id);
-      }
+      // if (initialValues) {
+      //   getApprovals(initialValues.id);
+      // }
     }
   }, [open, initialValues, form]);
 
@@ -127,22 +132,6 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
       setApprovers(Array(approvalNumber).fill({ userName: null }));
     }
   }, [approvalNumber, open, initialValues]);
-
-  const getApprovals = async (refId) => {
-    try {
-      let res = await getApprovalsByRef(refId, "YCCV");
-      if (res && res.status === 200) {
-        const list = res.data.data.map((ap) => ({
-          id: ap.id,
-          username: ap.userName, // phải trùng key với name trong Form
-          status: ap.status,
-          note: ap.note,
-        }));
-        setApprovers(list);
-        form.setFieldsValue({ approvers: list });
-      }
-    } catch (error) {}
-  };
 
   const getUser = async () => {
     try {
@@ -154,17 +143,6 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("TM", "tm-yeu-cau-cong-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
       }
     } catch (error) {
       console.log(error);
@@ -247,7 +225,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         dataIndex: "productCode",
         render: (_, record) => (
           <Input
-            value={record.materialCode}
+            value={record.productCode}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "productCode", e.target.value)
@@ -261,7 +239,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         dataIndex: "productName",
         render: (_, record) => (
           <Input
-            value={record.materialName}
+            value={record.productName}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "productName", e.target.value)
@@ -315,15 +293,11 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         title: "Thành tiền",
         width: isMobile ? 80 : 100,
         dataIndex: "totalPrice",
-        render: (_, record) => (
-          <Input
-            value={record.totalPrice}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "totalPrice", e.target.value)
-            }
-          />
-        ),
+        render: (_, record) => {
+          const total =
+            (Number(record.quantity) || 0) * (Number(record.unitPrice) || 0);
+          return <span>{total.toLocaleString()}</span>; // hiển thị dạng số đẹp
+        },
       },
       {
         title: "Ghi chú",
@@ -394,7 +368,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
   };
 
   const handleOk = () => {
-    let id = uuidv4();
+    const id = uuidv4();
     if (!initialValues) {
       form.validateFields().then(async (values) => {
         try {
@@ -407,7 +381,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
               productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              unitPrice: Number(item.workDay) || 0,
+              unitPrice: Number(item.unitPrice) || 0,
               note: item.note || "",
             })),
           };
@@ -424,13 +398,14 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.details
           );
           if (res && res.status === 200) {
+            console.log("Tạo phiếu nhập kho thành công:", res.data.data);
             // await handleAddApprovals(res.data.data, payload.transactionNo);
             const newFollowers = dataUser.find(
               (u) => u.value === user.data.userName
             );
             await addFollower(
-              res.data.data,
-              "ImportWareHouse",
+              res.data.data.id,
+              "InventoryTransaction",
               payload.transactionNo,
               [
                 {
@@ -474,7 +449,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
               productName: item.productName || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              unitPrice: Number(item.workDay) || 0,
+              unitPrice: Number(item.unitPrice) || 0,
               note: item.note || "",
             })),
           };
@@ -490,10 +465,9 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
             payload.note,
             payload.details
           );
-          if (res && res.status === 200) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
-            }
+
+          console.log("Cập nhật phiếu nhập kho thành công:", res.status);
+          if ((res && res.status === 200) || res.status === 204) {
             onSubmit(); // callback từ cha để reload
             form.resetFields();
             setMonthYear(dayjs());
@@ -506,6 +480,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
           }
         } catch (error) {
           if (error) {
+            console.error("Lỗi khi cập nhật phiếu:", error);
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",

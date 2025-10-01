@@ -34,8 +34,14 @@ import {
   exportExcelJR,
   filterJobRequirements,
 } from "../../../../services/apiTechnicalMaterial/apiJobRequirement";
-import { deleteInventoryTransaction, filterInventoryTransaction } from "../../../../config/config";
-import { deleteImportAnExportWareHouse, filterImportAnExportWareHouse } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
+import {
+  deleteInventoryTransaction,
+  filterInventoryTransaction,
+} from "../../../../config/config";
+import {
+  deleteImportAnExportWareHouse,
+  filterImportAnExportWareHouse,
+} from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const { RangePicker } = DatePicker;
 
@@ -91,18 +97,14 @@ const ImportWareHouse = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        transactionNo,
-        transactionType,
-        warehouseCode,
-        dateRange,
-      } = filters;
+      const { transactionNo, transactionType, warehouseCode, dateRange } =
+        filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
       let res = await filterImportAnExportWareHouse(
         transactionNo,
-        transactionType,
+        "IN",
         warehouseCode,
         fromDate,
         toDate,
@@ -418,10 +420,10 @@ const ImportWareHouse = () => {
 
   const handleReset = () => {
     setFilters({
-       dateRange: null,
-    transactionNo: "",
-    transactionType: "",
-    warehouseCode: "",
+      dateRange: null,
+      transactionNo: "",
+      transactionType: "",
+      warehouseCode: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -490,7 +492,9 @@ const ImportWareHouse = () => {
           <Input
             placeholder="Số chứng từ"
             value={filters.transactionNo}
-            onChange={(e) => handleFilterChange("transactionNo", e.target.value)}
+            onChange={(e) =>
+              handleFilterChange("transactionNo", e.target.value)
+            }
             size={isMobile ? "small" : "default"}
           />
         </Col>

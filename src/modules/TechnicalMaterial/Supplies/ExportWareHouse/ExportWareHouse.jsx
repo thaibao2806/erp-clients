@@ -34,6 +34,10 @@ import {
   exportExcelJR,
   filterJobRequirements,
 } from "../../../../services/apiTechnicalMaterial/apiJobRequirement";
+import {
+  deleteImportAnExportWareHouse,
+  filterImportAnExportWareHouse,
+} from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const { RangePicker } = DatePicker;
 
@@ -89,23 +93,15 @@ const ExportWareHouse = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        voucherNo,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-        repairOrderCode,
-      } = filters;
+      const { transactionNo, transactionType, warehouseCode, dateRange } =
+        filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await filterJobRequirements(
-        voucherNo,
-        productName,
-        repairOrderCode,
-        department,
-        managementUnit,
+      let res = await filterImportAnExportWareHouse(
+        transactionNo,
+        "OUT",
+        warehouseCode,
         fromDate,
         toDate,
         "",
@@ -134,11 +130,9 @@ const ExportWareHouse = () => {
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
-    department: "",
-    repairOrderCode: "",
+    transactionNo: "",
+    transactionType: "",
+    warehouseCode: "",
   });
 
   const columns = [
@@ -150,7 +144,7 @@ const ExportWareHouse = () => {
     },
     {
       title: "Số chứng từ",
-      dataIndex: "voucherNo",
+      dataIndex: "transactionNo",
       width: isMobile ? 150 : 200,
       render: (text, record) => (
         <Link to={`/tm/vat-tu/phieu-xuat-chi-tiet/${record.id}`}>{text}</Link> // ✅ THAY ĐOẠN NÀY
@@ -159,29 +153,24 @@ const ExportWareHouse = () => {
     {
       title: "Ngày chứng từ",
       width: isMobile ? 120 : 150,
-      dataIndex: "voucherDate",
+      dataIndex: "transactionDate",
       render: (date) =>
         date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Đối tượng",
       width: isMobile ? 150 : 200,
-      dataIndex: "objectName",
+      dataIndex: "partner",
     },
     {
       title: "Kho xuất",
       width: isMobile ? 120 : 150,
-      dataIndex: "warehouseName",
-    },
-    {
-      title: "Loại hàng",
-      width: isMobile ? 120 : 150,
-      dataIndex: "goodsTypeName",
+      dataIndex: "warehouseCode",
     },
     {
       title: "Địa chỉ giao hàng",
       width: isMobile ? 120 : 150,
-      dataIndex: "deliveryAddress",
+      dataIndex: "address",
     },
     {
       title: "Ghi chú",
@@ -216,7 +205,7 @@ const ExportWareHouse = () => {
     },
     {
       title: "Thông tin",
-      dataIndex: "voucherNo",
+      dataIndex: "transactionNo",
       fixed: "left",
       width: 200,
       render: (_, record) => (
@@ -225,24 +214,21 @@ const ExportWareHouse = () => {
             to={`/tm/vat-tu/phieu-xuat-chi-tiet/${record.id}`}
             style={{ fontWeight: 600, fontSize: 14 }}
           >
-            {record.voucherNo}
+            {record.transactionNo}
           </Link>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.voucherDate
-              ? new Date(record.voucherDate).toLocaleDateString("vi-VN")
+            {record.transactionDate
+              ? new Date(record.transactionDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.objectName}
+            {record.partner}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.warehouseName}
+            {record.warehouseCode}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.goodsTypeName}
-          </div>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.deliveryAddress}
+            {record.address}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
             {record.note}
@@ -342,7 +328,7 @@ const ExportWareHouse = () => {
 
           // Gọi API xóa từng ID
           await Promise.all(
-            selectedRowKeys.map((id) => deleteJobRequirements(id))
+            selectedRowKeys.map((id) => deleteImportAnExportWareHouse(id))
           );
 
           // Sau khi xóa thành công, cập nhật lại danh sách
@@ -421,10 +407,9 @@ const ExportWareHouse = () => {
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+      transactionNo: "",
+      transactionType: "",
+      warehouseCode: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -492,8 +477,10 @@ const ExportWareHouse = () => {
           </label>
           <Input
             placeholder="Số chứng từ"
-            value={filters.voucherNo}
-            onChange={(e) => handleFilterChange("voucherNo", e.target.value)}
+            value={filters.transactionNo}
+            onChange={(e) =>
+              handleFilterChange("transactionNo", e.target.value)
+            }
             size={isMobile ? "small" : "default"}
           />
         </Col>
@@ -509,11 +496,30 @@ const ExportWareHouse = () => {
           </label>
           <Input
             placeholder="Đối tượng"
-            value={filters.objectName}
-            onChange={(e) => handleFilterChange("objectName", e.target.value)}
+            value={filters.partner}
+            onChange={(e) => handleFilterChange("partner", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
+        {/* <Col xs={24} sm={12} md={8}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 4,
+                      fontSize: isMobile ? 12 : 14,
+                    }}
+                  >
+                    Loại hàng
+                  </label>
+                  <Input
+                    placeholder="Loại hàng"
+                    value={filters.goodsTypeName}
+                    onChange={(e) =>
+                      handleFilterChange("goodsTypeName", e.target.value)
+                    }
+                    size={isMobile ? "small" : "default"}
+                  />
+                </Col> */}
         <Col xs={24} sm={12} md={8}>
           <label
             style={{
@@ -522,32 +528,13 @@ const ExportWareHouse = () => {
               fontSize: isMobile ? 12 : 14,
             }}
           >
-            Kho xuất
+            Kho nhập
           </label>
           <Input
             placeholder="Kho xuất"
-            value={filters.warehouseName}
+            value={filters.warehouseCode}
             onChange={(e) =>
-              handleFilterChange("warehouseName", e.target.value)
-            }
-            size={isMobile ? "small" : "default"}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 4,
-              fontSize: isMobile ? 12 : 14,
-            }}
-          >
-            Loại hàng
-          </label>
-          <Input
-            placeholder="Loại hàng"
-            value={filters.goodsTypeName}
-            onChange={(e) =>
-              handleFilterChange("goodsTypeName", e.target.value)
+              handleFilterChange("warehouseCode", e.target.value)
             }
             size={isMobile ? "small" : "default"}
           />
@@ -632,31 +619,27 @@ const ExportWareHouse = () => {
                   style={{ fontWeight: 600, fontSize: 14 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {item.voucherNo}
+                  {item.transactionNo}
                 </Link>
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
                 <strong>Ngày:</strong>{" "}
-                {item.voucherDate
-                  ? new Date(item.voucherDate).toLocaleDateString("vi-VN")
+                {item.transactionDate
+                  ? new Date(item.transactionDate).toLocaleDateString("vi-VN")
                   : "---"}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Đối tượng:</strong> {item.objectName}
+                <strong>Đối tượng:</strong> {item.partner}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Kho xuất:</strong> {item.warehouseName}
+                <strong>Kho xuất:</strong> {item.warehouseCode}
               </div>
 
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Loại hàng:</strong> {item.goodsTypeName}
-              </div>
-
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Địa chỉ giao hàng:</strong> {item.deliveryAddress}
+                <strong>Địa chỉ giao hàng:</strong> {item.address}
               </div>
 
               {item.note && (

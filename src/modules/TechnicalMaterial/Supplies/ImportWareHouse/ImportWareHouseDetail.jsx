@@ -25,13 +25,12 @@ import SystemSection from "../../../../components/SystemSection";
 import dayjs from "dayjs";
 import { addAttachments } from "../../../../services/apiAttachment";
 import { useSelector } from "react-redux";
-import { getApprovalsByRef } from "../../../../services/apiApprovals";
-import { getApprovalSetting } from "../../../../services/apiApproveSetting";
 import ImportWareHouseModal from "./ImportWareHouseModal";
 import {
-  deleteJobRequirements,
-  getByIDJobRequirement,
-} from "../../../../services/apiTechnicalMaterial/apiJobRequirement";
+  deleteImportAnExportWareHouse,
+  getByIDImportAnExportWareHouse,
+  getImportAnExportWareHouse,
+} from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -59,35 +58,14 @@ const ImportWareHouseDetail = () => {
 
   useEffect(() => {
     getData();
-    getApprovals();
-    getApprovalByModulePage();
   }, []);
-
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("TM", "tm-yeu-cau-cong-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getApprovals = async () => {
-    try {
-      let res = await getApprovalsByRef(id, "YCCV");
-      if (res && res.status === 200) {
-        setApproval(res.data.data);
-      }
-    } catch (error) {}
-  };
 
   const getData = async () => {
     try {
-      let res = await getByIDJobRequirement(id);
+      let res = await getByIDImportAnExportWareHouse(id);
       if (res && res.status === 200) {
         setData(res.data.data);
+        console.log("Fetched Data:", res.data.data);
       }
     } catch (error) {
       console.log(error);
@@ -135,6 +113,7 @@ const ImportWareHouseDetail = () => {
           type: type, // hoặc đơn giản: type
         });
       } else {
+        console.log("Editing Data:", data);
         setEditingData(data);
       }
       setIsModalOpen(true);
@@ -142,7 +121,7 @@ const ImportWareHouseDetail = () => {
       fileInputRef.current?.click(); // Mở hộp thoại chọn file
     } else if (key === "delete") {
       try {
-        let res = await deleteJobRequirements(data.id);
+        let res = await deleteImportAnExportWareHouse(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
@@ -169,12 +148,12 @@ const ImportWareHouseDetail = () => {
       },
       {
         title: "Mã vật tư",
-        dataIndex: "materialCode",
+        dataIndex: "productCode",
         width: isMobile ? 80 : undefined,
       },
       {
         title: "Tên vật tư",
-        dataIndex: "materialName",
+        dataIndex: "productName",
         width: isMobile ? 200 : undefined,
         onCell: () => ({
           style: {
@@ -203,6 +182,11 @@ const ImportWareHouseDetail = () => {
         title: "Thành tiền",
         dataIndex: "totalPrice",
         width: isMobile ? 150 : undefined,
+        render: (_, record) => {
+          const total =
+            (Number(record.quantity) || 0) * (Number(record.unitPrice) || 0);
+          return <span>{total.toLocaleString()}</span>; // hiển thị dạng số đẹp
+        },
       },
       {
         title: "Ghi chú",
@@ -220,22 +204,22 @@ const ImportWareHouseDetail = () => {
       return (
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <div>
-            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            <strong>Số chứng từ:</strong> {data.transactionNo || ""}
           </div>
           <div>
-            <strong>Đối tượng:</strong> {data.objectName || ""}
+            <strong>Đối tượng:</strong> {data.partner || ""}
           </div>
           <div>
             <strong>Ngày chứng từ:</strong>{" "}
-            {data.voucherDate
-              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+            {data.transactionDate
+              ? new Date(data.transactionDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
           <div>
-            <strong>Kho nhập:</strong> {data.warehouseName || ""}
+            <strong>Kho nhập:</strong> {data.warehouseCode || ""}
           </div>
           <div>
-            <strong>Địa chỉ kho:</strong> {data.warehouseAddress || ""}
+            <strong>Địa chỉ kho:</strong> {data.address || ""}
           </div>
           <div>
             <strong>Ghi chú:</strong> {data.note || ""}
@@ -249,15 +233,15 @@ const ImportWareHouseDetail = () => {
         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <div>
-              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+              <strong>Số chứng từ:</strong> {data.transactionNo || ""}
             </div>
             <div>
-              <strong>Đối tượng:</strong> {data.objectName || ""}
+              <strong>Đối tượng:</strong> {data.partner || ""}
             </div>
             <div>
               <strong>Ngày chứng từ:</strong>{" "}
-              {data.voucherDate
-                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
+              {data.transactionDate
+                ? new Date(data.transactionDate).toLocaleDateString("vi-VN")
                 : "---"}
             </div>
           </Space>
@@ -265,10 +249,10 @@ const ImportWareHouseDetail = () => {
         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <div>
-              <strong>Kho nhập:</strong> {data.warehouseName || ""}
+              <strong>Kho nhập:</strong> {data.warehouseCode || ""}
             </div>
             <div>
-              <strong>Địa chỉ kho:</strong> {data.warehouseAddress || ""}
+              <strong>Địa chỉ kho:</strong> {data.address || ""}
             </div>
             <div>
               <strong>Ghi chú:</strong> {data.note || ""}
@@ -442,7 +426,7 @@ const ImportWareHouseDetail = () => {
         <Panel header="Đính kèm" key="3">
           <AttachmentSection
             refId={data ? data.id : ""}
-            refType={"JobRequirement"}
+            refType={"InventoryTransaction"}
             refreshTrigger={refreshFlag}
           />
         </Panel>
@@ -450,8 +434,8 @@ const ImportWareHouseDetail = () => {
         <Panel header="Ghi chú" key="4">
           <NoteSection
             refId={data ? data.id : ""}
-            refType={"JobRequirement"}
-            voucherNo={data ? data.voucherNo : ""}
+            refType={"InventoryTransaction"}
+            voucherNo={data ? data.transactionNo : ""}
           />
         </Panel>
 
@@ -469,8 +453,8 @@ const ImportWareHouseDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"JobRequirement"}
-              voucherNo={data.voucherNo}
+              refType={"InventoryTransaction"}
+              voucherNo={data.transactionNo}
             />
           )}
         </Panel>
@@ -481,7 +465,7 @@ const ImportWareHouseDetail = () => {
         onCancel={() => setIsModalOpen(false)}
         onSubmit={() => {
           getData();
-          getApprovals();
+          // getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}
@@ -500,7 +484,7 @@ const ImportWareHouseDetail = () => {
             const formData = new FormData();
             formData.append("file", file);
             formData.append("refId", data.id); // id của AssignmentSlip
-            formData.append("refType", "JobRequirement");
+            formData.append("refType", "InventoryTransaction");
 
             try {
               const res = await addAttachments(formData, user.data.token);
