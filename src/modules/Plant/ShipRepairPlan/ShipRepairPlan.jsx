@@ -34,6 +34,10 @@ import {
 } from "../../../services/apiPlan/apiAssignmentSlip";
 import { saveAs } from "file-saver";
 import ShipRepairPlanModal from "./ShipRepairPlanModal";
+import {
+  deleteShipRepairPlan,
+  filterShipRepairPlan,
+} from "../../../services/apiPlan/apiShipRepairPlan";
 
 const { RangePicker } = DatePicker;
 
@@ -67,7 +71,8 @@ const ShipRepairPlan = () => {
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false);
-  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
+  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] =
+    useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -75,7 +80,7 @@ const ShipRepairPlan = () => {
   });
 
   const { width } = useWindowSize();
-  
+
   // Responsive breakpoints
   const isMobile = width <= 768;
   const isTablet = width > 768 && width <= 1024;
@@ -88,21 +93,13 @@ const ShipRepairPlan = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        documentNumber,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-      } = filters;
+      const { voucherNo, shipName, dateRange } = filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await fillterAssignmentSlip(
-        documentNumber,
-        productName,
-        department,
-        managementUnit,
+      let res = await filterShipRepairPlan(
+        voucherNo,
+        shipName,
         fromDate,
         toDate,
         "",
@@ -131,10 +128,8 @@ const ShipRepairPlan = () => {
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    documentNumber: "",
-    productName: "",
-    managementUnit: "",
-    department: "",
+    voucherNo: "",
+    shipName: "",
   });
 
   const columns = [
@@ -146,11 +141,15 @@ const ShipRepairPlan = () => {
     },
     {
       title: "Số chứng từ",
-      dataIndex: "documentNumber",
+      dataIndex: "voucherNo",
       width: isMobile ? 120 : 150,
       fixed: isMobile ? "left" : false,
       render: (text, record) => (
-        <Link to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${record.id}`}>{text}</Link>
+        <Link
+          to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${record.id}`}
+        >
+          {text}
+        </Link>
       ),
     },
     // {
@@ -162,8 +161,8 @@ const ShipRepairPlan = () => {
     // },
     {
       title: "Tên sản phẩm",
-      dataIndex: "productName",
-      width: isMobile ? 100 : 120,
+      dataIndex: "shipName",
+      width: isMobile ? 120 : 150,
     },
     {
       title: "Đơn vị quản lý sd",
@@ -172,38 +171,52 @@ const ShipRepairPlan = () => {
     },
     {
       title: "Ngày cập cảng",
-      dataIndex: "department",
+      dataIndex: "arrivalDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Chạy kiểm tra",
-      dataIndex: "department",
+      dataIndex: "inspectionDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Lên đà",
-      dataIndex: "department",
+      dataIndex: "dockDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Khảo sát",
-      dataIndex: "department",
+      dataIndex: "surveyDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "N.T hạ thuỷ",
-      dataIndex: "department",
+      dataIndex: "launchDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Tách bến",
-      dataIndex: "department",
+      dataIndex: "departureDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Bàn giao",
-      dataIndex: "department",
+      dataIndex: "handoverDate",
       width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
     },
     {
       title: "Ghi chú",
@@ -223,24 +236,62 @@ const ShipRepairPlan = () => {
     },
     {
       title: "Thông tin",
-      dataIndex: "documentNumber",
+      dataIndex: "voucherNo",
       fixed: "left",
       width: 200,
       render: (_, record) => (
         <div>
-          <Link 
-            to={`/pl/phieu-giao-viec-chi-tiet/${record.id}`}
+          <Link
+            to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${record.id}`}
             style={{ fontWeight: 600, fontSize: 14 }}
           >
-            {record.documentNumber}
+            {record.voucherNo}
           </Link>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.documentDate 
-              ? new Date(record.documentDate).toLocaleDateString("vi-VN")
+            {record.shipName}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.managementUnit}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.arrivalDate
+              ? new Date(record.arrivalDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.productName}
+            {record.inspectionDate
+              ? new Date(record.inspectionDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.dockDate
+              ? new Date(record.dockDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.surveyDate
+              ? new Date(record.surveyDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.launchDate
+              ? new Date(record.launchDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.departureDate
+              ? new Date(record.departureDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.handoverDate
+              ? new Date(record.handoverDate).toLocaleDateString("vi-VN")
+              : "---"}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.note
+              ? new Date(record.note).toLocaleDateString("vi-VN")
+              : "---"}
           </div>
         </div>
       ),
@@ -314,7 +365,7 @@ const ShipRepairPlan = () => {
           setLoading(true);
 
           await Promise.all(
-            selectedRowKeys.map((id) => deleteAssignmetSlip(id))
+            selectedRowKeys.map((id) => deleteShipRepairPlan(id))
           );
 
           const remainingData = dataSource.filter(
@@ -392,10 +443,8 @@ const ShipRepairPlan = () => {
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      documentNumber: "",
-      productName: "",
-      managementUnit: "",
-      department: "",
+      voucherNo: "",
+      shipName: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -409,23 +458,23 @@ const ShipRepairPlan = () => {
       <Menu.Item key="add" icon={<PlusOutlined />} onClick={handleAdd}>
         Thêm mới
       </Menu.Item>
-      <Menu.Item 
-        key="delete" 
-        icon={<DeleteOutlined />} 
+      <Menu.Item
+        key="delete"
+        icon={<DeleteOutlined />}
         onClick={handleDelete}
         disabled={selectedRowKeys.length === 0}
         danger
       >
         Xóa ({selectedRowKeys.length})
       </Menu.Item>
-      <Menu.Item 
-        key="export" 
-        icon={<FileExcelOutlined />} 
+      {/* <Menu.Item
+        key="export"
+        icon={<FileExcelOutlined />}
         onClick={handleExportExcel}
         disabled={selectedRowKeys.length === 0}
       >
         Xuất Excel ({selectedRowKeys.length})
-      </Menu.Item>
+      </Menu.Item> */}
     </Menu>
   );
 
@@ -434,7 +483,13 @@ const ShipRepairPlan = () => {
     <div style={{ padding: isMobile ? 12 : 16 }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Thời gian
           </label>
           <RangePicker
@@ -446,33 +501,47 @@ const ShipRepairPlan = () => {
           />
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Số chứng từ
           </label>
           <Input
             placeholder="Số chứng từ"
-            value={filters.documentNumber}
-            onChange={(e) =>
-              handleFilterChange("documentNumber", e.target.value)
-            }
+            value={filters.voucherNo}
+            onChange={(e) => handleFilterChange("voucherNo", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Tên sản phẩm
           </label>
           <Input
             placeholder="Tên sản phẩm"
-            value={filters.productName}
-            onChange={(e) =>
-              handleFilterChange("productName", e.target.value)
-            }
+            value={filters.shipName}
+            onChange={(e) => handleFilterChange("shipName", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+        {/* <Col xs={24} sm={12} md={8}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Đơn vị quản lý sử dụng
           </label>
           <Input
@@ -483,7 +552,7 @@ const ShipRepairPlan = () => {
             }
             size={isMobile ? "small" : "default"}
           />
-        </Col>
+        </Col> */}
         {/* <Col xs={24} sm={12} md={8}>
           <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
             Bộ phận
@@ -521,68 +590,132 @@ const ShipRepairPlan = () => {
         <Card
           key={item.key}
           size="small"
-          style={{ 
+          style={{
             marginBottom: 12,
-            border: selectedRowKeys.includes(item.key) ? "2px solid #1890ff" : "1px solid #f0f0f0"
+            border: selectedRowKeys.includes(item.key)
+              ? "2px solid #1890ff"
+              : "1px solid #f0f0f0",
           }}
           bodyStyle={{ padding: 12 }}
           onClick={() => {
             const newSelection = selectedRowKeys.includes(item.key)
-              ? selectedRowKeys.filter(key => key !== item.key)
+              ? selectedRowKeys.filter((key) => key !== item.key)
               : [...selectedRowKeys, item.key];
             setSelectedRowKeys(newSelection);
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
             <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>#{item.stt}</span>
-                <Link 
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
+              >
+                <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>
+                  #{item.stt}
+                </span>
+                <Link
                   to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${item.id}`}
                   style={{ fontWeight: 600, fontSize: 14 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {item.documentNumber}
+                  {item.voucherNo}
                 </Link>
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Ngày:</strong> {item.documentDate 
-                  ? new Date(item.documentDate).toLocaleDateString("vi-VN")
+                <strong>Sản phẩm:</strong> {item.shipName}
+              </div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Đơn vị qlsd:</strong> {item.managementUnit}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Ngày cập cảng:</strong>{" "}
+                {item.arrivalDate
+                  ? new Date(item.arrivalDate).toLocaleDateString("vi-VN")
                   : "---"}
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Sản phẩm:</strong> {item.productName}
+                <strong>Chạy kiểm tra:</strong>{" "}
+                {item.inspectionDate
+                  ? new Date(item.inspectionDate).toLocaleDateString("vi-VN")
+                  : "---"}
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Bộ phận:</strong> {item.department}
+                <strong>Ngày lên đà:</strong>{" "}
+                {item.dockDate
+                  ? new Date(item.dockDate).toLocaleDateString("vi-VN")
+                  : "---"}
               </div>
-              
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Ngày khảo sát:</strong>{" "}
+                {item.surveyDate
+                  ? new Date(item.surveyDate).toLocaleDateString("vi-VN")
+                  : "---"}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Ngày hạ thủy:</strong>{" "}
+                {item.launchDate
+                  ? new Date(item.launchDate).toLocaleDateString("vi-VN")
+                  : "---"}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Ngày tách bến:</strong>{" "}
+                {item.departureDate
+                  ? new Date(item.departureDate).toLocaleDateString("vi-VN")
+                  : "---"}
+              </div>
+
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
+                <strong>Ngày bàn giao:</strong>{" "}
+                {item.handoverDate
+                  ? new Date(item.handoverDate).toLocaleDateString("vi-VN")
+                  : "---"}
+              </div>
+
               {item.note && (
                 <div style={{ fontSize: 12, color: "#666" }}>
                   <strong>Ghi chú:</strong> {item.note}
                 </div>
               )}
             </div>
-            
+
             <div style={{ marginLeft: 12 }}>
-              <Tag 
+              <Tag
                 color={
-                  item.approvalStatus === "approved" ? "green" : 
-                  item.approvalStatus === "rejected" ? "red" : "orange"
+                  item.approvalStatus === "approved"
+                    ? "green"
+                    : item.approvalStatus === "rejected"
+                    ? "red"
+                    : "orange"
                 }
                 style={{ fontSize: 10 }}
               >
-                {item.approvalStatus === "approved" ? "Đã duyệt" : 
-                 item.approvalStatus === "rejected" ? "Từ chối" : "Chờ duyệt"}
+                {item.approvalStatus === "approved"
+                  ? "Đã duyệt"
+                  : item.approvalStatus === "rejected"
+                  ? "Từ chối"
+                  : "Chờ duyệt"}
               </Tag>
             </div>
           </div>
         </Card>
       ))}
-      
+
       {/* Mobile Pagination */}
       <div style={{ textAlign: "center", marginTop: 16 }}>
         <Button
@@ -593,10 +726,14 @@ const ShipRepairPlan = () => {
           Trang trước
         </Button>
         <span style={{ margin: "0 12px", fontSize: 12 }}>
-          {pagination.current} / {Math.ceil(pagination.total / pagination.pageSize)}
+          {pagination.current} /{" "}
+          {Math.ceil(pagination.total / pagination.pageSize)}
         </span>
         <Button
-          disabled={pagination.current >= Math.ceil(pagination.total / pagination.pageSize)}
+          disabled={
+            pagination.current >=
+            Math.ceil(pagination.total / pagination.pageSize)
+          }
           onClick={() => fetchData(pagination.current + 1, pagination.pageSize)}
           size="small"
         >
@@ -619,14 +756,16 @@ const ShipRepairPlan = () => {
           gap: isMobile ? 8 : 0,
         }}
       >
-        <h1 style={{ 
-          margin: 0, 
-          fontSize: isMobile ? 18 : 24,
-          flex: isMobile ? "1 1 100%" : "auto"
-        }}>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: isMobile ? 18 : 24,
+            flex: isMobile ? "1 1 100%" : "auto",
+          }}
+        >
           Kế hoạch tàu vào sửa chữa
         </h1>
-        
+
         {isMobile ? (
           <Space size="small">
             <Button
@@ -635,7 +774,7 @@ const ShipRepairPlan = () => {
               size="small"
               style={{ background: "#e6f4fb", color: "#0700ad" }}
             />
-            <Dropdown overlay={actionMenu} trigger={['click']}>
+            <Dropdown overlay={actionMenu} trigger={["click"]}>
               <Button icon={<MoreOutlined />} size="small" />
             </Dropdown>
           </Space>
@@ -726,7 +865,7 @@ const ShipRepairPlan = () => {
             showSizeChanger: !isTablet,
             showQuickJumper: !isTablet,
             size: isTablet ? "small" : "default",
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} của ${total} mục`,
           }}
           onChange={(pagination) => {

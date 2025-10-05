@@ -35,6 +35,7 @@ dayjs.extend(customParseFormat);
 import { v4 as uuidv4 } from "uuid";
 import {
   createImportAnExportWareHouse,
+  getAllImportandExportDetail,
   updateImportAnExportWareHouse,
 } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
@@ -80,6 +81,7 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
   const { width } = useWindowSize();
+  const [materialOptions, setMaterialOptions] = useState([]);
 
   // Responsive breakpoints
   const isMobile = width <= 768;
@@ -224,12 +226,63 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         width: isMobile ? 150 : 200,
         dataIndex: "productCode",
         render: (_, record) => (
-          <Input
-            value={record.productCode}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "productCode", e.target.value)
+          <Select
+            showSearch
+            labelInValue
+            placeholder="Nhập mã vật tư"
+            value={
+              record.productCode
+                ? { value: record.productCode, label: record.productCode }
+                : undefined
             }
+            style={{ width: "100%" }}
+            size={isMobile ? "small" : "default"}
+            filterOption={false}
+            onSearch={handleSearchMaterial}
+            onChange={(option) => {
+              // option có dạng { value, label }
+              const selected = materialOptions.find(
+                (x) => x.value === option?.value
+              )?.data;
+
+              if (selected) {
+                // ✅ load sang các ô khác
+                handleInputChange(
+                  record.key,
+                  "productCode",
+                  selected.productCode
+                );
+                handleInputChange(
+                  record.key,
+                  "productName",
+                  selected.productName
+                );
+                handleInputChange(record.key, "unit", selected.unit);
+              } else if (option?.value) {
+                // ✅ nếu gõ tay
+                handleInputChange(record.key, "productCode", option.value);
+              }
+            }}
+            onInputKeyDown={(e) => {
+              if (e.key === "Tab" || e.key === "Enter") {
+                const inputValue = e.target.value?.trim();
+                if (inputValue) {
+                  handleInputChange(record.key, "productCode", inputValue);
+                }
+              }
+            }}
+            onBlur={(e) => {
+              const inputValue = e.target.value?.trim();
+              if (inputValue) {
+                handleInputChange(record.key, "productCode", inputValue);
+              }
+            }}
+            options={materialOptions.map((opt) => ({
+              label: `${opt.data.productCode} - ${opt.data.productName}`,
+              value: opt.data.productCode,
+              data: opt.data,
+            }))}
+            allowClear
           />
         ),
       },
@@ -238,12 +291,57 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         width: isMobile ? 150 : 200,
         dataIndex: "productName",
         render: (_, record) => (
-          <Input
-            value={record.productName}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "productName", e.target.value)
+          <Select
+            showSearch
+            placeholder="Nhập tên vật tư"
+            value={
+              record.productName
+                ? { value: record.productName, label: record.productName }
+                : undefined
             }
+            labelInValue
+            style={{ width: "100%" }}
+            size={isMobile ? "small" : "default"}
+            filterOption={false}
+            onSearch={handleSearchMaterial}
+            onChange={(option) => {
+              const selected = option?.data;
+              if (selected) {
+                handleInputChange(
+                  record.key,
+                  "productCode",
+                  selected.productCode
+                );
+                handleInputChange(
+                  record.key,
+                  "productName",
+                  selected.productName
+                );
+                handleInputChange(record.key, "unit", selected.unit);
+              } else if (option?.value) {
+                handleInputChange(record.key, "productName", option.value);
+              }
+            }}
+            onBlur={(e) => {
+              const inputValue = e.target.value?.trim();
+              if (inputValue) {
+                handleInputChange(record.key, "productName", inputValue);
+              }
+            }}
+            onInputKeyDown={(e) => {
+              if (e.key === "Tab" || e.key === "Enter") {
+                const inputValue = e.target.value?.trim();
+                if (inputValue) {
+                  handleInputChange(record.key, "productName", inputValue);
+                }
+              }
+            }}
+            options={materialOptions.map((opt) => ({
+              label: opt.data.productName,
+              value: opt.data.productName,
+              data: opt.data,
+            }))}
+            allowClear
           />
         ),
       },
@@ -316,6 +414,31 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
     ];
 
     return baseColumns;
+  };
+
+  let timeoutId = null;
+  const handleSearchMaterial = (keyword) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(async () => {
+      try {
+        if (!keyword || keyword.trim() === "") {
+          setMaterialOptions([]);
+          return;
+        }
+        const res = await getAllImportandExportDetail(keyword);
+        if (res && res.status === 200) {
+          setMaterialOptions(
+            res.data.data.map((item) => ({
+              label: `${item.productCode} - ${item.productName}`,
+              value: item.productCode,
+              data: item,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Lỗi khi tìm vật tư:", error);
+      }
+    }, 400);
   };
 
   const handleAddApprovals = async (refId, documentNumber) => {
@@ -565,34 +688,150 @@ const ImportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   <label style={{ fontSize: 11, color: "#666" }}>
                     Mã vật tư:
                   </label>
-                  <Input
-                    value={record.productCode}
-                    size="small"
-                    placeholder="Mã vật tư"
-                    onChange={(e) =>
-                      handleInputChange(
-                        record.key,
-                        "productCode",
-                        e.target.value
-                      )
+                  <Select
+                    showSearch
+                    labelInValue
+                    placeholder="Nhập mã vật tư"
+                    value={
+                      record.productCode
+                        ? {
+                            value: record.productCode,
+                            label: record.productCode,
+                          }
+                        : undefined
                     }
+                    style={{ width: "100%" }}
+                    size={isMobile ? "small" : "default"}
+                    filterOption={false}
+                    onSearch={handleSearchMaterial}
+                    onChange={(option) => {
+                      // option có dạng { value, label }
+                      const selected = materialOptions.find(
+                        (x) => x.value === option?.value
+                      )?.data;
+
+                      if (selected) {
+                        // ✅ load sang các ô khác
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          selected.productCode
+                        );
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          selected.productName
+                        );
+                        handleInputChange(record.key, "unit", selected.unit);
+                      } else if (option?.value) {
+                        // ✅ nếu gõ tay
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          option.value
+                        );
+                      }
+                    }}
+                    onInputKeyDown={(e) => {
+                      if (e.key === "Tab" || e.key === "Enter") {
+                        const inputValue = e.target.value?.trim();
+                        if (inputValue) {
+                          handleInputChange(
+                            record.key,
+                            "productCode",
+                            inputValue
+                          );
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const inputValue = e.target.value?.trim();
+                      if (inputValue) {
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          inputValue
+                        );
+                      }
+                    }}
+                    options={materialOptions.map((opt) => ({
+                      label: `${opt.data.productCode} - ${opt.data.productName}`,
+                      value: opt.data.productCode,
+                      data: opt.data,
+                    }))}
+                    allowClear
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: "#666" }}>
                     Tên vật tư:
                   </label>
-                  <Input
-                    value={record.productName}
-                    size="small"
-                    placeholder="Tên vật tư"
-                    onChange={(e) =>
-                      handleInputChange(
-                        record.key,
-                        "productName",
-                        e.target.value
-                      )
+                  <Select
+                    showSearch
+                    placeholder="Nhập tên vật tư"
+                    value={
+                      record.productName
+                        ? {
+                            value: record.productName,
+                            label: record.productName,
+                          }
+                        : undefined
                     }
+                    labelInValue
+                    style={{ width: "100%" }}
+                    size={isMobile ? "small" : "default"}
+                    filterOption={false}
+                    onSearch={handleSearchMaterial}
+                    onChange={(option) => {
+                      const selected = option?.data;
+                      if (selected) {
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          selected.productCode
+                        );
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          selected.productName
+                        );
+                        handleInputChange(record.key, "unit", selected.unit);
+                      } else if (option?.value) {
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          option.value
+                        );
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const inputValue = e.target.value?.trim();
+                      if (inputValue) {
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          inputValue
+                        );
+                      }
+                    }}
+                    onInputKeyDown={(e) => {
+                      if (e.key === "Tab" || e.key === "Enter") {
+                        const inputValue = e.target.value?.trim();
+                        if (inputValue) {
+                          handleInputChange(
+                            record.key,
+                            "productName",
+                            inputValue
+                          );
+                        }
+                      }
+                    }}
+                    options={materialOptions.map((opt) => ({
+                      label: opt.data.productName,
+                      value: opt.data.productName,
+                      data: opt.data,
+                    }))}
+                    allowClear
                   />
                 </div>
 

@@ -1,5 +1,5 @@
 
-import { addInventoryTransaction, deleteInventoryTransaction, filterInventoryTransaction, getAllInventoryTransaction, getInventoryTransactionByID, getStockOnHand, updateInventoryTransaction } from "../../config/config"
+import { addInventoryTransaction, deleteInventoryTransaction, filterInventoryTransaction, getAllDetailInventoryTransaction, getAllInventoryTransaction, getInventoryTransactionByID, getStockOnHand, updateInventoryTransaction } from "../../config/config"
 import axiosInstance from "../axiosInstance"
 
 const getImportAnExportWareHouse = () => {
@@ -32,6 +32,10 @@ const getStockOnHandReport = (warehouseCode, year, month) => {
     })
 }
 
+const getAllImportandExportDetail = (keyword) => {
+    return axiosInstance.get(getAllDetailInventoryTransaction + `?keyword=${keyword}`)
+}
+
 export {
     getImportAnExportWareHouse,
     createImportAnExportWareHouse,
@@ -39,5 +43,6 @@ export {
     filterImportAnExportWareHouse,
     deleteImportAnExportWareHouse,
     updateImportAnExportWareHouse,
-    getStockOnHandReport
+    getStockOnHandReport,
+    getAllImportandExportDetail
 }

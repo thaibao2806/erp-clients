@@ -17,21 +17,26 @@ import {
 import { DeleteOutlined, PlusOutlined, TableOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { useSelector } from "react-redux";
 import {
-  addAssignmentSlip,
-  updateAssignmentSlip,
-} from "../../../services/apiPlan/apiAssignmentSlip";
+  createReceivingReport,
+  updateReceivingReport,
+} from "../../../services/apiPlan/apiReceptionMinute";
 import { getDocumentNumber } from "../../../services/apiAutoNumbering";
-import { getApprovalSetting } from "../../../services/apiApproveSetting";
 import { getAllUser } from "../../../services/apiAuth";
+import { getApprovalSetting } from "../../../services/apiApproveSetting";
 import {
   createApprovals,
   getApprovalsByRef,
   updateStatusApprovals,
 } from "../../../services/apiApprovals";
-import { useSelector } from "react-redux";
 import { addFollower } from "../../../services/apiFollower";
 dayjs.extend(customParseFormat);
+import { v4 as uuidv4 } from "uuid";
+import {
+  createShipRepairPlan,
+  updateShipRepairPlan,
+} from "../../../services/apiPlan/apiShipRepairPlan";
 
 const approvalStatusOptions = [
   { value: "pending", label: "Chờ duyệt" },
@@ -66,14 +71,16 @@ const useWindowSize = () => {
 const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
+  const [receivingDate, setReceivingDate] = useState(dayjs());
   const [tableData, setTableData] = useState([]);
+  const user = useSelector((state) => state.auth.login?.currentUser);
   const [approvalNumber, setApprovalNumber] = useState();
   const [approvers, setApprovers] = useState([]);
   const [dataUser, setDataUser] = useState([]);
   const [isEditApproval, setIsEditApproval] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tableDrawerVisible, setTableDrawerVisible] = useState(false);
-  const user = useSelector((state) => state.auth.login?.currentUser);
+
   const { width } = useWindowSize();
 
   // Responsive breakpoints
@@ -83,64 +90,35 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   useEffect(() => {
     if (open) {
+      const values = { ...initialValues };
       if (!initialValues) {
         getVoucherNo();
       }
 
-      form.setFieldsValue(initialValues || {});
+      [
+        "arrivalDate",
+        "inspectionDate",
+        "dockDate",
+        "surveyDate",
+        "launchDate",
+        "departureDate",
+        "handoverDate",
+      ].forEach((key) => {
+        if (values[key]) values[key] = dayjs(values[key]);
+      });
+      form.setFieldsValue(values || {});
       setIsEditApproval(!!initialValues?.type);
-      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
-      if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
-        const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-        const formattedDetails = initialValues.details.map((item, index) => ({
-          key: `${Date.now()}_${index}`,
-          stt: index + 1,
-          content: item.content || "",
-          unit: item.unit || "",
-          quantity: item.quantity || "",
-          workDay: item.workDay || "",
-          note: item.note || "",
-          ...columns.reduce((acc, day) => {
-            acc[`d${day}`] = item[`d${day}`] || "";
-            return acc;
-          }, {}),
-        }));
-
-        setTableData(formattedDetails);
-      } else {
-        setTableData([]);
-      }
-      getApprovalByModulePage();
+      // setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      // setReceivingDate(dayjs(initialValues?.receivingDate || dayjs()));
       getUser();
-      if (initialValues) {
-        getApprovals(initialValues.id);
-      }
     }
   }, [open, initialValues, form]);
 
   useEffect(() => {
     if (open && !initialValues && approvalNumber > 0) {
-      setApprovers(Array(approvalNumber).fill({ userName: null }));
+      setApprovers(Array(approvalNumber).fill({ user: null }));
     }
   }, [approvalNumber, open, initialValues]);
-
-  const getApprovals = async (refId) => {
-    try {
-      let res = await getApprovalsByRef(refId, "PGV");
-      if (res && res.status === 200) {
-        const list = res.data.data.map((ap) => ({
-          id: ap.id,
-          username: ap.userName,
-          status: ap.status,
-          note: ap.note,
-        }));
-        setApprovers(list);
-        form.setFieldsValue({ approvers: list });
-      }
-    } catch (error) {}
-  };
 
   const getUser = async () => {
     try {
@@ -148,7 +126,7 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
       if (res && res.status === 200) {
         const options = res.data.data.map((user) => ({
           id: user.apk,
-          value: user.userName,
+          value: user.userName, // hoặc user.id nếu cần
           label: user.fullName || user.userName,
         }));
         setDataUser(options);
@@ -158,22 +136,11 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const getVoucherNo = async () => {
     try {
-      let res = await getDocumentNumber("PGV");
+      let res = await getDocumentNumber("KHTVSC");
       if (res && res.status === 200) {
-        form.setFieldsValue({ documentNumber: res.data.data.code });
+        form.setFieldsValue({ voucherNo: res.data.data.code });
       }
     } catch (error) {
       console.log(error);
@@ -183,28 +150,11 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const handleMonthChange = (date) => {
     setMonthYear(date);
     if (!date) return;
-
-    const daysInMonth = date.daysInMonth();
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   };
 
-  const handleAddRow = () => {
-    const daysInMonth = monthYear?.daysInMonth() || 0;
-    const newKey = `${Date.now()}`;
-    const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const newRow = {
-      key: newKey,
-      stt: tableData.length + 1,
-      ...columns.reduce((acc, day) => {
-        acc[`d${day}`] = "";
-        return acc;
-      }, {}),
-    };
-    setTableData((prev) => [...prev, newRow]);
-  };
-
-  const handleDeleteRow = (key) => {
-    setTableData((prev) => prev.filter((item) => item.key !== key));
+  const handleReceivingDateChange = (date) => {
+    setReceivingDate(date);
+    if (!date) return;
   };
 
   const handleInputChange = (key, field, value) => {
@@ -215,105 +165,6 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     );
   };
 
-  const generateColumns = () => {
-    const baseColumns = [
-      {
-        title: "",
-        dataIndex: "action",
-        width: isMobile ? 35 : 40,
-        fixed: isMobile ? "left" : false,
-        render: (_, record) => (
-          <Tooltip title="Xóa dòng">
-            <Button
-              icon={<DeleteOutlined />}
-              size={isMobile ? "small" : "small"}
-              danger
-              onClick={() => handleDeleteRow(record.key)}
-            />
-          </Tooltip>
-        ),
-      },
-      {
-        title: "STT",
-        dataIndex: "stt",
-        width: isMobile ? 45 : 50,
-        fixed: isMobile ? "left" : false,
-      },
-      {
-        title: "Nội dung",
-        dataIndex: "content",
-        width: isMobile ? 150 : 200,
-        render: (_, record) => (
-          <Input
-            value={record.content}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "content", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "ĐVT",
-        dataIndex: "unit",
-        width: isMobile ? 80 : 100,
-        render: (_, record) => (
-          <Input
-            value={record.unit}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "unit", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Số lượng",
-        dataIndex: "quantity",
-        width: isMobile ? 90 : 120,
-        render: (_, record) => (
-          <Input
-            value={record.quantity}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "quantity", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "N/Công",
-        dataIndex: "workDay",
-        width: isMobile ? 80 : 100,
-        render: (_, record) => (
-          <Input
-            value={record.workDay}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "workDay", e.target.value)
-            }
-          />
-        ),
-      },
-      {
-        title: "Ghi chú",
-        dataIndex: "note",
-        width: isMobile ? 120 : 150,
-        render: (_, record) => (
-          <Input
-            value={record.note}
-            size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "note", e.target.value)
-            }
-          />
-        ),
-      },
-    ];
-
-    return baseColumns;
-  };
-
   const handleAddApprovals = async (refId, documentNumber) => {
     try {
       const approversData = form.getFieldValue("approvers") || [];
@@ -322,17 +173,17 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         const user = dataUser.find((u) => u.value === item.username);
         return {
           userName: item.username,
-          fullName: user?.label || "",
+          fullName: user?.label || "", // hoặc tìm từ danh sách user để lấy fullName
           level: index + 1,
         };
       });
 
       const res = await createApprovals(
         refId,
-        "PGV",
+        "BBTN",
         formattedApprovers,
         documentNumber,
-        `/pl/phieu-giao-viec-chi-tiet/${refId}?type=PGV`
+        `/pl/bien-ban/bien-ban-tiep-nhan-chi-tiet/${refId}?type=BBTN`
       );
       if (res && res.status === 200) {
         console.log("Tạo danh sách duyệt thành công");
@@ -352,6 +203,7 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         return null;
       });
 
+      // Lọc null (nếu có), chờ tất cả promise hoàn thành
       const responses = await Promise.all(updatePromises.filter(Boolean));
     } catch (error) {
       console.error("Lỗi cập nhật phê duyệt:", error);
@@ -369,42 +221,53 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            documentDate: monthYear.toISOString(),
-            note: values.note || "",
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
+            arrivalDate: values.arrivalDate?.format("YYYY-MM-DD") || null,
+            inspectionDate: values.inspectionDate?.format("YYYY-MM-DD") || null,
+            dockDate: values.dockDate?.format("YYYY-MM-DD") || null,
+            surveyDate: values.surveyDate?.format("YYYY-MM-DD") || null,
+            launchDate: values.launchDate?.format("YYYY-MM-DD") || null,
+            departureDate: values.departureDate?.format("YYYY-MM-DD") || null,
+            handoverDate: values.handoverDate?.format("YYYY-MM-DD") || null,
           };
 
-          let res = await addAssignmentSlip(
-            payload.documentNumber,
-            payload.productName,
-            payload.documentDate,
-            payload.department,
+          let id = uuidv4();
+
+          let res = await createShipRepairPlan(
+            id,
+            payload.voucherNo,
+            payload.shipName,
             payload.managementUnit,
+            payload.arrivalDate,
+            payload.inspectionDate,
+            payload.dockDate,
+            payload.surveyDate,
+            payload.launchDate,
+            payload.departureDate,
+            payload.handoverDate,
             payload.note,
-            payload.details
+            user.data.userName,
+            new Date().toISOString(),
+            user.data.userName,
+            new Date().toISOString()
           );
-          if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.documentNumber);
-            const newFollowers = dataUser.find(u => u.value === user.data.userName);
+          if ((res && res.status === 200) || res.status === 201) {
+            onSubmit(); // callback từ cha để reload
+            //await handleAddApprovals(res.data.data, payload.documentNumber);
+            const newFollowers = dataUser.find(
+              (u) => u.value === user.data.userName
+            );
             await addFollower(
               res.data.data,
-              "AssignmentSlip",
-               payload.documentNumber,
-               [
+              "ShipRepairPlan",
+              payload.voucherNo,
+              [
                 {
-                  userId: newFollowers.id,
-                  userName: newFollowers.value,
+                  userId: newFollowers.id, // bạn đã đặt id = user.apk trong getUser
+                  userName: newFollowers.value, // chính là userName
                   fullName: user.data.fullName,
-                }
+                },
               ]
-            )
-            onSubmit();
+            );
             form.resetFields();
             setMonthYear(dayjs());
             setTableData([]);
@@ -416,15 +279,13 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           }
         } catch (error) {
           if (error) {
-            console.log(error);
             notification.error({
               message: "Thất bại",
               description: "Đã có lỗi xảy ra. Vui lòng thử lại",
               placement: isMobile ? "top" : "topRight",
             });
           }
-        }
-        finally{
+        } finally {
           setLoading(false);
         }
       });
@@ -434,31 +295,33 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           setLoading(true);
           const payload = {
             ...values,
-            documentDate: monthYear.toISOString(),
-            note: values.note || "",
-            details: tableData.map((item) => ({
-              content: item.content || "",
-              unit: item.unit || "",
-              quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
-              note: item.note || "",
-            })),
+            arrivalDate: values.arrivalDate?.format("YYYY-MM-DD") || null,
+            inspectionDate: values.inspectionDate?.format("YYYY-MM-DD") || null,
+            dockDate: values.dockDate?.format("YYYY-MM-DD") || null,
+            surveyDate: values.surveyDate?.format("YYYY-MM-DD") || null,
+            launchDate: values.launchDate?.format("YYYY-MM-DD") || null,
+            departureDate: values.departureDate?.format("YYYY-MM-DD") || null,
+            handoverDate: values.handoverDate?.format("YYYY-MM-DD") || null,
           };
-
-          let res = await updateAssignmentSlip(
+          let res = await updateShipRepairPlan(
             initialValues.id,
-            payload.documentNumber,
-            payload.productName,
-            payload.documentDate,
-            payload.department,
+            payload.voucherNo,
+            payload.shipName,
             payload.managementUnit,
+            payload.arrivalDate,
+            payload.inspectionDate,
+            payload.dockDate,
+            payload.surveyDate,
+            payload.launchDate,
+            payload.departureDate,
+            payload.handoverDate,
             payload.note,
-            payload.details
+            initialValues.createdBy,
+            initialValues.createdAt,
+            user.data.userName,
+            new Date().toISOString()
           );
-          if (res && res.status === 200) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
-            }
+          if ((res && res.status === 200) || res.status === 204) {
             onSubmit();
             form.resetFields();
             setMonthYear(dayjs());
@@ -477,153 +340,12 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
     }
   };
-
-  // Render Mobile Card View for table data
-  const renderMobileCards = () => (
-    <div style={{ marginTop: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 12,
-          alignItems: "center"
-        }}
-      >
-        <h4 style={{ margin: 0, fontSize: 14 }}>Nội dung giao việc ({tableData.length})</h4>
-        <Space size="small">
-          <Button 
-            icon={<PlusOutlined />} 
-            size="small"
-            onClick={handleAddRow}
-          >
-            Thêm
-          </Button>
-          <Button 
-            size="small"
-            onClick={() => setTableData([])}
-          >
-            Hủy
-          </Button>
-        </Space>
-      </div>
-      
-      {tableData.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: 24,
-            border: "1px dashed #d9d9d9",
-            borderRadius: 6,
-            color: "#999"
-          }}
-        >
-          Chưa có dữ liệu
-        </div>
-      ) : (
-        <div style={{ maxHeight: 300, overflowY: "auto" }}>
-          {tableData.map((record, index) => (
-            <div
-              key={record.key}
-              style={{
-                border: "1px solid #f0f0f0",
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 8,
-                background: "#fafafa"
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 8
-                }}
-              >
-                <strong style={{ fontSize: 12 }}>#{index + 1}</strong>
-                <Button
-                  icon={<DeleteOutlined />}
-                  size="small"
-                  danger
-                  onClick={() => handleDeleteRow(record.key)}
-                />
-              </div>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div>
-                  <label style={{ fontSize: 11, color: "#666" }}>Nội dung:</label>
-                  <Input
-                    value={record.content}
-                    size="small"
-                    placeholder="Nhập nội dung"
-                    onChange={(e) =>
-                      handleInputChange(record.key, "content", e.target.value)
-                    }
-                  />
-                </div>
-                
-                <div style={{ display: "flex", gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>ĐVT:</label>
-                    <Input
-                      value={record.unit}
-                      size="small"
-                      placeholder="ĐVT"
-                      onChange={(e) =>
-                        handleInputChange(record.key, "unit", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>Số lượng:</label>
-                    <Input
-                      value={record.quantity}
-                      size="small"
-                      placeholder="Số lượng"
-                      onChange={(e) =>
-                        handleInputChange(record.key, "quantity", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                
-                <div style={{ display: "flex", gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>N/Công:</label>
-                    <Input
-                      value={record.workDay}
-                      size="small"
-                      placeholder="N/Công"
-                      onChange={(e) =>
-                        handleInputChange(record.key, "workDay", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>Ghi chú:</label>
-                    <Input
-                      value={record.note}
-                      size="small"
-                      placeholder="Ghi chú"
-                      onChange={(e) =>
-                        handleInputChange(record.key, "note", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   // Determine modal width and layout
   const getModalWidth = () => {
@@ -641,254 +363,91 @@ const ShipRepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const colSpans = getColSpans();
 
   return (
-    <>
-      <Modal
-        title={
-          <span style={{ 
-            fontSize: isMobile ? 18 : 25, 
-            fontWeight: 600 
-          }}>
-            {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
-          </span>
-        }
-        open={open}
-        onCancel={() => {
-          form.resetFields();
-          setMonthYear(dayjs());
-          setTableData([]);
-          setTableDrawerVisible(false);
-          onCancel();
-        }}
-        onOk={handleOk}
-        okText={initialValues ? "Cập nhật" : "Thêm"}
-        width={getModalWidth()}
-        confirmLoading={loading}
-        style={isMobile ? { top: 20 } : {}}
-        bodyStyle={isMobile ? { padding: "16px" } : {}}
-      >
-        <Form 
-          form={form} 
-          layout="vertical"
-          size={isMobile ? "small" : "default"}
-        >
-          <Row gutter={isMobile ? [8, 8] : [16, 16]}>
-            <Col span={colSpans.half}>
-              <Form.Item
-                name="documentNumber"
-                label="Số chứng từ"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item
-                name="productName"
-                label="Tên sản phẩm"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item label="Ngày chứng từ" required>
-                <DatePicker
-                  picker="day"
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                  value={monthYear}
-                  onChange={handleMonthChange}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item
-                name="managementUnit"
-                label="Đơn bị quản lý sử dụng"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item
-                name="department"
-                label="Bộ phận"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
-              <Form.Item name="note" label="Ghi chú">
-                <Input.TextArea rows={1} />
-              </Form.Item>
-            </Col>
-
-            {/* Approval Section */}
-            {approvalNumber > 0 && (
-              <>
-                {approvers.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <Col span={colSpans.half}>
-                      <Form.Item
-                        label={`Người duyệt cấp ${idx + 1}`}
-                        name={["approvers", idx, "username"]}
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng chọn người duyệt",
-                          },
-                        ]}
-                      >
-                        <Select
-                          options={dataUser}
-                          placeholder="Chọn người duyệt"
-                          showSearch
-                          optionFilterProp="label"
-                          disabled={!!initialValues}
-                        />
-                      </Form.Item>
-                    </Col>
-                    {initialValues && (
-                      <>
-                        <Col span={colSpans.half}>
-                          <Form.Item
-                            label={`Trạng thái duyệt ${idx + 1}`}
-                            name={["approvers", idx, "status"]}
-                            rules={[
-                              {
-                                required: true,
-                                message: "Vui lòng chọn trạng thái duyệt",
-                              },
-                            ]}
-                          >
-                            <Select
-                              options={approvalStatusOptions}
-                              placeholder="Chọn trạng thái"
-                              disabled={!isEditApproval || item.username !== user.data.userName}
-                            />
-                          </Form.Item>
-                        </Col>
-                        {isEditApproval && (
-                          <Col span={colSpans.half}>
-                            <Form.Item
-                              label={`Ghi chú duyệt ${idx + 1}`}
-                              name={["approvers", idx, "note"]}
-                            >
-                              <Input.TextArea
-                                rows={1}
-                                placeholder="Ghi chú duyệt"
-                                disabled={!isEditApproval || item.username !== user.data.userName}
-                              />
-                            </Form.Item>
-                          </Col>
-                        )}
-                      </>
-                    )}
-                  </React.Fragment>
-                ))}
-              </>
-            )}
-          </Row>
-
-          {/* Table Section */}
-          {isMobile ? (
-            renderMobileCards()
-          ) : (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                  alignItems: "center"
-                }}
-              >
-                <h4 style={{ margin: 0 }}>Nội dung giao việc</h4>
-                {isTablet && (
-                  <Button
-                    icon={<TableOutlined />}
-                    onClick={() => setTableDrawerVisible(true)}
-                  >
-                    Xem bảng
-                  </Button>
-                )}
-                {!isTablet && (
-                  <Space>
-                    <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-                      Thêm dòng
-                    </Button>
-                    <Button onClick={() => setTableData([])}>Hủy</Button>
-                  </Space>
-                )}
-              </div>
-              
-              {!isTablet && (
-                <Table
-                  columns={generateColumns()}
-                  dataSource={tableData}
-                  pagination={false}
-                  scroll={{ x: "max-content", y: 300 }}
-                  bordered
-                  size="small"
-                />
-              )}
-              
-              {isTablet && tableData.length > 0 && (
-                <div
-                  style={{
-                    padding: 12,
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 6,
-                    textAlign: "center"
-                  }}
-                >
-                  <span>Có {tableData.length} dòng dữ liệu. </span>
-                  <Button 
-                    type="link" 
-                    onClick={() => setTableDrawerVisible(true)}
-                  >
-                    Nhấn để xem chi tiết
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </Form>
-      </Modal>
-
-      {/* Table Drawer for Tablet */}
-      <Drawer
-        title="Nội dung giao việc"
-        width="90%"
-        onClose={() => setTableDrawerVisible(false)}
-        open={tableDrawerVisible}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Space>
-            <Button icon={<PlusOutlined />} onClick={handleAddRow}>
-              Thêm dòng
-            </Button>
-            <Button onClick={() => setTableData([])}>Hủy</Button>
-          </Space>
-        </div>
-        <Table
-          columns={generateColumns()}
-          dataSource={tableData}
-          pagination={false}
-          scroll={{ x: "max-content", y: "calc(100vh - 200px)" }}
-          bordered
-          size="small"
-        />
-      </Drawer>
-    </>
+    <Modal
+      title={
+        <span style={{ fontSize: isMobile ? 18 : 25, fontWeight: 600 }}>
+          {initialValues ? "Cập nhật kế hoạch" : "Thêm kế hoạch"}
+        </span>
+      }
+      open={open}
+      onCancel={() => {
+        form.resetFields();
+        setMonthYear(dayjs());
+        setTableData([]);
+        onCancel();
+        setTableDrawerVisible(false);
+      }}
+      onOk={handleOk}
+      okText={initialValues ? "Cập nhật" : "Thêm"}
+      width={getModalWidth()}
+      confirmLoading={loading}
+      style={isMobile ? { top: 20 } : {}}
+      bodyStyle={isMobile ? { padding: "16px" } : {}}
+    >
+      <Form form={form} layout="vertical" size={isMobile ? "small" : "default"}>
+        <Row gutter={isMobile ? [8, 8] : [16, 16]}>
+          <Col span={colSpans.half}>
+            <Form.Item
+              name="voucherNo"
+              label="Số chứng từ"
+              rules={[{ required: true }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item name="shipName" label="Tên phương tiện">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item name="managementUnit" label="Đơn vị qlsd">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Ngày cập cảng" name="arrivalDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Chạy kiểm tra" name="inspectionDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Lên đà" name="dockDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Khảo sát" name="surveyDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Ngày hạ thuỷ" name="launchDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Tách bến" name="departureDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Bàn giao" name="handoverDate">
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={colSpans.half}>
+            <Form.Item label="Ghi chú" name="note">
+              <Input.TextArea rows={3} placeholder="Nhập ghi chú (nếu có)" />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Form>
+    </Modal>
   );
 };
 

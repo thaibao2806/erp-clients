@@ -35,6 +35,7 @@ dayjs.extend(customParseFormat);
 import { v4 as uuidv4 } from "uuid";
 import {
   createImportAnExportWareHouse,
+  getAllImportandExportDetail,
   updateImportAnExportWareHouse,
 } from "../../../../services/apiTechnicalMaterial/apiInventoryTransaction";
 
@@ -80,6 +81,29 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.auth.login?.currentUser);
   const { width } = useWindowSize();
+
+  const [materialOptions, setMaterialOptions] = useState([]);
+
+  const handleSearchMaterial = async (keyword) => {
+    try {
+      if (!keyword || keyword.trim() === "") {
+        setMaterialOptions([]);
+        return;
+      }
+      const res = await getAllImportandExportDetail(keyword);
+      if (res && res.status === 200) {
+        setMaterialOptions(
+          res.data.data.map((item) => ({
+            label: `${item.productCode} - ${item.productName}`,
+            value: item.productCode,
+            data: item, // giữ toàn bộ thông tin
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Lỗi khi tìm vật tư:", error);
+    }
+  };
 
   // Responsive breakpoints
   const isMobile = width <= 768;
@@ -151,7 +175,7 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
   const getVoucherNo = async () => {
     try {
-      let res = await getDocumentNumber("NK");
+      let res = await getDocumentNumber("XK");
       if (res && res.status === 200) {
         form.setFieldsValue({ transactionNo: res.data.data.code });
       }
@@ -224,12 +248,36 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         width: isMobile ? 150 : 200,
         dataIndex: "productCode",
         render: (_, record) => (
-          <Input
+          <Select
+            showSearch
+            placeholder="Nhập mã vật tư"
             value={record.productCode}
+            style={{ width: "100%" }}
             size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "productCode", e.target.value)
-            }
+            filterOption={false}
+            onSearch={handleSearchMaterial}
+            onChange={(value) => {
+              const selected = materialOptions.find(
+                (x) => x.value === value
+              )?.data;
+              if (selected) {
+                handleInputChange(
+                  record.key,
+                  "productCode",
+                  selected.productCode
+                );
+                handleInputChange(
+                  record.key,
+                  "productName",
+                  selected.productName
+                );
+                handleInputChange(record.key, "unit", selected.unit);
+              }
+            }}
+            options={materialOptions.map((opt) => ({
+              label: `${opt.data.productCode} - ${opt.data.productName}`,
+              value: opt.data.productCode,
+            }))}
           />
         ),
       },
@@ -238,12 +286,36 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
         width: isMobile ? 150 : 200,
         dataIndex: "productName",
         render: (_, record) => (
-          <Input
+          <Select
+            showSearch
+            placeholder="Nhập tên vật tư"
             value={record.productName}
+            style={{ width: "100%" }}
             size={isMobile ? "small" : "default"}
-            onChange={(e) =>
-              handleInputChange(record.key, "productName", e.target.value)
-            }
+            filterOption={false}
+            onSearch={handleSearchMaterial}
+            onChange={(value) => {
+              const selected = materialOptions
+                .map((x) => x.data)
+                .find((x) => x.productName === value);
+              if (selected) {
+                handleInputChange(
+                  record.key,
+                  "productCode",
+                  selected.productCode
+                );
+                handleInputChange(
+                  record.key,
+                  "productName",
+                  selected.productName
+                );
+                handleInputChange(record.key, "unit", selected.unit);
+              }
+            }}
+            options={materialOptions.map((opt) => ({
+              label: opt.data.productName,
+              value: opt.data.productName,
+            }))}
           />
         ),
       },
@@ -565,34 +637,80 @@ const ExportWareHouseModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   <label style={{ fontSize: 11, color: "#666" }}>
                     Mã vật tư:
                   </label>
-                  <Input
+                  <Select
+                    showSearch
+                    placeholder="Nhập mã vật tư"
                     value={record.productCode}
-                    size="small"
-                    placeholder="Mã vật tư"
-                    onChange={(e) =>
-                      handleInputChange(
-                        record.key,
-                        "productCode",
-                        e.target.value
-                      )
-                    }
+                    style={{ width: "100%" }}
+                    size={isMobile ? "small" : "default"}
+                    filterOption={false}
+                    onSearch={handleSearchMaterial}
+                    onChange={(value) => {
+                      const selected = materialOptions.find(
+                        (x) => x.value === value
+                      )?.data;
+                      if (selected) {
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          selected.productCode
+                        );
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          selected.productName
+                        );
+                        handleInputChange(
+                          record.key,
+                          "unit",
+                          selected.unitName
+                        );
+                      }
+                    }}
+                    options={materialOptions.map((opt) => ({
+                      label: `${opt.data.productCode} - ${opt.data.productName}`,
+                      value: opt.data.productCode,
+                    }))}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: "#666" }}>
                     Tên vật tư:
                   </label>
-                  <Input
+                  <Select
+                    showSearch
+                    placeholder="Nhập tên vật tư"
                     value={record.productName}
-                    size="small"
-                    placeholder="Tên vật tư"
-                    onChange={(e) =>
-                      handleInputChange(
-                        record.key,
-                        "productName",
-                        e.target.value
-                      )
-                    }
+                    style={{ width: "100%" }}
+                    size={isMobile ? "small" : "default"}
+                    filterOption={false}
+                    onSearch={handleSearchMaterial}
+                    onChange={(value) => {
+                      const selected = materialOptions
+                        .map((x) => x.data)
+                        .find((x) => x.productName === value);
+                      if (selected) {
+                        handleInputChange(
+                          record.key,
+                          "productCode",
+                          selected.productCode
+                        );
+                        handleInputChange(
+                          record.key,
+                          "productName",
+                          selected.productName
+                        );
+                        handleInputChange(
+                          record.key,
+                          "unit",
+                          selected.unitName
+                        );
+                      }
+                    }}
+                    options={materialOptions.map((opt) => ({
+                      label: opt.data.productName,
+                      value: opt.data.productName,
+                    }))}
                   />
                 </div>
 

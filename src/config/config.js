@@ -198,7 +198,15 @@ export const updateInventoryTransaction = "/api/v1/InventoryTransaction/"
 export const getInventoryTransactionByID = "/api/v1/InventoryTransaction/"
 export const deleteInventoryTransaction = "/api/v1/InventoryTransaction/"
 export const filterInventoryTransaction = "/api/v1/InventoryTransaction/filter"
+export const getAllDetailInventoryTransaction = "/api/v1/InventoryTransaction/GetAllDetail"
 
 //stockonHand
 export const getStockOnHand = "/api/v1/Stock/report"
 
+//shipRepairPlan
+export const getshipRepairPlan = "/api/v1/khkd/shiprepairplan"
+export const addshipRepairPlan = "/api/v1/khkd/shiprepairplan"
+export const getshipRepairPlanByID = "/api/v1/khkd/shiprepairplan/"
+export const updateshipRepairPlan = "/api/v1/khkd/shiprepairplan/"
+export const deleteshipRepairPlan = "/api/v1/khkd/shiprepairplan/"
+export const filtershipRepairPlan = "/api/v1/khkd/shiprepairplan/filter"
