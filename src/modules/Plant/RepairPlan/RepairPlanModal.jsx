@@ -22,15 +22,13 @@ import {
   updateAssignmentSlip,
 } from "../../../services/apiPlan/apiAssignmentSlip";
 import { getDocumentNumber } from "../../../services/apiAutoNumbering";
-import { getApprovalSetting } from "../../../services/apiApproveSetting";
 import { getAllUser } from "../../../services/apiAuth";
-import {
-  createApprovals,
-  getApprovalsByRef,
-  updateStatusApprovals,
-} from "../../../services/apiApprovals";
 import { useSelector } from "react-redux";
 import { addFollower } from "../../../services/apiFollower";
+import {
+  createRepairPlan,
+  updateRepairPlans,
+} from "../../../services/apiPlan/apiRepairPlan";
 dayjs.extend(customParseFormat);
 
 const approvalStatusOptions = [
@@ -63,6 +61,13 @@ const useWindowSize = () => {
   return windowSize;
 };
 
+const statusOptions = [
+  { value: "Chưa thực hiện", label: "Chưa thực hiện" },
+  { value: "Đang thực hiện", label: "Đang thực hiện" },
+  { value: "Hoàn thành", label: "Hoàn thành" },
+  { value: "Tạm ngưng", label: "Tạm ngưng" },
+];
+
 const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [monthYear, setMonthYear] = useState(dayjs());
@@ -89,9 +94,9 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
 
       form.setFieldsValue(initialValues || {});
       setIsEditApproval(!!initialValues?.type);
-      setMonthYear(dayjs(initialValues?.documentDate || dayjs()));
+      setMonthYear(dayjs(initialValues?.voucherDate || dayjs()));
       if (initialValues?.details?.length) {
-        const daysInMonth = dayjs(initialValues.documentDate).daysInMonth();
+        const daysInMonth = dayjs(initialValues.voucherDate).daysInMonth();
         const columns = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
         const formattedDetails = initialValues.details.map((item, index) => ({
@@ -100,7 +105,10 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           content: item.content || "",
           unit: item.unit || "",
           quantity: item.quantity || "",
-          workDay: item.workDay || "",
+          beginTime: dayjs(item.beginTime) || dayjs(),
+          endTime: dayjs(item.endTime) || dayjs(),
+          department: item.department || "",
+          status: item.status || "",
           note: item.note || "",
           ...columns.reduce((acc, day) => {
             acc[`d${day}`] = item[`d${day}`] || "";
@@ -112,11 +120,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
       } else {
         setTableData([]);
       }
-      getApprovalByModulePage();
       getUser();
-      if (initialValues) {
-        getApprovals(initialValues.id);
-      }
     }
   }, [open, initialValues, form]);
 
@@ -125,22 +129,6 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
       setApprovers(Array(approvalNumber).fill({ userName: null }));
     }
   }, [approvalNumber, open, initialValues]);
-
-  const getApprovals = async (refId) => {
-    try {
-      let res = await getApprovalsByRef(refId, "PGV");
-      if (res && res.status === 200) {
-        const list = res.data.data.map((ap) => ({
-          id: ap.id,
-          username: ap.userName,
-          status: ap.status,
-          note: ap.note,
-        }));
-        setApprovers(list);
-        form.setFieldsValue({ approvers: list });
-      }
-    } catch (error) {}
-  };
 
   const getUser = async () => {
     try {
@@ -158,22 +146,11 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     }
   };
 
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const getVoucherNo = async () => {
     try {
-      let res = await getDocumentNumber("PGV");
+      let res = await getDocumentNumber("TDSC");
       if (res && res.status === 200) {
-        form.setFieldsValue({ documentNumber: res.data.data.code });
+        form.setFieldsValue({ voucherNo: res.data.data.code });
       }
     } catch (error) {
       console.log(error);
@@ -282,16 +259,55 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         ),
       },
       {
-        title: "N/Công",
-        dataIndex: "workDay",
-        width: isMobile ? 80 : 100,
+        title: "Thời gian bắt đầu",
+        dataIndex: "beginTime",
+        width: isMobile ? 120 : 150,
+        render: (_, record) => (
+          <DatePicker
+            format="DD/MM/YYYY"
+            value={record.beginTime ? dayjs(record.beginTime) : null}
+            onChange={(date) =>
+              handleInputChange(record.key, "beginTime", date)
+            }
+          />
+        ),
+      },
+      {
+        title: "Thời gian kết thúc",
+        dataIndex: "endTime",
+        width: isMobile ? 120 : 150,
+        render: (_, record) => (
+          <DatePicker
+            format="DD/MM/YYYY"
+            value={record.endTime ? dayjs(record.endTime) : null}
+            onChange={(date) => handleInputChange(record.key, "endTime", date)}
+          />
+        ),
+      },
+      {
+        title: "Bộ phận thực hiện",
+        dataIndex: "department",
+        width: isMobile ? 120 : 150,
         render: (_, record) => (
           <Input
-            value={record.workDay}
+            value={record.department}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
-              handleInputChange(record.key, "workDay", e.target.value)
+              handleInputChange(record.key, "department", e.target.value)
             }
+          />
+        ),
+      },
+      {
+        title: "Trạng thái",
+        dataIndex: "status",
+        width: isMobile ? 120 : 150,
+        render: (_, record) => (
+          <Select
+            value={record.status}
+            onChange={(value) => handleInputChange(record.key, "status", value)}
+            options={statusOptions}
+            placeholder="Chọn trạng thái"
           />
         ),
       },
@@ -300,66 +316,19 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         dataIndex: "note",
         width: isMobile ? 120 : 150,
         render: (_, record) => (
-          <Input
+          <Input.TextArea
             value={record.note}
             size={isMobile ? "small" : "default"}
             onChange={(e) =>
               handleInputChange(record.key, "note", e.target.value)
             }
+            rows={1}
           />
         ),
       },
     ];
 
     return baseColumns;
-  };
-
-  const handleAddApprovals = async (refId, documentNumber) => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-
-      const formattedApprovers = approversData.map((item, index) => {
-        const user = dataUser.find((u) => u.value === item.username);
-        return {
-          userName: item.username,
-          fullName: user?.label || "",
-          level: index + 1,
-        };
-      });
-
-      const res = await createApprovals(
-        refId,
-        "PGV",
-        formattedApprovers,
-        documentNumber,
-        `/pl/phieu-giao-viec-chi-tiet/${refId}?type=PGV`
-      );
-      if (res && res.status === 200) {
-        console.log("Tạo danh sách duyệt thành công");
-      }
-    } catch (error) {
-      console.error("Lỗi khi tạo duyệt:", error);
-    }
-  };
-
-  const handleUpdateApprovals = async () => {
-    try {
-      const approversData = form.getFieldValue("approvers") || [];
-      const updatePromises = approversData.map((item) => {
-        if (item.id) {
-          return updateStatusApprovals(item.id, item.status, item.note);
-        }
-        return null;
-      });
-
-      const responses = await Promise.all(updatePromises.filter(Boolean));
-    } catch (error) {
-      console.error("Lỗi cập nhật phê duyệt:", error);
-      notification.error({
-        message: "Cập nhật thất bại",
-        description: "Có lỗi xảy ra khi cập nhật trạng thái duyệt.",
-      });
-    }
   };
 
   const handleOk = () => {
@@ -375,35 +344,33 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               content: item.content || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              beginTime: item.beginTime?.format("YYYY-MM-DD") || null,
+              endTime: item.endTime?.format("YYYY-MM-DD") || null,
+              department: item.department || "",
+              status: item.status || "",
               note: item.note || "",
             })),
           };
 
-          let res = await addAssignmentSlip(
-            payload.documentNumber,
+          let res = await createRepairPlan(
+            payload.voucherNo,
             payload.productName,
-            payload.documentDate,
-            payload.department,
+            payload.voucherDate,
             payload.managementUnit,
             payload.note,
             payload.details
           );
           if (res && res.status === 200) {
-            await handleAddApprovals(res.data.data, payload.documentNumber);
-            const newFollowers = dataUser.find(u => u.value === user.data.userName);
-            await addFollower(
-              res.data.data,
-              "AssignmentSlip",
-               payload.documentNumber,
-               [
-                {
-                  userId: newFollowers.id,
-                  userName: newFollowers.value,
-                  fullName: user.data.fullName,
-                }
-              ]
-            )
+            const newFollowers = dataUser.find(
+              (u) => u.value === user.data.userName
+            );
+            await addFollower(res.data.data, "RepairPlan", payload.voucherNo, [
+              {
+                userId: newFollowers.id,
+                userName: newFollowers.value,
+                fullName: user.data.fullName,
+              },
+            ]);
             onSubmit();
             form.resetFields();
             setMonthYear(dayjs());
@@ -423,8 +390,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               placement: isMobile ? "top" : "topRight",
             });
           }
-        }
-        finally{
+        } finally {
           setLoading(false);
         }
       });
@@ -440,25 +406,24 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               content: item.content || "",
               unit: item.unit || "",
               quantity: Number(item.quantity) || 0,
-              workDay: Number(item.workDay) || 0,
+              beginTime: item.beginTime?.format("YYYY-MM-DD") || null,
+              endTime: item.endTime?.format("YYYY-MM-DD") || null,
+              department: item.department || "",
+              status: item.status || "",
               note: item.note || "",
             })),
           };
 
-          let res = await updateAssignmentSlip(
+          let res = await updateRepairPlans(
             initialValues.id,
-            payload.documentNumber,
+            payload.voucherNo,
             payload.productName,
-            payload.documentDate,
-            payload.department,
+            payload.voucherDate,
             payload.managementUnit,
             payload.note,
             payload.details
           );
-          if (res && res.status === 200) {
-            if (isEditApproval) {
-              await handleUpdateApprovals();
-            }
+          if ((res && res.status === 200) || res.status === 204) {
             onSubmit();
             form.resetFields();
             setMonthYear(dayjs());
@@ -470,6 +435,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
             });
           }
         } catch (error) {
+          console.log(error);
           if (error) {
             notification.error({
               message: "Thất bại",
@@ -477,7 +443,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               placement: isMobile ? "top" : "topRight",
             });
           }
-        } finally{
+        } finally {
           setLoading(false);
         }
       });
@@ -492,27 +458,22 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 12,
-          alignItems: "center"
+          alignItems: "center",
         }}
       >
-        <h4 style={{ margin: 0, fontSize: 14 }}>Nội dung giao việc ({tableData.length})</h4>
+        <h4 style={{ margin: 0, fontSize: 14 }}>
+          Nội dung giao việc ({tableData.length})
+        </h4>
         <Space size="small">
-          <Button 
-            icon={<PlusOutlined />} 
-            size="small"
-            onClick={handleAddRow}
-          >
+          <Button icon={<PlusOutlined />} size="small" onClick={handleAddRow}>
             Thêm
           </Button>
-          <Button 
-            size="small"
-            onClick={() => setTableData([])}
-          >
+          <Button size="small" onClick={() => setTableData([])}>
             Hủy
           </Button>
         </Space>
       </div>
-      
+
       {tableData.length === 0 ? (
         <div
           style={{
@@ -520,7 +481,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
             padding: 24,
             border: "1px dashed #d9d9d9",
             borderRadius: 6,
-            color: "#999"
+            color: "#999",
           }}
         >
           Chưa có dữ liệu
@@ -535,7 +496,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                 borderRadius: 8,
                 padding: 12,
                 marginBottom: 8,
-                background: "#fafafa"
+                background: "#fafafa",
               }}
             >
               <div
@@ -543,7 +504,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 8
+                  marginBottom: 8,
                 }}
               >
                 <strong style={{ fontSize: 12 }}>#{index + 1}</strong>
@@ -554,10 +515,12 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   onClick={() => handleDeleteRow(record.key)}
                 />
               </div>
-              
+
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div>
-                  <label style={{ fontSize: 11, color: "#666" }}>Nội dung:</label>
+                  <label style={{ fontSize: 11, color: "#666" }}>
+                    Nội dung:
+                  </label>
                   <Input
                     value={record.content}
                     size="small"
@@ -567,7 +530,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     }
                   />
                 </div>
-                
+
                 <div style={{ display: "flex", gap: 8 }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ fontSize: 11, color: "#666" }}>ĐVT:</label>
@@ -581,38 +544,85 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>Số lượng:</label>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Số lượng:
+                    </label>
                     <Input
                       value={record.quantity}
                       size="small"
                       placeholder="Số lượng"
                       onChange={(e) =>
-                        handleInputChange(record.key, "quantity", e.target.value)
+                        handleInputChange(
+                          record.key,
+                          "quantity",
+                          e.target.value
+                        )
                       }
                     />
                   </div>
                 </div>
-                
+
                 <div style={{ display: "flex", gap: 8 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>N/Công:</label>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Thời gian bắt đầu:
+                    </label>
                     <Input
-                      value={record.workDay}
+                      value={record.beginTime}
                       size="small"
-                      placeholder="N/Công"
+                      placeholder="Thời gian bắt đầu"
                       onChange={(e) =>
-                        handleInputChange(record.key, "workDay", e.target.value)
+                        handleInputChange(
+                          record.key,
+                          "beginTime",
+                          e.target.value
+                        )
                       }
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: "#666" }}>Ghi chú:</label>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Thời gian kết thúc:
+                    </label>
                     <Input
-                      value={record.note}
+                      value={record.endTime}
                       size="small"
                       placeholder="Ghi chú"
                       onChange={(e) =>
-                        handleInputChange(record.key, "note", e.target.value)
+                        handleInputChange(record.key, "endTime", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Bộ phận thực hiện:
+                    </label>
+                    <Input
+                      value={record.department}
+                      size="small"
+                      placeholder="Bộ phận thực hiện"
+                      onChange={(e) =>
+                        handleInputChange(
+                          record.key,
+                          "department",
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#666" }}>
+                      Trạng thái:
+                    </label>
+                    <Input
+                      value={record.status}
+                      size="small"
+                      placeholder="Trạng thái"
+                      onChange={(e) =>
+                        handleInputChange(record.key, "status", e.target.value)
                       }
                     />
                   </div>
@@ -644,11 +654,13 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
     <>
       <Modal
         title={
-          <span style={{ 
-            fontSize: isMobile ? 18 : 25, 
-            fontWeight: 600 
-          }}>
-            {initialValues ? "Cập nhật phiếu giao việc" : "Thêm phiếu giao việc"}
+          <span
+            style={{
+              fontSize: isMobile ? 18 : 25,
+              fontWeight: 600,
+            }}
+          >
+            {initialValues ? "Cập nhật tiến độ" : "Thêm tiến độ sửa chữa"}
           </span>
         }
         open={open}
@@ -666,15 +678,15 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
         style={isMobile ? { top: 20 } : {}}
         bodyStyle={isMobile ? { padding: "16px" } : {}}
       >
-        <Form 
-          form={form} 
+        <Form
+          form={form}
           layout="vertical"
           size={isMobile ? "small" : "default"}
         >
           <Row gutter={isMobile ? [8, 8] : [16, 16]}>
             <Col span={colSpans.half}>
               <Form.Item
-                name="documentNumber"
+                name="voucherNo"
                 label="Số chứng từ"
                 rules={[{ required: true }]}
               >
@@ -711,85 +723,10 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
               </Form.Item>
             </Col>
             <Col span={colSpans.half}>
-              <Form.Item
-                name="department"
-                label="Bộ phận"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={colSpans.half}>
               <Form.Item name="note" label="Ghi chú">
                 <Input.TextArea rows={1} />
               </Form.Item>
             </Col>
-
-            {/* Approval Section */}
-            {approvalNumber > 0 && (
-              <>
-                {approvers.map((item, idx) => (
-                  <React.Fragment key={idx}>
-                    <Col span={colSpans.half}>
-                      <Form.Item
-                        label={`Người duyệt cấp ${idx + 1}`}
-                        name={["approvers", idx, "username"]}
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng chọn người duyệt",
-                          },
-                        ]}
-                      >
-                        <Select
-                          options={dataUser}
-                          placeholder="Chọn người duyệt"
-                          showSearch
-                          optionFilterProp="label"
-                          disabled={!!initialValues}
-                        />
-                      </Form.Item>
-                    </Col>
-                    {initialValues && (
-                      <>
-                        <Col span={colSpans.half}>
-                          <Form.Item
-                            label={`Trạng thái duyệt ${idx + 1}`}
-                            name={["approvers", idx, "status"]}
-                            rules={[
-                              {
-                                required: true,
-                                message: "Vui lòng chọn trạng thái duyệt",
-                              },
-                            ]}
-                          >
-                            <Select
-                              options={approvalStatusOptions}
-                              placeholder="Chọn trạng thái"
-                              disabled={!isEditApproval || item.username !== user.data.userName}
-                            />
-                          </Form.Item>
-                        </Col>
-                        {isEditApproval && (
-                          <Col span={colSpans.half}>
-                            <Form.Item
-                              label={`Ghi chú duyệt ${idx + 1}`}
-                              name={["approvers", idx, "note"]}
-                            >
-                              <Input.TextArea
-                                rows={1}
-                                placeholder="Ghi chú duyệt"
-                                disabled={!isEditApproval || item.username !== user.data.userName}
-                              />
-                            </Form.Item>
-                          </Col>
-                        )}
-                      </>
-                    )}
-                  </React.Fragment>
-                ))}
-              </>
-            )}
           </Row>
 
           {/* Table Section */}
@@ -802,7 +739,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   display: "flex",
                   justifyContent: "space-between",
                   marginBottom: 8,
-                  alignItems: "center"
+                  alignItems: "center",
                 }}
               >
                 <h4 style={{ margin: 0 }}>Nội dung giao việc</h4>
@@ -823,7 +760,7 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   </Space>
                 )}
               </div>
-              
+
               {!isTablet && (
                 <Table
                   columns={generateColumns()}
@@ -834,19 +771,19 @@ const RepairPlanModal = ({ open, onCancel, onSubmit, initialValues }) => {
                   size="small"
                 />
               )}
-              
+
               {isTablet && tableData.length > 0 && (
                 <div
                   style={{
                     padding: 12,
                     border: "1px solid #f0f0f0",
                     borderRadius: 6,
-                    textAlign: "center"
+                    textAlign: "center",
                   }}
                 >
                   <span>Có {tableData.length} dòng dữ liệu. </span>
-                  <Button 
-                    type="link" 
+                  <Button
+                    type="link"
                     onClick={() => setTableDrawerVisible(true)}
                   >
                     Nhấn để xem chi tiết

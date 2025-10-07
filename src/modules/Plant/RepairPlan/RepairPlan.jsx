@@ -34,6 +34,10 @@ import {
 } from "../../../services/apiPlan/apiAssignmentSlip";
 import { saveAs } from "file-saver";
 import RepairPlanModal from "./RepairPlanModal";
+import {
+  deleteRepairPlanByID,
+  fillterRepairPlans,
+} from "../../../services/apiPlan/apiRepairPlan";
 
 const { RangePicker } = DatePicker;
 
@@ -67,7 +71,8 @@ const RepairPlan = () => {
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false);
-  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
+  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] =
+    useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -75,7 +80,7 @@ const RepairPlan = () => {
   });
 
   const { width } = useWindowSize();
-  
+
   // Responsive breakpoints
   const isMobile = width <= 768;
   const isTablet = width > 768 && width <= 1024;
@@ -88,20 +93,13 @@ const RepairPlan = () => {
   const fetchData = async (page = 1, pageSize = 10) => {
     try {
       setLoading(true);
-      const {
-        documentNumber,
-        productName,
-        managementUnit,
-        department,
-        dateRange,
-      } = filters;
+      const { voucherNo, productName, managementUnit, dateRange } = filters;
       const fromDate = dateRange ? dateRange[0].format("YYYY-MM-DD") : null;
       const toDate = dateRange ? dateRange[1].format("YYYY-MM-DD") : null;
 
-      let res = await fillterAssignmentSlip(
-        documentNumber,
+      let res = await fillterRepairPlans(
+        voucherNo,
         productName,
-        department,
         managementUnit,
         fromDate,
         toDate,
@@ -131,7 +129,7 @@ const RepairPlan = () => {
 
   const [filters, setFilters] = useState({
     dateRange: null,
-    documentNumber: "",
+    voucherNo: "",
     productName: "",
     managementUnit: "",
     department: "",
@@ -146,20 +144,22 @@ const RepairPlan = () => {
     },
     {
       title: "Số chứng từ",
-      dataIndex: "documentNumber",
+      dataIndex: "voucherNo",
       width: isMobile ? 120 : 150,
       fixed: isMobile ? "left" : false,
       render: (text, record) => (
-        <Link to={`/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/${record.id}`}>{text}</Link>
+        <Link to={`/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/${record.id}`}>
+          {text}
+        </Link>
       ),
     },
-    // {
-    //   title: "Ngày chứng từ",
-    //   dataIndex: "documentDate",
-    //   width: isMobile ? 100 : 120,
-    //   render: (date) =>
-    //     date ? new Date(date).toLocaleDateString("vi-VN") : "---",
-    // },
+    {
+      title: "Ngày chứng từ",
+      dataIndex: "voucherDate",
+      width: isMobile ? 100 : 120,
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "---",
+    },
     {
       title: "Tên sản phẩm",
       dataIndex: "productName",
@@ -169,41 +169,6 @@ const RepairPlan = () => {
       title: "Đơn vị quản lý sd",
       dataIndex: "managementUnit",
       width: isMobile ? 120 : 150,
-    },
-    {
-      title: "Ngày cập cảng",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "Chạy kiểm tra",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "Lên đà",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "Khảo sát",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "N.T hạ thuỷ",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "Tách bến",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
-    },
-    {
-      title: "Bàn giao",
-      dataIndex: "department",
-      width: isMobile ? 100 : 120,
     },
     {
       title: "Ghi chú",
@@ -223,24 +188,30 @@ const RepairPlan = () => {
     },
     {
       title: "Thông tin",
-      dataIndex: "documentNumber",
+      dataIndex: "voucherNo",
       fixed: "left",
       width: 200,
       render: (_, record) => (
         <div>
-          <Link 
-            to={`/pl/phieu-giao-viec-chi-tiet/${record.id}`}
+          <Link
+            to={`/pl/ke-hoach/ke-hoach-sua-chua-chi-tiet/${record.id}`}
             style={{ fontWeight: 600, fontSize: 14 }}
           >
-            {record.documentNumber}
+            {record.voucherNo}
           </Link>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-            {record.documentDate 
-              ? new Date(record.documentDate).toLocaleDateString("vi-VN")
+            {record.voucherDate
+              ? new Date(record.voucherDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
           <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
             {record.productName}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.managementUnit}
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            {record.note}
           </div>
         </div>
       ),
@@ -314,7 +285,7 @@ const RepairPlan = () => {
           setLoading(true);
 
           await Promise.all(
-            selectedRowKeys.map((id) => deleteAssignmetSlip(id))
+            selectedRowKeys.map((id) => deleteRepairPlanByID(id))
           );
 
           const remainingData = dataSource.filter(
@@ -341,43 +312,6 @@ const RepairPlan = () => {
     });
   };
 
-  const handleExportExcel = async () => {
-    if (selectedRowKeys.length === 0) {
-      Modal.warning({
-        title: "Chưa chọn dòng nào",
-        content: "Vui lòng chọn ít nhất một dòng để xuất Excel.",
-      });
-      return;
-    }
-    try {
-      setLoading(true);
-      for (const id of selectedRowKeys) {
-        const matchedItem = dataSource.find((item) => item.id === id);
-        const fileName = matchedItem?.documentNumber
-          ? `PhieuGiaoViec_${matchedItem.documentNumber}.xlsx`
-          : `PhieuGiaoViec_${id}.xlsx`;
-        try {
-          let res = await exportExcel(id);
-          const blob = new Blob([res.data], {
-            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          });
-
-          saveAs(blob, fileName);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-      setMobileActionDrawerVisible(false);
-    } catch (error) {
-      Modal.error({
-        title: "Lỗi xuất file",
-        content: "Đã xảy ra lỗi khi xuất một hoặc nhiều phiếu.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFilterChange = (field, value) => {
     setFilters({ ...filters, [field]: value });
   };
@@ -392,10 +326,9 @@ const RepairPlan = () => {
   const handleReset = () => {
     setFilters({
       dateRange: null,
-      documentNumber: "",
+      voucherNo: "",
       productName: "",
       managementUnit: "",
-      department: "",
     });
     fetchData(pagination.current, pagination.pageSize);
     if (isMobile) {
@@ -409,22 +342,14 @@ const RepairPlan = () => {
       <Menu.Item key="add" icon={<PlusOutlined />} onClick={handleAdd}>
         Thêm mới
       </Menu.Item>
-      <Menu.Item 
-        key="delete" 
-        icon={<DeleteOutlined />} 
+      <Menu.Item
+        key="delete"
+        icon={<DeleteOutlined />}
         onClick={handleDelete}
         disabled={selectedRowKeys.length === 0}
         danger
       >
         Xóa ({selectedRowKeys.length})
-      </Menu.Item>
-      <Menu.Item 
-        key="export" 
-        icon={<FileExcelOutlined />} 
-        onClick={handleExportExcel}
-        disabled={selectedRowKeys.length === 0}
-      >
-        Xuất Excel ({selectedRowKeys.length})
       </Menu.Item>
     </Menu>
   );
@@ -434,7 +359,13 @@ const RepairPlan = () => {
     <div style={{ padding: isMobile ? 12 : 16 }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Thời gian
           </label>
           <RangePicker
@@ -446,33 +377,47 @@ const RepairPlan = () => {
           />
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Số chứng từ
           </label>
           <Input
             placeholder="Số chứng từ"
-            value={filters.documentNumber}
-            onChange={(e) =>
-              handleFilterChange("documentNumber", e.target.value)
-            }
+            value={filters.voucherNo}
+            onChange={(e) => handleFilterChange("voucherNo", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Tên sản phẩm
           </label>
           <Input
             placeholder="Tên sản phẩm"
             value={filters.productName}
-            onChange={(e) =>
-              handleFilterChange("productName", e.target.value)
-            }
+            onChange={(e) => handleFilterChange("productName", e.target.value)}
             size={isMobile ? "small" : "default"}
           />
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontSize: isMobile ? 12 : 14,
+            }}
+          >
             Đơn vị quản lý sử dụng
           </label>
           <Input
@@ -484,19 +429,6 @@ const RepairPlan = () => {
             size={isMobile ? "small" : "default"}
           />
         </Col>
-        {/* <Col xs={24} sm={12} md={8}>
-          <label style={{ display: "block", marginBottom: 4, fontSize: isMobile ? 12 : 14 }}>
-            Bộ phận
-          </label>
-          <Input
-            placeholder="Bộ phận"
-            value={filters.department}
-            onChange={(e) =>
-              handleFilterChange("department", e.target.value)
-            }
-            size={isMobile ? "small" : "default"}
-          />
-        </Col> */}
       </Row>
       <div style={{ marginTop: 16, textAlign: "right" }}>
         <Button
@@ -521,68 +453,72 @@ const RepairPlan = () => {
         <Card
           key={item.key}
           size="small"
-          style={{ 
+          style={{
             marginBottom: 12,
-            border: selectedRowKeys.includes(item.key) ? "2px solid #1890ff" : "1px solid #f0f0f0"
+            border: selectedRowKeys.includes(item.key)
+              ? "2px solid #1890ff"
+              : "1px solid #f0f0f0",
           }}
           bodyStyle={{ padding: 12 }}
           onClick={() => {
             const newSelection = selectedRowKeys.includes(item.key)
-              ? selectedRowKeys.filter(key => key !== item.key)
+              ? selectedRowKeys.filter((key) => key !== item.key)
               : [...selectedRowKeys, item.key];
             setSelectedRowKeys(newSelection);
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
             <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>#{item.stt}</span>
-                <Link 
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
+              >
+                <span style={{ fontSize: 12, color: "#666", marginRight: 8 }}>
+                  #{item.stt}
+                </span>
+                <Link
                   to={`/pl/ke-hoach/ke-hoach-tau-vao-sua-chua-chi-tiet/${item.id}`}
                   style={{ fontWeight: 600, fontSize: 14 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {item.documentNumber}
+                  {item.voucherNo}
                 </Link>
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Ngày:</strong> {item.documentDate 
-                  ? new Date(item.documentDate).toLocaleDateString("vi-VN")
+                <strong>Ngày:</strong>{" "}
+                {item.voucherDate
+                  ? new Date(item.voucherDate).toLocaleDateString("vi-VN")
                   : "---"}
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
                 <strong>Sản phẩm:</strong> {item.productName}
               </div>
-              
+
               <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>
-                <strong>Bộ phận:</strong> {item.department}
+                <strong>Đơn vị qlsd:</strong> {item.managementUnit}
               </div>
-              
+
               {item.note && (
                 <div style={{ fontSize: 12, color: "#666" }}>
                   <strong>Ghi chú:</strong> {item.note}
                 </div>
               )}
             </div>
-            
-            <div style={{ marginLeft: 12 }}>
-              <Tag 
-                color={
-                  item.approvalStatus === "approved" ? "green" : 
-                  item.approvalStatus === "rejected" ? "red" : "orange"
-                }
-                style={{ fontSize: 10 }}
-              >
-                {item.approvalStatus === "approved" ? "Đã duyệt" : 
-                 item.approvalStatus === "rejected" ? "Từ chối" : "Chờ duyệt"}
-              </Tag>
-            </div>
           </div>
         </Card>
       ))}
-      
+
       {/* Mobile Pagination */}
       <div style={{ textAlign: "center", marginTop: 16 }}>
         <Button
@@ -593,10 +529,14 @@ const RepairPlan = () => {
           Trang trước
         </Button>
         <span style={{ margin: "0 12px", fontSize: 12 }}>
-          {pagination.current} / {Math.ceil(pagination.total / pagination.pageSize)}
+          {pagination.current} /{" "}
+          {Math.ceil(pagination.total / pagination.pageSize)}
         </span>
         <Button
-          disabled={pagination.current >= Math.ceil(pagination.total / pagination.pageSize)}
+          disabled={
+            pagination.current >=
+            Math.ceil(pagination.total / pagination.pageSize)
+          }
           onClick={() => fetchData(pagination.current + 1, pagination.pageSize)}
           size="small"
         >
@@ -619,14 +559,16 @@ const RepairPlan = () => {
           gap: isMobile ? 8 : 0,
         }}
       >
-        <h1 style={{ 
-          margin: 0, 
-          fontSize: isMobile ? 18 : 24,
-          flex: isMobile ? "1 1 100%" : "auto"
-        }}>
-          Kế hoạch tàu vào sửa chữa
+        <h1
+          style={{
+            margin: 0,
+            fontSize: isMobile ? 18 : 24,
+            flex: isMobile ? "1 1 100%" : "auto",
+          }}
+        >
+          Tiến độ sửa chữa
         </h1>
-        
+
         {isMobile ? (
           <Space size="small">
             <Button
@@ -635,7 +577,7 @@ const RepairPlan = () => {
               size="small"
               style={{ background: "#e6f4fb", color: "#0700ad" }}
             />
-            <Dropdown overlay={actionMenu} trigger={['click']}>
+            <Dropdown overlay={actionMenu} trigger={["click"]}>
               <Button icon={<MoreOutlined />} size="small" />
             </Dropdown>
           </Space>
@@ -666,7 +608,7 @@ const RepairPlan = () => {
                 size={isTablet ? "small" : "default"}
               />
             </Tooltip>
-            <Tooltip title="Xuất excel">
+            {/* <Tooltip title="Xuất excel">
               <Button
                 icon={<FileExcelOutlined />}
                 onClick={handleExportExcel}
@@ -674,7 +616,7 @@ const RepairPlan = () => {
                 size={isTablet ? "small" : "default"}
                 disabled={selectedRowKeys.length === 0}
               />
-            </Tooltip>
+            </Tooltip> */}
           </Space>
         )}
       </div>
@@ -726,7 +668,7 @@ const RepairPlan = () => {
             showSizeChanger: !isTablet,
             showQuickJumper: !isTablet,
             size: isTablet ? "small" : "default",
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} của ${total} mục`,
           }}
           onChange={(pagination) => {

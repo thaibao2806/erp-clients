@@ -210,3 +210,11 @@ export const getshipRepairPlanByID = "/api/v1/khkd/shiprepairplan/"
 export const updateshipRepairPlan = "/api/v1/khkd/shiprepairplan/"
 export const deleteshipRepairPlan = "/api/v1/khkd/shiprepairplan/"
 export const filtershipRepairPlan = "/api/v1/khkd/shiprepairplan/filter"
+
+//repari plan
+export const getRepairPlan = "/api/v1/RepairPlan"
+export const addRepairPlan = "/api/v1/RepairPlan"
+export const getRepairPlanByID = "/api/v1/RepairPlan/"
+export const updateRepairPlan = "/api/v1/RepairPlan/"
+export const deleteRepairPlan = "/api/v1/RepairPlan/"
+export const filterRepairPlan = "/api/v1/RepairPlan/filter"

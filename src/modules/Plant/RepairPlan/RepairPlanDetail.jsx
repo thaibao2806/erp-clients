@@ -32,6 +32,10 @@ import { useSelector } from "react-redux";
 import { getApprovalsByRef } from "../../../services/apiApprovals";
 import { getApprovalSetting } from "../../../services/apiApproveSetting";
 import RepairPlanModal from "./RepairPlanModal";
+import {
+  deleteRepairPlanByID,
+  getByIdRepairPlan,
+} from "../../../services/apiPlan/apiRepairPlan";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -39,7 +43,10 @@ const { useBreakpoint } = Grid;
 
 // Gantt Chart Component
 const GanttChart = ({ data, isMobile }) => {
-  const [timelineRange, setTimelineRange] = useState({ start: null, end: null });
+  const [timelineRange, setTimelineRange] = useState({
+    start: null,
+    end: null,
+  });
   const [timelineData, setTimelineData] = useState([]);
 
   useEffect(() => {
@@ -54,15 +61,15 @@ const GanttChart = ({ data, isMobile }) => {
     let maxDate = null;
 
     // Tìm khoảng thời gian tổng thể
-    details.forEach(item => {
-      if (item.startDate) {
-        const start = dayjs(item.startDate);
+    details.forEach((item) => {
+      if (item.beginTime) {
+        const start = dayjs(item.beginTime);
         if (!minDate || start.isBefore(minDate)) {
           minDate = start;
         }
       }
-      if (item.endDate) {
-        const end = dayjs(item.endDate);
+      if (item.endTime) {
+        const end = dayjs(item.endTime);
         if (!maxDate || end.isAfter(maxDate)) {
           maxDate = end;
         }
@@ -71,13 +78,13 @@ const GanttChart = ({ data, isMobile }) => {
 
     // Nếu không có ngày, tạo một khoảng thời gian mặc định
     if (!minDate || !maxDate) {
-      minDate = dayjs().startOf('month');
-      maxDate = dayjs().endOf('month');
+      minDate = dayjs().startOf("month");
+      maxDate = dayjs().endOf("month");
     }
 
     // Thêm buffer 1 tuần ở mỗi đầu
-    minDate = minDate.subtract(1, 'week');
-    maxDate = maxDate.add(1, 'week');
+    minDate = minDate.subtract(1, "week");
+    maxDate = maxDate.add(1, "week");
 
     setTimelineRange({ start: minDate, end: maxDate });
     setTimelineData(details);
@@ -85,47 +92,51 @@ const GanttChart = ({ data, isMobile }) => {
 
   const generateTimelineColumns = () => {
     if (!timelineRange.start || !timelineRange.end) {
-      console.log('No timeline range available');
+      console.log("No timeline range available");
       return [];
     }
-    
+
     const columns = [];
-    const startDate = timelineRange.start.startOf('day');
-    const endDate = timelineRange.end.startOf('day');
-    const totalDays = endDate.diff(startDate, 'day');
-    
-    console.log('Timeline Debug Info:', {
-      start: startDate.format('YYYY-MM-DD'),
-      end: endDate.format('YYYY-MM-DD'),
-      totalDays: totalDays
+    const startDate = timelineRange.start.startOf("day");
+    const endDate = timelineRange.end.startOf("day");
+    const totalDays = endDate.diff(startDate, "day");
+
+    console.log("Timeline Debug Info:", {
+      start: startDate.format("YYYY-MM-DD"),
+      end: endDate.format("YYYY-MM-DD"),
+      totalDays: totalDays,
     });
-    
+
     // Giới hạn số cột để tránh quá tải
     const maxColumns = isMobile ? 30 : 45;
     let step = 1;
-    
+
     if (totalDays > maxColumns) {
       step = Math.ceil(totalDays / maxColumns);
     }
-    
+
     // Tạo các cột timeline - sử dụng for loop để tránh reference issue
     for (let i = 0; i < totalDays && columns.length < maxColumns; i += step) {
-      const currentDate = startDate.add(i, 'day');
-      
+      const currentDate = startDate.add(i, "day");
+
       const dateInfo = {
         date: currentDate,
         day: currentDate.date(),
         month: currentDate.month() + 1,
         year: currentDate.year(),
         isWeekend: currentDate.day() === 0 || currentDate.day() === 6,
-        step: step
+        step: step,
       };
-      
+
       columns.push(dateInfo);
-      
-      console.log(`Column ${columns.length - 1}: ${currentDate.format('DD/MM/YYYY')} (day: ${dateInfo.day})`);
+
+      console.log(
+        `Column ${columns.length - 1}: ${currentDate.format(
+          "DD/MM/YYYY"
+        )} (day: ${dateInfo.day})`
+      );
     }
-    
+
     console.log(`Final columns count: ${columns.length}, step: ${step}`);
     return columns;
   };
@@ -134,49 +145,55 @@ const GanttChart = ({ data, isMobile }) => {
     if (!startDate || !endDate || !timelineRange.start || !timelineRange.end) {
       return { left: 0, width: 0 };
     }
-    
+
     try {
       const taskStart = dayjs(startDate);
       const taskEnd = dayjs(endDate);
       const timelineStart = timelineRange.start;
       const timelineEnd = timelineRange.end;
-      
-      console.log('Bar Position Debug:', {
-        taskStart: taskStart.format('DD/MM/YYYY'),
-        taskEnd: taskEnd.format('DD/MM/YYYY'),
-        timelineStart: timelineStart.format('DD/MM/YYYY'),
-        timelineEnd: timelineEnd.format('DD/MM/YYYY')
+
+      console.log("Bar Position Debug:", {
+        taskStart: taskStart.format("DD/MM/YYYY"),
+        taskEnd: taskEnd.format("DD/MM/YYYY"),
+        timelineStart: timelineStart.format("DD/MM/YYYY"),
+        timelineEnd: timelineEnd.format("DD/MM/YYYY"),
       });
-      
+
       // Kiểm tra task có nằm trong timeline không
       if (taskEnd.isBefore(timelineStart) || taskStart.isAfter(timelineEnd)) {
-        console.log('Task outside timeline range');
+        console.log("Task outside timeline range");
         return { left: 0, width: 0 };
       }
-      
+
       // Tính toán theo số ngày từ đầu timeline
-      const totalTimelineDays = timelineEnd.diff(timelineStart, 'day');
-      const startOffsetDays = taskStart.diff(timelineStart, 'day');
-      const taskDurationDays = taskEnd.diff(taskStart, 'day') + 1;
-      
+      const totalTimelineDays = timelineEnd.diff(timelineStart, "day");
+      const startOffsetDays = taskStart.diff(timelineStart, "day");
+      const taskDurationDays = taskEnd.diff(taskStart, "day") + 1;
+
       // Tính % dựa trên vị trí thực tế trong timeline
-      const leftPercent = Math.max(0, (startOffsetDays / totalTimelineDays) * 100);
-      const widthPercent = Math.max(2, (taskDurationDays / totalTimelineDays) * 100);
-      
-      console.log('Bar calculations:', {
+      const leftPercent = Math.max(
+        0,
+        (startOffsetDays / totalTimelineDays) * 100
+      );
+      const widthPercent = Math.max(
+        2,
+        (taskDurationDays / totalTimelineDays) * 100
+      );
+
+      console.log("Bar calculations:", {
         totalTimelineDays,
         startOffsetDays,
         taskDurationDays,
-        leftPercent: leftPercent.toFixed(1) + '%',
-        widthPercent: widthPercent.toFixed(1) + '%'
+        leftPercent: leftPercent.toFixed(1) + "%",
+        widthPercent: widthPercent.toFixed(1) + "%",
       });
-      
-      return { 
-        left: leftPercent, 
-        width: Math.min(widthPercent, 100 - leftPercent) // Không vượt quá 100%
+
+      return {
+        left: leftPercent,
+        width: Math.min(widthPercent, 100 - leftPercent), // Không vượt quá 100%
       };
     } catch (error) {
-      console.error('Error calculating bar position:', error);
+      console.error("Error calculating bar position:", error);
       return { left: 0, width: 0 };
     }
   };
@@ -189,34 +206,27 @@ const GanttChart = ({ data, isMobile }) => {
         title: "STT",
         dataIndex: "stt",
         width: isMobile ? 50 : 60,
-        fixed: 'left',
-        align: 'center'
+        fixed: "left",
+        align: "center",
       },
       {
         title: "Nội dung công việc",
         dataIndex: "content",
         width: isMobile ? 120 : 200,
-        fixed: 'left',
-        ellipsis: true,
-      },
-      {
-        title: "Hạng mục",
-        dataIndex: "category",
-        width: isMobile ? 100 : 120,
-        fixed: 'left',
+        fixed: "left",
         ellipsis: true,
       },
       {
         title: "Thời gian bắt đầu",
-        dataIndex: "startDate",
+        dataIndex: "beginTime",
         width: isMobile ? 100 : 120,
-        render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : '---'
+        render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "---"),
       },
       {
         title: "Thời gian kết thúc",
-        dataIndex: "endDate",
+        dataIndex: "endTime",
         width: isMobile ? 100 : 120,
-        render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : '---'
+        render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "---"),
       },
       {
         title: "Bộ phận thực hiện",
@@ -228,177 +238,178 @@ const GanttChart = ({ data, isMobile }) => {
         title: "Tổng ngày",
         dataIndex: "totalDays",
         width: isMobile ? 80 : 100,
-        align: 'center',
+        align: "center",
         render: (_, record) => {
           if (record.startDate && record.endDate) {
-            const days = dayjs(record.endDate).diff(dayjs(record.startDate), 'day') + 1;
+            const days =
+              dayjs(record.endDate).diff(dayjs(record.startDate), "day") + 1;
             return days;
           }
-          return record.workDay || '---';
-        }
+          return record.workDay || "---";
+        },
       },
       {
         title: "Trạng thái",
         dataIndex: "status",
         width: isMobile ? 90 : 120,
-        align: 'center',
+        align: "center",
         render: (status) => {
           const statusConfig = {
-            'completed': { color: '#52c41a', text: 'Hoàn thành' },
-            'in_progress': { color: '#1890ff', text: 'Đang thực hiện' },
-            'pending': { color: '#faad14', text: 'Chờ thực hiện' },
-            'overdue': { color: '#ff4d4f', text: 'Trễ hạn' }
+            completed: { color: "#52c41a", text: "Hoàn thành" },
+            in_progress: { color: "#1890ff", text: "Đang thực hiện" },
+            pending: { color: "#faad14", text: "Chờ thực hiện" },
+            overdue: { color: "#ff4d4f", text: "Trễ hạn" },
           };
-          
-          const config = statusConfig[status] || { color: '#d9d9d9', text: 'Chưa xác định' };
-          
+
+          const config = statusConfig[status] || {
+            color: "#d9d9d9",
+            text: "Chưa xác định",
+          };
+
           return (
-            <div style={{
-              backgroundColor: config.color,
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontSize: isMobile ? '10px' : '12px',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}>
+            <div
+              style={{
+                backgroundColor: config.color,
+                color: "white",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                fontSize: isMobile ? "10px" : "12px",
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
+            >
               {config.text}
             </div>
           );
-        }
+        },
       },
       {
         title: "Ghi chú",
         dataIndex: "note",
         width: isMobile ? 100 : 150,
         ellipsis: true,
-        render: (note) => note || '---'
-      }
+        render: (note) => note || "---",
+      },
     ];
 
     // Thêm cột timeline
     const timelineColumn = {
       title: (
-        <div style={{ textAlign: 'center', minWidth: isMobile ? 300 : 600 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Biểu đồ Gantt</div>
-            {/* <div style={{ display: 'flex', fontSize: '12px', overflowX: 'hidden' }}>
-                {timelineColumns.map((col, index) => (
-                <div
-                    key={`timeline-${col.date.format('YYYY-MM-DD')}-${index}`}
-                    style={{
-                    flex: '1 0 auto',
-                    minWidth: isMobile ? 30 : 35,
-                    padding: '2px 1px',
-                    borderRight: '1px solid #f0f0f0',
-                    backgroundColor: col.isWeekend ? '#fafafa' : 'white',
-                    textAlign: 'center'
-                    }}
-                >
-                    <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
-                    </div>
-                    {(index === 0 || col.day === 1) && (
-                    <div style={{ fontSize: '10px', color: '#666' }}>
-                        {col.month}/{String(col.year).slice(-2)}
-                    </div>
-                    )}
-                </div>
-                ))}
-          </div> */}
+        <div style={{ textAlign: "center", minWidth: isMobile ? 300 : 600 }}>
+          <div style={{ fontWeight: "bold", marginBottom: 8 }}>
+            Biểu đồ Gantt
+          </div>
         </div>
       ),
-      dataIndex: 'timeline',
+      dataIndex: "timeline",
       width: isMobile ? 300 : 600,
       render: (_, record) => {
         const containerWidth = isMobile ? 300 : 600;
-        const { left, width } = calculateBarPosition(record.startDate, record.endDate);
-        
+        const { left, width } = calculateBarPosition(
+          record.beginTime,
+          record.endTime
+        );
+
         return (
-          <div style={{ 
-            position: 'relative', 
-            height: 30, 
-            minWidth: containerWidth,
-            backgroundColor: '#f9f9f9',
-            border: '1px solid #f0f0f0'
-          }}>
+          <div
+            style={{
+              position: "relative",
+              height: 30,
+              minWidth: containerWidth,
+              backgroundColor: "#f9f9f9",
+              border: "1px solid #f0f0f0",
+            }}
+          >
             {/* Background grid và date markers */}
-            {timelineColumns.length <= 45 && timelineColumns.map((col, index) => {
-              const colLeftPercent = (index / timelineColumns.length) * 100;
-              const colWidthPercent = 100 / timelineColumns.length;
-              
-              return (
-                <div
-                  key={`grid-${index}`}
-                  style={{
-                    position: 'absolute',
-                    left: `${colLeftPercent}%`,
-                    width: `${colWidthPercent}%`,
-                    height: '100%',
-                    borderRight: index % 5 === 0 ? '2px solid #d9d9d9' : '1px solid #f5f5f5',
-                    backgroundColor: col.isWeekend ? '#fafafa' : 'transparent'
-                  }}
-                >
-                  {/* Debug: Hiển thị ngày ở giữa mỗi cột */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-15px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: '8px',
-                    color: '#999',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {col.day}
+            {timelineColumns.length <= 45 &&
+              timelineColumns.map((col, index) => {
+                const colLeftPercent = (index / timelineColumns.length) * 100;
+                const colWidthPercent = 100 / timelineColumns.length;
+
+                return (
+                  <div
+                    key={`grid-${index}`}
+                    style={{
+                      position: "absolute",
+                      left: `${colLeftPercent}%`,
+                      width: `${colWidthPercent}%`,
+                      height: "100%",
+                      borderRight:
+                        index % 5 === 0
+                          ? "2px solid #d9d9d9"
+                          : "1px solid #f5f5f5",
+                      backgroundColor: col.isWeekend
+                        ? "#fafafa"
+                        : "transparent",
+                    }}
+                  >
+                    {/* Debug: Hiển thị ngày ở giữa mỗi cột */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-15px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        fontSize: "8px",
+                        color: "#999",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {col.day}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-            
+                );
+              })}
+
             {/* Progress bar - sử dụng % thay vì px */}
-            {record.startDate && record.endDate && width > 0 && (
+            {record.beginTime && record.endTime && width > 0 && (
               <div
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   left: `${left}%`,
                   width: `${width}%`,
                   height: 20,
                   top: 5,
                   backgroundColor: (() => {
                     const colors = {
-                      'completed': '#52c41a',
-                      'in_progress': '#1890ff', 
-                      'pending': '#faad14',
-                      'overdue': '#ff4d4f'
+                      completed: "#52c41a",
+                      in_progress: "#1890ff",
+                      pending: "#faad14",
+                      overdue: "#ff4d4f",
                     };
-                    return colors[record.status] || '#1890ff';
+                    return colors[record.status] || "#1890ff";
                   })(),
                   borderRadius: 4,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: isMobile ? '10px' : '12px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  overflow: 'hidden',
-                  zIndex: 10
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: isMobile ? "10px" : "12px",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  overflow: "hidden",
+                  zIndex: 10,
                 }}
               >
-                {width > 15 && record.content && record.content.length > (isMobile ? 5 : 10) 
+                {/* {width > 15 &&
+                record.content &&
+                record.content.length > (isMobile ? 5 : 10)
                   ? `${record.content.substring(0, isMobile ? 5 : 10)}...`
-                  : width > 8 ? record.content : ''
-                }
+                  : width > 8
+                  ? record.content
+                  : ""} */}
               </div>
             )}
           </div>
         );
-      }
+      },
     };
 
     return [...baseColumns, timelineColumn];
   };
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ overflowX: "auto" }}>
       <Table
         columns={getGanttColumns()}
         dataSource={timelineData?.map((item, index) => ({
@@ -406,14 +417,17 @@ const GanttChart = ({ data, isMobile }) => {
           stt: index + 1,
           key: index,
           // Thêm các trường mặc định nếu không có
-          startDate: item.startDate || dayjs().format('YYYY-MM-DD'),
-          endDate: item.endDate || dayjs().add(item.workDay || 1, 'day').format('YYYY-MM-DD'),
-          category: item.category || item.unit || 'Chưa phân loại',
-          department: item.department || 'Chưa xác định'
+          startDate: item.beginTime || dayjs().format("YYYY-MM-DD"),
+          endDate:
+            item.endTime ||
+            dayjs()
+              .add(item.workDay || 1, "day")
+              .format("YYYY-MM-DD"),
+          department: item.department || "Chưa xác định",
         }))}
-        scroll={{ 
+        scroll={{
           x: isMobile ? 1000 : 1400,
-          y: isMobile ? 400 : undefined
+          y: isMobile ? 400 : undefined,
         }}
         size="small"
         bordered
@@ -427,14 +441,14 @@ const GanttChart = ({ data, isMobile }) => {
                   backgroundColor: "#e6f4fb",
                   color: "#0700ad",
                   fontWeight: "600",
-                  fontSize: isMobile ? '12px' : '14px'
+                  fontSize: isMobile ? "12px" : "14px",
                 }}
               />
             ),
           },
         }}
         style={{
-          fontSize: isMobile ? '12px' : '14px'
+          fontSize: isMobile ? "12px" : "14px",
         }}
       />
     </div>
@@ -465,7 +479,7 @@ const mockData = {
       quantity: 1,
       workDay: 6,
       status: "completed",
-      note: "Ưu tiên cao"
+      note: "Ưu tiên cao",
     },
     {
       id: 2,
@@ -478,7 +492,7 @@ const mockData = {
       quantity: 1,
       workDay: 8,
       status: "in_progress",
-      note: "Cần phê duyệt trước"
+      note: "Cần phê duyệt trước",
     },
     {
       id: 3,
@@ -491,7 +505,7 @@ const mockData = {
       quantity: 50,
       workDay: 15,
       status: "pending",
-      note: "Yêu cầu chất lượng cao"
+      note: "Yêu cầu chất lượng cao",
     },
     {
       id: 4,
@@ -504,7 +518,7 @@ const mockData = {
       quantity: 10,
       workDay: 10,
       status: "pending",
-      note: "Theo quy trình chuẩn"
+      note: "Theo quy trình chuẩn",
     },
     {
       id: 5,
@@ -517,7 +531,7 @@ const mockData = {
       quantity: 1,
       workDay: 5,
       status: "pending",
-      note: "Kiểm tra toàn diện"
+      note: "Kiểm tra toàn diện",
     },
     {
       id: 6,
@@ -530,9 +544,9 @@ const mockData = {
       quantity: 10,
       workDay: 6,
       status: "overdue",
-      note: "Đóng gói cẩn thận"
-    }
-  ]
+      note: "Đóng gói cẩn thận",
+    },
+  ],
 };
 
 const RepairPlanDetail = () => {
@@ -559,41 +573,18 @@ const RepairPlanDetail = () => {
   useEffect(() => {
     // Nếu muốn test với dữ liệu mẫu, uncomment dòng dưới
     // setUseMockData(true);
-    
+
     if (useMockData) {
       // Sử dụng dữ liệu mẫu cho test
       setData(mockData);
     } else {
       // Sử dụng API thật
       getData();
-      getApprovals();
-      getApprovalByModulePage();
     }
   }, [useMockData]);
-
-  const getApprovalByModulePage = async () => {
-    try {
-      let res = await getApprovalSetting("PL", "pl-phieu-giao-viec");
-      if (res && res.status === 200) {
-        setApprovalNumber(res.data.data.approvalNumber);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const getApprovals = async () => {
-    try {
-      let res = await getApprovalsByRef(id, "PGV");
-      if (res && res.status === 200) {
-        setApproval(res.data.data);
-      }
-    } catch (error) {}
-  };
-
   const getData = async () => {
     try {
-      let res = await getAssignmentSlipById(id);
+      let res = await getByIdRepairPlan(id);
       if (res && res.status === 200) {
         setData(res.data.data);
       }
@@ -650,13 +641,13 @@ const RepairPlanDetail = () => {
       fileInputRef.current?.click();
     } else if (key === "delete") {
       try {
-        let res = await deleteAssignmetSlip(data.id);
+        let res = await deleteRepairPlanByID(data.id);
         if ((res && res.status === 200) || res.status === 204) {
           Modal.success({
             title: "Xóa thành công",
             content: `Đã xóa thành công phiếu`,
           });
-          navigator("/pl/phieu-giao-viec");
+          navigator("/pl/ke-hoach/ke-hoach-sua-chua");
         }
       } catch (error) {
         Modal.error({
@@ -672,17 +663,24 @@ const RepairPlanDetail = () => {
     if (isMobile) {
       return (
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
-          <div><strong>Tên sản phẩm:</strong> {data.productName || ""}</div>
+          <div>
+            <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+          </div>
+          <div>
+            <strong>Tên sản phẩm:</strong> {data.productName || ""}
+          </div>
           <div>
             <strong>Ngày chứng từ:</strong>{" "}
-            {data.documentDate
-              ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+            {data.voucherDate
+              ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
               : "---"}
           </div>
-          <div><strong>Đơn bị quản lý:</strong> {data.documentNumber || ""}</div>
-          <div><strong>Bộ phận:</strong> {data.department || ""}</div>
-          <div><strong>Ghi chú:</strong> {data.note || ""}</div>
+          <div>
+            <strong>Đơn bị quản lý:</strong> {data.managementUnit || ""}
+          </div>
+          <div>
+            <strong>Ghi chú:</strong> {data.note || ""}
+          </div>
         </Space>
       );
     }
@@ -690,133 +688,64 @@ const RepairPlanDetail = () => {
     return (
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-          <Space
-            direction="vertical"
-            size="small"
-            style={{ width: "100%" }}
-          >
-            <div><strong>Số chứng từ:</strong> {data.documentNumber || ""}</div>
-            <div><strong>Tên sản phẩm:</strong> {data.productName || ""}</div>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Số chứng từ:</strong> {data.voucherNo || ""}
+            </div>
+            <div>
+              <strong>Tên sản phẩm:</strong> {data.productName || ""}
+            </div>
             <div>
               <strong>Ngày chứng từ:</strong>{" "}
-              {data.documentDate
-                ? new Date(data.documentDate).toLocaleDateString("vi-VN")
+              {data.voucherDate
+                ? new Date(data.voucherDate).toLocaleDateString("vi-VN")
                 : "---"}
             </div>
           </Space>
         </Col>
         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-          <Space
-            direction="vertical"
-            size="small"
-            style={{ width: "100%" }}
-          >
-            <div><strong>Đơn bị quản lý:</strong> {data.documentNumber || ""}</div>
-            <div><strong>Bộ phận:</strong> {data.department || ""}</div>
-            <div><strong>Ghi chú:</strong> {data.note || ""}</div>
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <div>
+              <strong>Đơn bị quản lý:</strong> {data.managementUnit || ""}
+            </div>
+            <div>
+              <strong>Ghi chú:</strong> {data.note || ""}
+            </div>
           </Space>
         </Col>
       </Row>
     );
   };
 
-  // Responsive approval section
-  const renderApprovalSection = () => {
-    if (!approvals?.length) return null;
-
-    if (isMobile) {
-      return (
-        <div style={{ marginTop: 16 }}>
-          {approvals.map((item, index) => (
-            <div key={index} style={{ marginBottom: 16, padding: 12, border: '1px solid #d9d9d9', borderRadius: 6 }}>
-              <Space direction="vertical" size="small" style={{ width: "100%" }}>
-                <div><strong>Người duyệt {index + 1}:</strong> {item.fullName}</div>
-                <div>
-                  <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
-                  {item.status === "rejected"
-                    ? "Từ chối"
-                    : item.status === "approved"
-                    ? "Đã duyệt"
-                    : "Chờ duyệt"}
-                </div>
-                <div><strong>Ghi chú người duyệt {index + 1}:</strong> {item.note || ""}</div>
-              </Space>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {approvals.map((item, index) => (
-          <Col xs={24} sm={24} md={12} lg={12} xl={12} key={index}>
-            <Space
-              direction="vertical"
-              size="small"
-              style={{ width: "100%" }}
-            >
-              <div><strong>Người duyệt {index + 1}:</strong> {item.fullName}</div>
-              <div>
-                <strong>Trạng thái duyệt {index + 1}:</strong>{" "}
-                {item.status === "rejected"
-                  ? "Từ chối"
-                  : item.status === "approved"
-                  ? "Đã duyệt"
-                  : "Chờ duyệt"}
-              </div>
-              <div><strong>Ghi chú người duyệt {index + 1}:</strong> {item.note || ""}</div>
-            </Space>
-          </Col>
-        ))}
-      </Row>
-    );
-  };
-
   return (
-    <div style={{ 
-      padding: isMobile ? 8 : 16,
-      minHeight: '100vh'
-    }}>
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        minHeight: "100vh",
+      }}
+    >
       <Row justify="space-between" align="middle" gutter={[16, 16]}>
         <Col xs={24} sm={16} md={18} lg={20}>
-          <Title 
+          <Title
             level={isMobile ? 4 : 3}
-            style={{ 
+            style={{
               margin: 0,
-              fontSize: isMobile ? '18px' : undefined
+              fontSize: isMobile ? "18px" : undefined,
             }}
           >
-            Xem chi tiết phiếu giao việc
-            {useMockData && (
-              <span style={{ 
-                fontSize: '14px', 
-                color: '#1890ff', 
-                fontWeight: 'normal',
-                marginLeft: '10px'
-              }}>
-                (Dữ liệu mẫu)
-              </span>
-            )}
+            Xem chi tiết tiến độ sửa chữa
           </Title>
         </Col>
         <Col xs={24} sm={8} md={6} lg={4}>
           <Space>
-            <Button 
-              onClick={() => setUseMockData(!useMockData)}
-              type={useMockData ? "primary" : "default"}
-              size="small"
-            >
-              {useMockData ? "Dùng API" : "Test Mock"}
-            </Button>
             <Dropdown
               menu={{ items, onClick: handleMenuClick }}
               trigger={["click"]}
               placement={isMobile ? "bottomRight" : "bottom"}
             >
-              <Button 
-                style={{ width: isMobile ? '100%' : 'auto' }}
-                size={isMobile ? 'middle' : 'middle'}
+              <Button
+                style={{ width: isMobile ? "100%" : "auto" }}
+                size={isMobile ? "middle" : "middle"}
               >
                 Hoạt động <DownOutlined />
               </Button>
@@ -832,12 +761,7 @@ const RepairPlanDetail = () => {
         size={isMobile ? "small" : "middle"}
       >
         <Panel header="Thông tin phiếu giao việc" key="1">
-          {data && (
-            <>
-              {renderInfoSection()}
-              {renderApprovalSection()}
-            </>
-          )}
+          {data && <>{renderInfoSection()}</>}
         </Panel>
 
         <Panel header="Biểu đồ Gantt - Nội dung phiếu giao việc" key="2">
@@ -847,7 +771,7 @@ const RepairPlanDetail = () => {
         <Panel header="Đính kèm" key="3">
           <AttachmentSection
             refId={data ? data.id : ""}
-            refType={"AssignmentSlip"}
+            refType={"RepairPlan"}
             refreshTrigger={refreshFlag}
           />
         </Panel>
@@ -855,8 +779,8 @@ const RepairPlanDetail = () => {
         <Panel header="Ghi chú" key="4">
           <NoteSection
             refId={data ? data.id : ""}
-            refType={"AssignmentSlip"}
-            voucherNo={data ? data.documentNumber : ""}
+            refType={"RepairPlan"}
+            voucherNo={data ? data.voucherNo : ""}
           />
         </Panel>
 
@@ -874,8 +798,8 @@ const RepairPlanDetail = () => {
                   : "",
               }}
               refId={data.id}
-              refType={"AssignmentSlip"}
-              voucherNo={data.documentNumber}
+              refType={"RepairPlan"}
+              voucherNo={data.voucherNo}
             />
           )}
         </Panel>
@@ -886,7 +810,6 @@ const RepairPlanDetail = () => {
         onCancel={() => setIsModalOpen(false)}
         onSubmit={() => {
           getData();
-          getApprovals();
           setIsModalOpen(false);
         }}
         initialValues={editingData}
@@ -905,7 +828,7 @@ const RepairPlanDetail = () => {
             const formData = new FormData();
             formData.append("file", file);
             formData.append("refId", data.id);
-            formData.append("refType", "AssignmentSlip");
+            formData.append("refType", "RepairPlan");
 
             try {
               const res = await addAttachments(formData, user.data.token);
