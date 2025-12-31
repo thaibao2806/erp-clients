@@ -58,6 +58,8 @@ import RepairDetail from "../modules/ProductionControl/Propose/Repair/RepairDeta
 import BuySupplies from "../modules/ProductionControl/Propose/BuySupplies/BuySupplies";
 import BuySuppliesDetail from "../modules/ProductionControl/Propose/BuySupplies/BuySuppliesDetail";
 import MaterialManager from "../modules/TechnicalMaterial/Supplies/MaterialManager/MaterialManager";
+import Projects from "../modules/Plant/Projects/Projects";
+import ProjectsDetail from "../modules/Plant/Projects/ProjectsDetail";
 function AppRoute() {
   return (
     <Routes>
@@ -214,6 +216,14 @@ function AppRoute() {
           <Route
             path="/tm/vat-tu/quan-ly-vat-tu"
             element={<MaterialManager />}
+          />
+          <Route
+            path="/pl/project"
+            element={<Projects />}
+          />
+          <Route
+            path="/pl/project-chi-tiet/:id"
+            element={<ProjectsDetail />}
           />
         </Route>
       </Route>

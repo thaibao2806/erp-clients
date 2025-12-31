@@ -1,4 +1,4 @@
-export const url = "http://localhost:5251"
+export const url = "http://192.168.20.133:5000"
 
 //auth
 export const login = "/api/v1/Auth/login"

@@ -37,6 +37,7 @@ export const moduleData = {
         { key: 'pl-bien-ban', label: 'D. Biên bản', children: [
           { key: 'pl-bien-ban-tiep-nhan', label: '1. Biên bản tiếp nhận', path: '/pl/bien-ban/bien-ban-tiep-nhan' },
         ] },
+        { key: 'pl-project', label: 'E. Dự án', path: '/pl/project' },
       ],
     },
     FN: { // Warehouse Management
